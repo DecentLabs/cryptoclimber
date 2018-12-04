@@ -55,6 +55,7 @@ var priceData
 
 function setup() {
   priceData = parsePriceData(PIXI.loader.resources.prices.data)
+  console.log(priceData.scale)
   const bgTexture = PIXI.loader.resources.bg.texture
   const w = bgTexture.width
   const h = bgTexture.height
@@ -81,7 +82,7 @@ function setup() {
 }
 
 var time = 0
-const LINE_WIDTH = 60
+const LINE_WIDTH = 10
 
 var diff
 
@@ -108,7 +109,7 @@ function update(dt) {
     app.stage.addChild(line)
   }
   ENTITIES.lines.forEach(line => {
-    line.x -= dt
+    line.x -= LINE_WIDTH / 60 * dt
     line.y += priceData.scale * diff / 60 * dt
   })
 
@@ -122,7 +123,7 @@ function parsePriceData(data) {
     series: series,
     min: Math.min(...series),
     max: Math.max(...series),
-    scale: 10 / Math.abs(series[0] - series[1])
+    scale: 10 // / Math.abs(series[0] - series[1])
   }
 }
 
