@@ -54,7 +54,14 @@ const ENTITIES = {
 }
 
 const INIT_FUNDS = 10000
-var funds = INIT_FUNDS
+const RESERVE = 0.9
+
+var ASSETS = {
+  funds: INIT_FUNDS,
+  volume: 0,
+  short: 0,
+  long: 0,
+}
 
 var priceData
 
@@ -87,9 +94,10 @@ function setup() {
   app.stage.addChild(ENTITIES.messages.iteration);
   y += ROW_HEIGHT
 
-  ENTITIES.messages.funds = new PIXI.Text('funds: $' + funds, TEXT_STYLE)
+  ENTITIES.messages.funds = new PIXI.Text('funds: $' + ASSETS.funds, TEXT_STYLE)
   ENTITIES.messages.funds.position.set(x, y)
   app.stage.addChild(ENTITIES.messages.funds);
+  y += ROW_HEIGHT
 
   ENTITIES.messages.position = new PIXI.Text('', TEXT_STYLE)
   ENTITIES.messages.position.position.set(x, y)
@@ -125,23 +133,55 @@ function update(dt) {
     return // TODO: end of level
   }
   if (ENTITIES.lines.length === i) {
-    ENTITIES.messages.iteration.text = 'tick: ' + i + ' / ' + priceData.series.length
+
+    if (INPUT.long && ASSETS.long === 0) {
+      openLong(i)
+    }
+    if (!INPUT.long && ASSETS.long !== 0) {
+      closeLong()
+    }
+
     let line = new PIXI.Graphics();
     line.position.set(W/2, H/2);
 
     diff = priceData.series[i + 1] - priceData.series[i]
-    var color =
     line.lineStyle(positionToThickness(), positionToColor())
         .moveTo(0, 0)
         .lineTo(LINE_WIDTH, -priceData.scale * diff)
 
     ENTITIES.lines.push(line)
     app.stage.addChild(line)
+
+    if (ASSETS.long !== 0) {
+      ASSETS.long = Math.round(ASSETS.long / ASSETS.buyingPrice * priceData.series[i+1])
+      ENTITIES.messages.position.text = 'long: $' + ASSETS.long
+    } else if (ASSETS.short !== 0) {
+    } else {
+      ENTITIES.messages.position.text = ''
+    }
+
+    ENTITIES.messages.iteration.text = 'tick: ' + i + ' / ' + priceData.series.length
+    ENTITIES.messages.funds.text = 'funds: $' + ASSETS.funds
+
   }
   ENTITIES.lines.forEach(line => {
     line.x -= LINE_WIDTH / 60 * dt
     line.y += priceData.scale * diff / 60 * dt
   })
+}
+
+function openLong(i) {
+  ASSETS.buyingPrice = priceData.series[i]
+  ASSETS.volume = ASSETS.funds * (1-RESERVE)
+  ASSETS.funds = ASSETS.funds - ASSETS.volume
+  ASSETS.long = ASSETS.volume
+  console.log(ASSETS)
+}
+
+function closeLong() {
+  ASSETS.funds = ASSETS.funds + ASSETS.long
+  ASSETS.long = 0
+  ASSETS.volume = 0
 }
 
 function parsePriceData(data) {
