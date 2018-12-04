@@ -4,18 +4,10 @@
     <meta charset="utf-8">
     <title>Crypt surfer</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/4.8.2/pixi.min.js"></script>
+    <style>* {padding: 0; margin: 0}</style>
   </head>
   <body>
     <script>
-
-// //Aliases
-// let Application = PIXI.Application,
-//     Container = PIXI.Container,
-//     loader = PIXI.loader,
-//     resources = PIXI.loader.resources,
-//     TextureCache = PIXI.utils.TextureCache,
-//     Sprite = PIXI.Sprite,
-//     Rectangle = PIXI.Rectangle;
 
 const CONF = {
   width: 1024,
@@ -26,6 +18,13 @@ const CONF = {
 };
 
 const app = new PIXI.Application(CONF);
+const W = window.innerWidth
+const H = window.innerHeight
+// Full screen
+app.renderer.view.style.position = 'absolute';
+app.renderer.view.style.display = 'block';
+app.renderer.autoResize = true;
+app.renderer.resize(W, H);
 
 document.body.appendChild(app.view);
 
@@ -36,12 +35,11 @@ PIXI.loader
 const bgSprites = []
 
 function setup() {
-
   const bgTexture = PIXI.loader.resources.bg.texture
   const w = bgTexture.width
   const h = bgTexture.height
-  for (let i = -w; i < CONF.width; i += w) {
-    for (let j = -h; j < CONF.height; j += h) {
+  for (let i = -w; i < W; i += w) {
+    for (let j = -h; j < H; j += h) {
       let bgSprite = new PIXI.Sprite(bgTexture)
       bgSprite.position.set(i, j)
       app.stage.addChild(bgSprite);
@@ -49,6 +47,8 @@ function setup() {
     }
   }
 }
+
+
     </script>
   </body>
 </html>
