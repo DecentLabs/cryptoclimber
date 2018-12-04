@@ -1,0 +1,54 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Crypt surfer</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/4.8.2/pixi.min.js"></script>
+  </head>
+  <body>
+    <script>
+
+// //Aliases
+// let Application = PIXI.Application,
+//     Container = PIXI.Container,
+//     loader = PIXI.loader,
+//     resources = PIXI.loader.resources,
+//     TextureCache = PIXI.utils.TextureCache,
+//     Sprite = PIXI.Sprite,
+//     Rectangle = PIXI.Rectangle;
+
+const CONF = {
+  width: 1024,
+  height: 768,
+  antialias: true,
+  transparent: false,
+  resolution: 1
+};
+
+const app = new PIXI.Application(CONF);
+
+document.body.appendChild(app.view);
+
+PIXI.loader
+  .add('bg', 'bg_tile.jpg')
+  .load(setup);
+
+const bgSprites = []
+
+function setup() {
+
+  const bgTexture = PIXI.loader.resources.bg.texture
+  const w = bgTexture.width
+  const h = bgTexture.height
+  for (let i = -w; i < CONF.width; i += w) {
+    for (let j = -h; j < CONF.height; j += h) {
+      let bgSprite = new PIXI.Sprite(bgTexture)
+      bgSprite.position.set(i, j)
+      app.stage.addChild(bgSprite);
+      bgSprites.push(bgSprites)
+    }
+  }
+}
+    </script>
+  </body>
+</html>
