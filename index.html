@@ -36,11 +36,12 @@ PIXI.loader
   .load(setup);
 
 const bgSprites = []
-var prices
+var player
+
+var priceData
 
 function setup() {
-  prices = toPrices(PIXI.loader.resources.prices.data)
-  console.log(prices)
+  priceData = parsePriceData(PIXI.loader.resources.prices.data)
   const bgTexture = PIXI.loader.resources.bg.texture
   const w = bgTexture.width
   const h = bgTexture.height
@@ -52,12 +53,59 @@ function setup() {
       bgSprites.push(bgSprites)
     }
   }
+
+
+  player = new PIXI.Graphics()
+  player.lineStyle(2, 0xFF00FF)
+  player.drawCircle(W/2, H/2, 4)
+  player.endFill()
+  app.stage.addChild(player)
+
+  app.ticker.add(update);
 }
 
-function toPrices(data) {
+var time = 0
+const lines = []
+const LINE_WIDTH = 60
+
+var diff
+
+function update(dt) {
+  time += dt / 60
+  var i = Math.floor(time)
+  if (lines.length === priceData.series.length) {
+    return // TODO: end of level
+  }
+  if (lines.length === i) {
+    let line = new PIXI.Graphics();
+    line.position.set(W/2, H/2);
+
+    diff = priceData.series[i + 1] - priceData.series[i]
+    // Draw the line (endPoint should be relative to myGraph's position)
+    line.lineStyle(1, 0xff0000)
+        .moveTo(0, 0)
+        .lineTo(LINE_WIDTH, -priceData.scale * diff)
+
+    lines.push(line)
+    app.stage.addChild(line)
+  }
+  lines.forEach(line => {
+    line.x -= dt
+    line.y += priceData.scale * diff / 60 * dt
+  })
+}
+
+function parsePriceData(data) {
   const days = Object.keys(data.bpi)
   days.sort()
-  return days.map(day => data.bpi[day])
+  const series = days.map(day => data.bpi[day])
+  console.log(series)
+  return {
+    series: series,
+    min: Math.min(...series),
+    max: Math.max(...series),
+    scale: 10 / Math.abs(series[0] - series[1])
+  }
 }
 
     </script>
