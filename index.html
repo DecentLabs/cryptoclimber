@@ -47,6 +47,8 @@ const ENTITIES = {
   player: null,
   messages: {
     iteration: null,
+    funds: null,
+    position: null,
   },
   lines: [],
 }
@@ -57,8 +59,8 @@ var funds = INIT_FUNDS
 var priceData
 
 function setup() {
+  addInputListeners()
   priceData = parsePriceData(PIXI.loader.resources.prices.data)
-  console.log(priceData.scale)
   const bgTexture = PIXI.loader.resources.bg.texture
   const w = bgTexture.width
   const h = bgTexture.height
@@ -77,13 +79,21 @@ function setup() {
   ENTITIES.player.endFill()
   app.stage.addChild(ENTITIES.player)
 
+  var x = 4
+  var y = 4
+  const ROW_HEIGHT = 20
   ENTITIES.messages.iteration = new PIXI.Text('tick: ', TEXT_STYLE)
-  ENTITIES.messages.iteration.position.set(4, 4)
+  ENTITIES.messages.iteration.position.set(x, y)
   app.stage.addChild(ENTITIES.messages.iteration);
+  y += ROW_HEIGHT
 
   ENTITIES.messages.funds = new PIXI.Text('funds: $' + funds, TEXT_STYLE)
-  ENTITIES.messages.funds.position.set(4, 24)
+  ENTITIES.messages.funds.position.set(x, y)
   app.stage.addChild(ENTITIES.messages.funds);
+
+  ENTITIES.messages.position = new PIXI.Text('', TEXT_STYLE)
+  ENTITIES.messages.position.position.set(x, y)
+  app.stage.addChild(ENTITIES.messages.position);
 
   app.ticker.add(update);
 }
@@ -93,7 +103,22 @@ const LINE_WIDTH = 10
 
 var diff
 
+const INPUT = {
+  short: false,
+  long: false,
+}
+
+function positionToColor() {
+  return INPUT.short ? 0xff0000 :
+      INPUT.long ? 0x00ff55 :
+      0xeeeeee
+}
+function positionToThickness() {
+  return INPUT.short || INPUT.long ? 2 : 1
+}
+
 function update(dt) {
+
   time += dt / 60
   var i = Math.floor(time)
   if (ENTITIES.lines.length === priceData.series.length) {
@@ -105,8 +130,8 @@ function update(dt) {
     line.position.set(W/2, H/2);
 
     diff = priceData.series[i + 1] - priceData.series[i]
-    // Draw the line (endPoint should be relative to myGraph's position)
-    line.lineStyle(1, 0xff0000)
+    var color =
+    line.lineStyle(positionToThickness(), positionToColor())
         .moveTo(0, 0)
         .lineTo(LINE_WIDTH, -priceData.scale * diff)
 
@@ -117,7 +142,6 @@ function update(dt) {
     line.x -= LINE_WIDTH / 60 * dt
     line.y += priceData.scale * diff / 60 * dt
   })
-
 }
 
 function parsePriceData(data) {
@@ -130,6 +154,25 @@ function parsePriceData(data) {
     max: Math.max(...series),
     scale: 10 // / Math.abs(series[0] - series[1])
   }
+}
+
+function addInputListeners() {
+  window.addEventListener('keydown', event => {
+    if (event.key === 's') {
+      INPUT.short = true
+    }
+    if (event.key === 'l') {
+      INPUT.long = true
+    }
+  }, false)
+  window.addEventListener('keyup', event => {
+    if (event.key === 's') {
+      INPUT.short = false
+    }
+    if (event.key === 'l') {
+      INPUT.long = false
+    }
+  }, false)
 }
 
     </script>
