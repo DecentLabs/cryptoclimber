@@ -35,8 +35,21 @@ PIXI.loader
   .add('prices', BITCOIN_PRICE)
   .load(setup);
 
-const bgSprites = []
-var player
+const TEXT_STYLE = new PIXI.TextStyle({
+  fontFamily: "Arial",
+  fontSize: 18,
+  fill: "#ff0000",
+});
+
+
+const ENTITIES = {
+  bgSprites: [],
+  player: null,
+  messages: {
+    iteration: null,
+  },
+  lines: [],
+}
 
 var priceData
 
@@ -50,33 +63,38 @@ function setup() {
       let bgSprite = new PIXI.Sprite(bgTexture)
       bgSprite.position.set(i, j)
       app.stage.addChild(bgSprite);
-      bgSprites.push(bgSprites)
+      ENTITIES.bgSprites.push(bgSprite)
     }
   }
 
+  ENTITIES.player = new PIXI.Graphics()
+  ENTITIES.player.lineStyle(2, 0xFF00FF)
+  ENTITIES.player.drawCircle(W/2, H/2, 4)
+  ENTITIES.player.endFill()
+  app.stage.addChild(ENTITIES.player)
 
-  player = new PIXI.Graphics()
-  player.lineStyle(2, 0xFF00FF)
-  player.drawCircle(W/2, H/2, 4)
-  player.endFill()
-  app.stage.addChild(player)
+  ENTITIES.messages.iteration = new PIXI.Text('tick: ', TEXT_STYLE)
+  ENTITIES.messages.iteration.position.set(4, 4)
+  app.stage.addChild(ENTITIES.messages.iteration);
 
   app.ticker.add(update);
 }
 
 var time = 0
-const lines = []
 const LINE_WIDTH = 60
 
 var diff
 
+var iterationLabel
+
 function update(dt) {
   time += dt / 60
   var i = Math.floor(time)
-  if (lines.length === priceData.series.length) {
+  if (ENTITIES.lines.length === priceData.series.length) {
     return // TODO: end of level
   }
-  if (lines.length === i) {
+  if (ENTITIES.lines.length === i) {
+    ENTITIES.messages.iteration.text = 'tick: ' + i + ' / ' + priceData.series.length
     let line = new PIXI.Graphics();
     line.position.set(W/2, H/2);
 
@@ -86,20 +104,20 @@ function update(dt) {
         .moveTo(0, 0)
         .lineTo(LINE_WIDTH, -priceData.scale * diff)
 
-    lines.push(line)
+    ENTITIES.lines.push(line)
     app.stage.addChild(line)
   }
-  lines.forEach(line => {
+  ENTITIES.lines.forEach(line => {
     line.x -= dt
     line.y += priceData.scale * diff / 60 * dt
   })
+
 }
 
 function parsePriceData(data) {
   const days = Object.keys(data.bpi)
   days.sort()
   const series = days.map(day => data.bpi[day])
-  console.log(series)
   return {
     series: series,
     min: Math.min(...series),
