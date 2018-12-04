@@ -36,9 +36,9 @@ PIXI.loader
   .load(setup);
 
 const TEXT_STYLE = new PIXI.TextStyle({
-  fontFamily: "Arial",
+  fontFamily: 'Arial',
   fontSize: 18,
-  fill: "#ff0000",
+  fill: 'white',
 });
 
 
@@ -50,6 +50,9 @@ const ENTITIES = {
   },
   lines: [],
 }
+
+const INIT_FUNDS = 10000
+var funds = INIT_FUNDS
 
 var priceData
 
@@ -78,6 +81,10 @@ function setup() {
   ENTITIES.messages.iteration.position.set(4, 4)
   app.stage.addChild(ENTITIES.messages.iteration);
 
+  ENTITIES.messages.funds = new PIXI.Text('funds: $' + funds, TEXT_STYLE)
+  ENTITIES.messages.funds.position.set(4, 24)
+  app.stage.addChild(ENTITIES.messages.funds);
+
   app.ticker.add(update);
 }
 
@@ -85,8 +92,6 @@ var time = 0
 const LINE_WIDTH = 10
 
 var diff
-
-var iterationLabel
 
 function update(dt) {
   time += dt / 60
