@@ -28,13 +28,19 @@ app.renderer.resize(W, H);
 
 document.body.appendChild(app.view);
 
+const BITCOIN_PRICE = 'https://api.coindesk.com/v1/bpi/historical/close.json?start=2013-01-01&end=2014-01-01&currency=USD'
+
 PIXI.loader
   .add('bg', 'bg_tile.jpg')
+  .add('prices', BITCOIN_PRICE)
   .load(setup);
 
 const bgSprites = []
+var prices
 
 function setup() {
+  prices = toPrices(PIXI.loader.resources.prices.data)
+  console.log(prices)
   const bgTexture = PIXI.loader.resources.bg.texture
   const w = bgTexture.width
   const h = bgTexture.height
@@ -48,6 +54,11 @@ function setup() {
   }
 }
 
+function toPrices(data) {
+  const days = Object.keys(data.bpi)
+  days.sort()
+  return days.map(day => data.bpi[day])
+}
 
     </script>
   </body>
