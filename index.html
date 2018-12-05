@@ -14,6 +14,12 @@ const RESERVE = 0.9
 const GAME_LENGTH_TICKS = 60
 const GRAPH_X_GRANULARITY_PX = 10
 
+const INTRO = 'Crypto Climber\n\n' +
+  'You\'ll get a random 60 day sample of Bitcoin\'s price history.\nCan you  guess which way it will move?' +
+  '\n\nHold [L] if you think the price goes up to open a long position' +
+  '\nHold [S] if you think the price goes down to short sell Bitcoin' +
+  '\n\nPress any key to start!'
+
 const CONF = {
   width: 1024,
   height: 768,
@@ -108,7 +114,7 @@ function setup() {
   ENTITIES.messages.position.position.set(W/2 + 32, H/2 - 12)
   app.stage.addChild(ENTITIES.messages.position);
 
-  ENTITIES.messages.summary = new PIXI.Text('', TEXT_STYLE)
+  ENTITIES.messages.summary = new PIXI.Text(INTRO, TEXT_STYLE)
   ENTITIES.messages.summary.position.set(W/2, 64)
   ENTITIES.messages.summary.anchor.set(0.5, 0)
   app.stage.addChild(ENTITIES.messages.summary);
@@ -120,6 +126,7 @@ var time = 0
 
 var diff
 var gameOver = false
+var gameStarted = false
 
 const INPUT = {
   short: false,
@@ -136,6 +143,9 @@ function positionToThickness() {
 }
 
 function update(dt) {
+  if (!gameStarted) {
+    return
+  }
 
   time += dt / 60
   var i = Math.min(Math.floor(time), GAME_LENGTH_TICKS)
@@ -163,7 +173,7 @@ function update(dt) {
           ('ONOES! You lost ' + resultPercent + '% of your investment')
       summary += '\nPeriod: ' + priceData.from + ' - ' + priceData.to
       summary += '\nPrice range: $' + priceData.min + ' - $' + priceData.max
-      summary += '\n\nPress any key to start again'
+      summary += '\n\nPress almost any key to reset.'
       ENTITIES.messages.summary.text = summary
     }
     return
@@ -268,6 +278,11 @@ function parsePriceData(data) {
 
 function addInputListeners() {
   window.addEventListener('keydown', event => {
+    if (!gameStarted) {
+      gameStarted = true
+      ENTITIES.messages.summary.text = ''
+      return
+    }
     if (event.key === 's') {
       INPUT.short = true
       INPUT.long = false
@@ -276,6 +291,7 @@ function addInputListeners() {
       INPUT.short = false
     } else if (gameOver) {
       gameOver = false
+      gameStarted = false
       time = 0
       ENTITIES = defaultEntities()
       ASSETS.funds = INIT_FUNDS
