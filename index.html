@@ -152,8 +152,8 @@ function update(dt) {
 
     const result = ASSETS.funds - INIT_FUNDS
     const resultPercent = (result / INIT_FUNDS * 100).toFixed(1)
-    var summary = result > 0 ?
-        ('YAY! You made a nice return: ' + resultPercent + '%') :
+    var summary = result >= 0 ?
+        ('YAY! You made a return: ' + resultPercent + '%') :
         ('ONOES! You lost ' + resultPercent + '% of your investment')
     summary += '\nPeriod: ' + priceData.from + ' - ' + priceData.to
     summary += '\nPrice range: $' + priceData.min + ' - $' + priceData.max
@@ -166,17 +166,15 @@ function update(dt) {
     if (INPUT.long && !ASSETS.long) {
       openLong(i)
     }
-    if (INPUT.short && !ASSETS.short) {
-      openShort(i)
-    }
     if (!INPUT.long && ASSETS.long) {
       closeLong()
+    }
+    if (INPUT.short && !ASSETS.short) {
+      openShort(i)
     }
     if (!INPUT.short && ASSETS.short) {
       closeShort()
     }
-
-    console.log(priceData.series[i], priceData.series[i+1])
 
     let line = new PIXI.Graphics();
     line.position.set(W/2, H/2);
@@ -190,8 +188,8 @@ function update(dt) {
     app.stage.addChild(line)
 
     if (ASSETS.long) {
-      ASSETS.long = ASSETS.volume / ASSETS.strikePrice * priceData.series[i+1]
-      ENTITIES.messages.position.text = 'long: $' + Math.round(ASSETS.long) + ' (' + Math.round(ASSETS.long - ASSETS.volume) + ')'
+      ASSETS.long.current = ASSETS.long.volume / ASSETS.long.strikePrice * priceData.series[i+1]
+      ENTITIES.messages.position.text = 'long: $' + Math.round(ASSETS.long.current) + ' (' + Math.round(ASSETS.long.current - ASSETS.long.volume) + ')'
     } else if (ASSETS.short) {
       // ASSETS.volume dolcsi ertekben kolcsonkertem bitcoint, es rogton eladtam
       // ennyi bitcoint adtam el eredetileg:
@@ -200,10 +198,10 @@ function update(dt) {
       // nekem meg megvan az eredeti ASSETS.volume dolcsim
       // abbol megveszem a bitcoint mai aron, es a kulonbozetet megnyertem!
       // bwahahaha
-      const longValue = ASSETS.volume / ASSETS.strikePrice * priceData.series[i+1]
-      ASSETS.short = 2*ASSETS.volume - longValue
+      const longValue = ASSETS.short.volume / ASSETS.short.strikePrice * priceData.series[i+1]
+      ASSETS.short.current = 2*ASSETS.short.volume - longValue
 
-      ENTITIES.messages.position.text = 'short: $' + Math.round(ASSETS.short) + ' (' + Math.round(ASSETS.short - ASSETS.volume) + ')'
+      ENTITIES.messages.position.text = 'short: $' + Math.round(ASSETS.short.current) + ' (' + Math.round(ASSETS.short.current - ASSETS.short.volume) + ')'
     } else {
       ENTITIES.messages.position.text = ''
     }
@@ -219,29 +217,29 @@ function update(dt) {
 }
 
 function openLong(i) {
-  ASSETS.strikePrice = priceData.series[i]
-  ASSETS.volume = ASSETS.funds * (1-RESERVE)
-  ASSETS.funds = ASSETS.funds - ASSETS.volume
-  ASSETS.long = ASSETS.volume
+  ASSETS.long = {}
+  ASSETS.long.strikePrice = priceData.series[i]
+  ASSETS.long.volume = ASSETS.funds * (1-RESERVE)
+  ASSETS.long.current = ASSETS.long.volume
+  ASSETS.funds = ASSETS.funds - ASSETS.long.volume
 }
 
 function closeLong() {
-  ASSETS.funds = ASSETS.funds + ASSETS.long
+  ASSETS.funds = ASSETS.funds + ASSETS.long.current
   ASSETS.long = null
-  ASSETS.volume = null
 }
 
 function openShort(i) {
-  ASSETS.strikePrice = priceData.series[i]
-  ASSETS.volume = ASSETS.funds * (1-RESERVE)
-  ASSETS.funds = ASSETS.funds - ASSETS.volume
-  ASSETS.short = ASSETS.volume
+  ASSETS.short = {}
+  ASSETS.short.strikePrice = priceData.series[i]
+  ASSETS.short.volume = ASSETS.funds * (1-RESERVE)
+  ASSETS.short.current = ASSETS.short.volume
+  ASSETS.funds = ASSETS.funds - ASSETS.short.volume
 }
 
 function closeShort() {
-  ASSETS.funds = ASSETS.funds + ASSETS.short
+  ASSETS.funds = ASSETS.funds + ASSETS.short.current
   ASSETS.short = null
-  ASSETS.volume = null
 }
 
 function parsePriceData(data) {
