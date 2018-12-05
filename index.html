@@ -42,16 +42,20 @@ const TEXT_STYLE = new PIXI.TextStyle({
 });
 
 
-const ENTITIES = {
-  bgSprites: [],
-  player: null,
-  messages: {
-    iteration: null,
-    funds: null,
-    position: null,
-  },
-  lines: [],
+function defaultEntities() {
+  return {
+    bgSprites: [],
+    player: null,
+    messages: {
+      iteration: null,
+      funds: null,
+      position: null,
+    },
+    lines: [],
+  }
 }
+
+var ENTITIES = defaultEntities()
 
 const INIT_FUNDS = 10000
 const RESERVE = 0.9
@@ -114,6 +118,7 @@ var time = 0
 const LINE_WIDTH = 10
 
 var diff
+var gameOver = false
 
 const INPUT = {
   short: false,
@@ -134,6 +139,7 @@ function update(dt) {
   time += dt / 60
   var i = Math.min(Math.floor(time), GAME_LENGTH_TICKS)
   if (i >= GAME_LENGTH_TICKS) {
+    gameOver = true
     if (ASSETS.long) {
       closeLong()
     }
@@ -151,6 +157,7 @@ function update(dt) {
         ('ONOES! You lost ' + resultPercent + '% of your investment')
     summary += '\nPeriod: ' + priceData.from + ' - ' + priceData.to
     summary += '\nPrice range: $' + priceData.min + ' - $' + priceData.max
+    summary += '\n\nPress any key to start again'
     ENTITIES.messages.summary.text = summary
     return
   }
@@ -259,10 +266,16 @@ function addInputListeners() {
     if (event.key === 's') {
       INPUT.short = true
       INPUT.long = false
-    }
-    if (event.key === 'l') {
+    } else if (event.key === 'l') {
       INPUT.long = true
       INPUT.short = false
+    } else if (gameOver) {
+      gameOver = false
+      time = 0
+      ENTITIES = defaultEntities()
+      ASSETS.funds = INIT_FUNDS
+      app.ticker.remove(update);
+      setup()
     }
   }, false)
   window.addEventListener('keyup', event => {
