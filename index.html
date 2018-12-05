@@ -98,11 +98,14 @@ function setup() {
   ENTITIES.messages.funds = new PIXI.Text('funds: $' + ASSETS.funds, TEXT_STYLE)
   ENTITIES.messages.funds.position.set(x, y)
   app.stage.addChild(ENTITIES.messages.funds);
-  y += ROW_HEIGHT
 
   ENTITIES.messages.position = new PIXI.Text('', TEXT_STYLE)
   ENTITIES.messages.position.position.set(W/2 + 32, H/2 - 12)
   app.stage.addChild(ENTITIES.messages.position);
+
+  ENTITIES.messages.summary = new PIXI.Text('', TEXT_STYLE)
+  ENTITIES.messages.summary.position.set(W/2 + 32, H/2 - 12)
+  app.stage.addChild(ENTITIES.messages.summary);
 
   app.ticker.add(update);
 }
@@ -140,7 +143,16 @@ function update(dt) {
     ENTITIES.messages.iteration.text = 'tick: ' + i + ' / ' + GAME_LENGTH_TICKS
     ENTITIES.messages.funds.text = 'funds: $' + Math.round(ASSETS.funds)
     ENTITIES.messages.position.text = ''
-    return // TODO: end of level
+
+    const result = ASSETS.funds - INIT_FUNDS
+    const resultPercent = (result / INIT_FUNDS * 100).toFixed(1)
+    var summary = result > 0 ?
+        ('YAY! You made a nice return: ' + resultPercent + '%') :
+        ('ONOES! You lost ' + resultPercent + '% of your investment')
+    summary += '\nPeriod: ' + priceData.from + ' - ' + priceData.to
+    summary += '\nPrice range: $' + priceData.min + ' - $' + priceData.max
+    ENTITIES.messages.summary.text = summary
+    return
   }
   if (ENTITIES.lines.length === i) {
 
