@@ -9,6 +9,11 @@
   <body>
     <script>
 
+const INIT_FUNDS = 10000
+const RESERVE = 0.9
+const GAME_LENGTH_TICKS = 60
+const GRAPH_X_GRANULARITY_PX = 10
+
 const CONF = {
   width: 1024,
   height: 768,
@@ -57,10 +62,6 @@ function defaultEntities() {
 
 var ENTITIES = defaultEntities()
 
-const INIT_FUNDS = 10000
-const RESERVE = 0.9
-const GAME_LENGTH_TICKS = 10
-
 var ASSETS = {
   funds: INIT_FUNDS,
   volume: null,
@@ -108,14 +109,14 @@ function setup() {
   app.stage.addChild(ENTITIES.messages.position);
 
   ENTITIES.messages.summary = new PIXI.Text('', TEXT_STYLE)
-  ENTITIES.messages.summary.position.set(W/2 + 32, H/2 - 12)
+  ENTITIES.messages.summary.position.set(W/2, 64)
+  ENTITIES.messages.summary.anchor.set(0.5, 0)
   app.stage.addChild(ENTITIES.messages.summary);
 
   app.ticker.add(update);
 }
 
 var time = 0
-const LINE_WIDTH = 10
 
 var diff
 var gameOver = false
@@ -139,26 +140,32 @@ function update(dt) {
   time += dt / 60
   var i = Math.min(Math.floor(time), GAME_LENGTH_TICKS)
   if (i >= GAME_LENGTH_TICKS) {
-    gameOver = true
-    if (ASSETS.long) {
-      closeLong()
-    }
-    if (ASSETS.short) {
-      closeShort()
-    }
-    ENTITIES.messages.iteration.text = 'tick: ' + i + ' / ' + GAME_LENGTH_TICKS
-    ENTITIES.messages.funds.text = 'funds: $' + Math.round(ASSETS.funds)
-    ENTITIES.messages.position.text = ''
+    if (!gameOver) {
+      gameOver = true
+      ENTITIES.lines.forEach(line => {
+        line.x += H/2 - 16
+      })
+      ENTITIES.player.x += H/2 - 16
+      if (ASSETS.long) {
+        closeLong()
+      }
+      if (ASSETS.short) {
+        closeShort()
+      }
+      ENTITIES.messages.iteration.text = 'tick: ' + i + ' / ' + GAME_LENGTH_TICKS
+      ENTITIES.messages.funds.text = 'funds: $' + Math.round(ASSETS.funds)
+      ENTITIES.messages.position.text = ''
 
-    const result = ASSETS.funds - INIT_FUNDS
-    const resultPercent = (result / INIT_FUNDS * 100).toFixed(1)
-    var summary = result >= 0 ?
-        ('YAY! You made a return: ' + resultPercent + '%') :
-        ('ONOES! You lost ' + resultPercent + '% of your investment')
-    summary += '\nPeriod: ' + priceData.from + ' - ' + priceData.to
-    summary += '\nPrice range: $' + priceData.min + ' - $' + priceData.max
-    summary += '\n\nPress any key to start again'
-    ENTITIES.messages.summary.text = summary
+      const result = ASSETS.funds - INIT_FUNDS
+      const resultPercent = (result / INIT_FUNDS * 100).toFixed(1)
+      var summary = result >= 0 ?
+          ('YAY! You made a return: ' + resultPercent + '%') :
+          ('ONOES! You lost ' + resultPercent + '% of your investment')
+      summary += '\nPeriod: ' + priceData.from + ' - ' + priceData.to
+      summary += '\nPrice range: $' + priceData.min + ' - $' + priceData.max
+      summary += '\n\nPress any key to start again'
+      ENTITIES.messages.summary.text = summary
+    }
     return
   }
   if (ENTITIES.lines.length === i) {
@@ -182,7 +189,7 @@ function update(dt) {
     diff = priceData.series[i + 1] - priceData.series[i]
     line.lineStyle(positionToThickness(), positionToColor())
         .moveTo(0, 0)
-        .lineTo(LINE_WIDTH, -priceData.scale * diff)
+        .lineTo(GRAPH_X_GRANULARITY_PX, -priceData.scale * diff)
 
     ENTITIES.lines.push(line)
     app.stage.addChild(line)
@@ -211,7 +218,7 @@ function update(dt) {
 
   }
   ENTITIES.lines.forEach(line => {
-    line.x -= LINE_WIDTH / 60 * dt
+    line.x -= GRAPH_X_GRANULARITY_PX / 60 * dt
     line.y += priceData.scale * diff / 60 * dt
   })
 }
