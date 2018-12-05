@@ -10,13 +10,16 @@
     <script>
 
 const INIT_FUNDS = 10000
-const RESERVE = 0.9
-const GAME_LENGTH_TICKS = 60
-const GRAPH_X_GRANULARITY_PX = 10
-const COLOR_BY_CORRECTNESS = false
+const RESERVE = 0.0
+const TICKS_PER_DAY = 24
+const GAME_LENGTH_DAYS = 30
+const GAME_LENGTH_TICKS = GAME_LENGTH_DAYS * TICKS_PER_DAY
+const GRAPH_X_GRANULARITY_PX = 5 // smaller is more dense
+const COLOR_BY_CORRECTNESS = true
+const SPEED = 10 // smaller is faster
 
 const INTRO = 'Crypto Climber\n\n' +
-  'You\'ll get a random 60 day sample of Bitcoin\'s price history.\nCan you  guess which way it will move?' +
+  'You\'ll get a random 30 day sample of Bitcoin\'s price history.\nCan you  guess which way it will move?' +
   '\n\nHold [L] if you think the price goes up to open a long position' +
   '\nHold [S] if you think the price goes down to short sell Bitcoin' +
   '\n\nPress any key to start!'
@@ -40,11 +43,9 @@ app.renderer.resize(W, H);
 
 document.body.appendChild(app.view);
 
-const BITCOIN_PRICE = 'https://api.coindesk.com/v1/bpi/historical/close.json?start=2011-01-01&end=2018-12-01&currency=USD'
-
 PIXI.loader
   .add('bg', 'bg_tile.jpg')
-  .add('prices', BITCOIN_PRICE)
+  .add('prices', 'btc1h.json')
   .load(setup);
 
 const TEXT_STYLE = new PIXI.TextStyle({
@@ -102,7 +103,7 @@ function setup() {
   var x = 4
   var y = 4
   const ROW_HEIGHT = 20
-  ENTITIES.messages.iteration = new PIXI.Text('day: 1 / ' + GAME_LENGTH_TICKS, TEXT_STYLE)
+  ENTITIES.messages.iteration = new PIXI.Text('day: 1 / ' + GAME_LENGTH_DAYS, TEXT_STYLE)
   ENTITIES.messages.iteration.position.set(x, y)
   app.stage.addChild(ENTITIES.messages.iteration);
   y += ROW_HEIGHT
@@ -156,8 +157,8 @@ function update(dt) {
   if (!gameStarted) {
     return
   }
-
-  time += dt / 60
+  dt2 = dt / SPEED
+  time += dt2
   var i = Math.min(Math.floor(time), GAME_LENGTH_TICKS)
   if (i >= GAME_LENGTH_TICKS) {
     if (!gameOver) {
@@ -172,7 +173,7 @@ function update(dt) {
       if (ASSETS.short) {
         closeShort()
       }
-      ENTITIES.messages.iteration.text = 'day: ' + i + ' / ' + GAME_LENGTH_TICKS
+      ENTITIES.messages.iteration.text = 'day: ' + Math.floor(i / TICKS_PER_DAY) + ' / ' + GAME_LENGTH_DAYS
       ENTITIES.messages.funds.text = 'net worth: $' + Math.round(ASSETS.funds)
       ENTITIES.messages.position.text = ''
 
@@ -233,17 +234,16 @@ function update(dt) {
       ENTITIES.messages.position.text = ''
     }
 
-    ENTITIES.messages.iteration.text = 'day: ' + i + ' / ' + GAME_LENGTH_TICKS
+    ENTITIES.messages.iteration.text = 'day: ' + Math.floor(i / TICKS_PER_DAY) + ' / ' + GAME_LENGTH_DAYS
     var funds = ASSETS.funds +
         (ASSETS.long ? ASSETS.long.current : 0) +
         (ASSETS.short ? ASSETS.short.current : 0)
 
     ENTITIES.messages.funds.text = 'net worth: $' + Math.round(funds)
-
   }
   ENTITIES.lines.forEach(line => {
-    line.x -= GRAPH_X_GRANULARITY_PX / 60 * dt
-    line.y += priceData.scale * diff / 60 * dt
+    line.x -= GRAPH_X_GRANULARITY_PX * dt2
+    line.y += priceData.scale * diff * dt2
   })
 }
 
@@ -274,10 +274,8 @@ function closeShort() {
 }
 
 function parsePriceData(data) {
-  const days = Object.keys(data.bpi)
-  days.sort()
-  const fromIndex = Math.floor(Math.random() * (days.length - GAME_LENGTH_TICKS -2))
-  const series = days.slice(fromIndex, fromIndex + GAME_LENGTH_TICKS + 2).map(day => data.bpi[day])
+  const fromIndex = Math.floor(Math.random() * (data.values.length - GAME_LENGTH_TICKS - 2))
+  const series = data.values.slice(fromIndex, fromIndex + GAME_LENGTH_TICKS + 2)
   const min = Math.min(...series)
   const max = Math.max(...series)
   return {
@@ -285,8 +283,6 @@ function parsePriceData(data) {
     min: min,
     max: max,
     scale: H / 2 / (max - min),
-    from: days[fromIndex],
-    to: days[fromIndex+GAME_LENGTH_TICKS],
   }
 }
 
