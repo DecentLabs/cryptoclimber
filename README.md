@@ -4,7 +4,9 @@ Crypto trading simulator implemented in PIXI.js
 
 ## Run the game
 
-Just clone the repo and open `index.html` in a browser. Or just check it out from my website: http://www.terraforming.earth/crypto
+Just clone the repo and open `index.html` in a browser.
+
+Or just play it directly on my website: http://www.terraforming.earth/crypto
 
 ## Deploy to my website
 
