@@ -55,7 +55,7 @@ const ENTITIES = {
 
 const INIT_FUNDS = 10000
 const RESERVE = 0.9
-const GAME_LENGTH_TICKS = 60
+const GAME_LENGTH_TICKS = 10
 
 var ASSETS = {
   funds: INIT_FUNDS,
@@ -129,22 +129,29 @@ function positionToThickness() {
 function update(dt) {
 
   time += dt / 60
-  var i = Math.floor(time)
-  if (ENTITIES.lines.length === priceData.series.length) {
+  var i = Math.min(Math.floor(time), GAME_LENGTH_TICKS)
+  if (i >= GAME_LENGTH_TICKS) {
+    if (ASSETS.long) {
+      closeLong()
+    }
+    if (ASSETS.short) {
+      closeShort()
+    }
+    ENTITIES.messages.iteration.text = 'tick: ' + i + ' / ' + GAME_LENGTH_TICKS
+    ENTITIES.messages.funds.text = 'funds: $' + Math.round(ASSETS.funds)
+    ENTITIES.messages.position.text = ''
     return // TODO: end of level
   }
   if (ENTITIES.lines.length === i) {
 
     if (INPUT.long && !ASSETS.long) {
-      console.log('entering long')
       openLong(i)
-    }
-    if (!INPUT.long && ASSETS.long) {
-      console.log('closing long')
-      closeLong()
     }
     if (INPUT.short && !ASSETS.short) {
       openShort(i)
+    }
+    if (!INPUT.long && ASSETS.long) {
+      closeLong()
     }
     if (!INPUT.short && ASSETS.short) {
       closeShort()
@@ -182,7 +189,7 @@ function update(dt) {
       ENTITIES.messages.position.text = ''
     }
 
-    ENTITIES.messages.iteration.text = 'tick: ' + i + ' / ' + priceData.series.length
+    ENTITIES.messages.iteration.text = 'tick: ' + i + ' / ' + GAME_LENGTH_TICKS
     ENTITIES.messages.funds.text = 'funds: $' + Math.round(ASSETS.funds)
 
   }
@@ -221,11 +228,10 @@ function closeShort() {
 function parsePriceData(data) {
   const days = Object.keys(data.bpi)
   days.sort()
-  const fromIndex = Math.floor(Math.random() * (days.length - GAME_LENGTH_TICKS))
-  const series = days.slice(fromIndex, fromIndex + 60).map(day => data.bpi[day])
+  const fromIndex = Math.floor(Math.random() * (days.length - GAME_LENGTH_TICKS -2))
+  const series = days.slice(fromIndex, fromIndex + GAME_LENGTH_TICKS + 2).map(day => data.bpi[day])
   const min = Math.min(...series)
   const max = Math.max(...series)
-  console.log(min, max, H/(max-min))
   return {
     series: series,
     min: min,
@@ -240,9 +246,11 @@ function addInputListeners() {
   window.addEventListener('keydown', event => {
     if (event.key === 's') {
       INPUT.short = true
+      INPUT.long = false
     }
     if (event.key === 'l') {
       INPUT.long = true
+      INPUT.short = false
     }
   }, false)
   window.addEventListener('keyup', event => {
