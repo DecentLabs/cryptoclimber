@@ -13,6 +13,7 @@ const INIT_FUNDS = 10000
 const RESERVE = 0.9
 const GAME_LENGTH_TICKS = 60
 const GRAPH_X_GRANULARITY_PX = 10
+const COLOR_BY_CORRECTNESS = false
 
 const INTRO = 'Crypto Climber\n\n' +
   'You\'ll get a random 60 day sample of Bitcoin\'s price history.\nCan you  guess which way it will move?' +
@@ -133,10 +134,19 @@ const INPUT = {
   long: false,
 }
 
-function positionToColor() {
-  return INPUT.short ? 0xff0000 :
-      INPUT.long ? 0x00ff55 :
-      0xeeeeee
+function positionToColor(diff) {
+  if (!COLOR_BY_CORRECTNESS) {
+    return INPUT.short ? 0xff0000 :
+        INPUT.long ? 0x00ff55 :
+        0xeeeeee
+  }
+  if (!ASSETS.short && !ASSETS.long) {
+    return 0xeeeeee
+  }
+  if (ASSETS.short && diff < 0 || ASSETS.long && diff > 0) {
+    return 0x00ff55
+  }
+  return 0xff0000
 }
 function positionToThickness() {
   return INPUT.short || INPUT.long ? 2 : 1
@@ -197,7 +207,7 @@ function update(dt) {
     line.position.set(W/2, H/2);
 
     diff = priceData.series[i + 1] - priceData.series[i]
-    line.lineStyle(positionToThickness(), positionToColor())
+    line.lineStyle(positionToThickness(), positionToColor(diff))
         .moveTo(0, 0)
         .lineTo(GRAPH_X_GRANULARITY_PX, -priceData.scale * diff)
 
