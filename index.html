@@ -101,7 +101,7 @@ function setup() {
   var x = 4
   var y = 4
   const ROW_HEIGHT = 20
-  ENTITIES.messages.iteration = new PIXI.Text('tick: ', TEXT_STYLE)
+  ENTITIES.messages.iteration = new PIXI.Text('day: 1 / ' + GAME_LENGTH_TICKS, TEXT_STYLE)
   ENTITIES.messages.iteration.position.set(x, y)
   app.stage.addChild(ENTITIES.messages.iteration);
   y += ROW_HEIGHT
@@ -162,8 +162,8 @@ function update(dt) {
       if (ASSETS.short) {
         closeShort()
       }
-      ENTITIES.messages.iteration.text = 'tick: ' + i + ' / ' + GAME_LENGTH_TICKS
-      ENTITIES.messages.funds.text = 'funds: $' + Math.round(ASSETS.funds)
+      ENTITIES.messages.iteration.text = 'day: ' + i + ' / ' + GAME_LENGTH_TICKS
+      ENTITIES.messages.funds.text = 'net worth: $' + Math.round(ASSETS.funds)
       ENTITIES.messages.position.text = ''
 
       const result = ASSETS.funds - INIT_FUNDS
@@ -223,8 +223,12 @@ function update(dt) {
       ENTITIES.messages.position.text = ''
     }
 
-    ENTITIES.messages.iteration.text = 'tick: ' + i + ' / ' + GAME_LENGTH_TICKS
-    ENTITIES.messages.funds.text = 'funds: $' + Math.round(ASSETS.funds)
+    ENTITIES.messages.iteration.text = 'day: ' + i + ' / ' + GAME_LENGTH_TICKS
+    var funds = ASSETS.funds +
+        (ASSETS.long ? ASSETS.long.current : 0) +
+        (ASSETS.short ? ASSETS.short.current : 0)
+
+    ENTITIES.messages.funds.text = 'net worth: $' + Math.round(funds)
 
   }
   ENTITIES.lines.forEach(line => {
