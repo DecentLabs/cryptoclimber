@@ -189,65 +189,12 @@ function update(dt) {
   if (i >= GAME_LENGTH_TICKS) {
     if (!gameOver) {
       gameOver = true
-      ENTITIES.lines.forEach(line => {
-        line.x += H/2 - 16
-      })
-      ENTITIES.player.x += H/2 - 16
-      if (ASSETS.long) {
-        closeLong()
-      }
-      if (ASSETS.short) {
-        closeShort()
-      }
-      ENTITIES.messages.iteration.text = 'day: ' + Math.floor(i / TICKS_PER_DAY) + ' / ' + GAME_LENGTH_DAYS
-      ENTITIES.messages.funds.text = 'net worth: $' + Math.round(ASSETS.funds)
-      if (SHOW_PRICE) {
-        ENTITIES.messages.price.text = ''
-      }
-      ENTITIES.messages.position.text = ''
-      if (SHOW_DEBUG) {
-        ENTITIES.messages.debug.text = ''
-      }
-
-      const result = ASSETS.funds - INIT_FUNDS
-      const resultPercent = (result / INIT_FUNDS * 100).toFixed(1)
-      var summary = result >= 0 ?
-          ('YAY! You made a return: ' + resultPercent + '%') :
-          ('ONOES! You lost ' + resultPercent + '% of your investment')
-      summary += '\nPeriod: ' + priceData.from + ' - ' + priceData.to
-      summary += '\nPrice range: $' + priceData.min + ' - $' + priceData.max
-      summary += '\n\nPress almost any key to reset.'
-      ENTITIES.messages.summary.text = summary
+      showGameOver()
     }
     return
   }
   if (ENTITIES.lines.length === i) {
-
-    if (INPUT.long && !INPUT.short) {
-      // LONG
-      if (ASSETS.short) {
-        closeShort()
-      }
-      if (!ASSETS.long) {
-        openLong(i)
-      }
-    } else if (!INPUT.long && INPUT.short) {
-      // SHORT
-      if (ASSETS.long) {
-        closeLong()
-      }
-      if (!ASSETS.short) {
-        openShort(i)
-      }
-    } else {
-      // NEUTRAL
-      if (ASSETS.short) {
-        closeShort()
-      }
-      if (ASSETS.long) {
-        closeLong()
-      }
-    }
+    handleInput(i)
 
     let line = new PIXI.Graphics();
     line.position.set(W/2, H/2);
@@ -262,7 +209,6 @@ function update(dt) {
 
     if (ASSETS.long) {
       ASSETS.long.current = ASSETS.long.volume / ASSETS.long.strikePrice * priceData.series[i+1]
-      ENTITIES.messages.position.text = 'long: $' + Math.round(ASSETS.long.current) + ' (' + Math.round(ASSETS.long.current - ASSETS.long.volume) + ')'
     } else if (ASSETS.short) {
       // ASSETS.volume dolcsi ertekben kolcsonkertem bitcoint, es rogton eladtam
       // ennyi bitcoint adtam el eredetileg:
@@ -273,31 +219,99 @@ function update(dt) {
       // bwahahaha
       const longValue = ASSETS.short.volume / ASSETS.short.strikePrice * priceData.series[i+1]
       ASSETS.short.current = 2*ASSETS.short.volume - longValue
-
-      ENTITIES.messages.position.text = 'short: $' + Math.round(ASSETS.short.current) + ' (' + Math.round(ASSETS.short.current - ASSETS.short.volume) + ')'
-    } else {
-      ENTITIES.messages.position.text = ''
     }
 
-    ENTITIES.messages.iteration.text = 'day: ' + Math.floor(i / TICKS_PER_DAY) + ' / ' + GAME_LENGTH_DAYS
-    var funds = ASSETS.funds +
-        (ASSETS.long ? ASSETS.long.current : 0) +
-        (ASSETS.short ? ASSETS.short.current : 0)
-
-    ENTITIES.messages.funds.text = 'net worth: $' + Math.round(funds)
-    if (SHOW_PRICE) {
-      ENTITIES.messages.price.text = 'price: ' + priceData.series[i]
-    }
-    if (SHOW_DEBUG) {
-      ENTITIES.messages.debug.text =
-        'inputs: ' + (INPUT.short?'S':' ') + (INPUT.long?'L':' ') +
-        ' assets: ' + (ASSETS.short?'S':' ') + (ASSETS.long?'L':' ')
-    }
+    updateMessages(i)
   }
   ENTITIES.lines.forEach(line => {
     line.x -= GRAPH_X_GRANULARITY_PX * dt2
     line.y += priceData.scale * diff * dt2
   })
+}
+
+function handleInput(i) {
+  if (INPUT.long && !INPUT.short) {
+    // LONG
+    if (ASSETS.short) {
+      closeShort()
+    }
+    if (!ASSETS.long) {
+      openLong(i)
+    }
+  } else if (!INPUT.long && INPUT.short) {
+    // SHORT
+    if (ASSETS.long) {
+      closeLong()
+    }
+    if (!ASSETS.short) {
+      openShort(i)
+    }
+  } else {
+    // NEUTRAL
+    if (ASSETS.short) {
+      closeShort()
+    }
+    if (ASSETS.long) {
+      closeLong()
+    }
+  }
+}
+
+function updateMessages(i) {
+  if (ASSETS.long) {
+    ENTITIES.messages.position.text = 'long: $' + Math.round(ASSETS.long.current) + ' (' + Math.round(ASSETS.long.current - ASSETS.long.volume) + ')'
+  } else if (ASSETS.short) {
+    ENTITIES.messages.position.text = 'short: $' + Math.round(ASSETS.short.current) + ' (' + Math.round(ASSETS.short.current - ASSETS.short.volume) + ')'
+  } else {
+    ENTITIES.messages.position.text = ''
+  }
+
+  ENTITIES.messages.iteration.text = 'day: ' + Math.floor(i / TICKS_PER_DAY) + ' / ' + GAME_LENGTH_DAYS
+  var funds = ASSETS.funds +
+      (ASSETS.long ? ASSETS.long.current : 0) +
+      (ASSETS.short ? ASSETS.short.current : 0)
+
+  ENTITIES.messages.funds.text = 'net worth: $' + Math.round(funds)
+  if (SHOW_PRICE) {
+    ENTITIES.messages.price.text = 'price: ' + priceData.series[i]
+  }
+  if (SHOW_DEBUG) {
+    ENTITIES.messages.debug.text =
+      'inputs: ' + (INPUT.short?'S':' ') + (INPUT.long?'L':' ') +
+      ' assets: ' + (ASSETS.short?'S':' ') + (ASSETS.long?'L':' ')
+  }
+}
+
+function showGameOver() {
+  ENTITIES.lines.forEach(line => {
+    line.x += H/2 - 16
+  })
+  ENTITIES.player.x += H/2 - 16
+  if (ASSETS.long) {
+    closeLong()
+  }
+  if (ASSETS.short) {
+    closeShort()
+  }
+  ENTITIES.messages.iteration.text = 'day: ' + Math.floor(i / TICKS_PER_DAY) + ' / ' + GAME_LENGTH_DAYS
+  ENTITIES.messages.funds.text = 'net worth: $' + Math.round(ASSETS.funds)
+  if (SHOW_PRICE) {
+    ENTITIES.messages.price.text = ''
+  }
+  ENTITIES.messages.position.text = ''
+  if (SHOW_DEBUG) {
+    ENTITIES.messages.debug.text = ''
+  }
+
+  const result = ASSETS.funds - INIT_FUNDS
+  const resultPercent = (result / INIT_FUNDS * 100).toFixed(1)
+  var summary = result >= 0 ?
+      ('YAY! You made a return: ' + resultPercent + '%') :
+      ('ONOES! You lost ' + resultPercent + '% of your investment')
+  summary += '\nPeriod: ' + priceData.from + ' - ' + priceData.to
+  summary += '\nPrice range: $' + priceData.min + ' - $' + priceData.max
+  summary += '\n\nPress almost any key to reset.'
+  ENTITIES.messages.summary.text = summary
 }
 
 function openLong(i) {
