@@ -127,7 +127,7 @@ function setupMessages() {
   y += ROW_HEIGHT
 
   if (SHOW_PRICE) {
-    ENTITIES.messages.price = new PIXI.Text('price: ', TEXT_STYLE)
+    ENTITIES.messages.price = new PIXI.Text('price: $', TEXT_STYLE)
     ENTITIES.messages.price.position.set(x, y)
     app.stage.addChild(ENTITIES.messages.price)
     y += ROW_HEIGHT
@@ -189,7 +189,7 @@ function update(dt) {
   if (i >= GAME_LENGTH_TICKS) {
     if (!gameOver) {
       gameOver = true
-      showGameOver()
+      showGameOver(i)
     }
     return
   }
@@ -273,7 +273,7 @@ function updateMessages(i) {
 
   ENTITIES.messages.funds.text = 'net worth: $' + Math.round(funds)
   if (SHOW_PRICE) {
-    ENTITIES.messages.price.text = 'price: ' + priceData.series[i]
+    ENTITIES.messages.price.text = 'price: $' + priceData.series[i]
   }
   if (SHOW_DEBUG) {
     ENTITIES.messages.debug.text =
@@ -282,7 +282,7 @@ function updateMessages(i) {
   }
 }
 
-function showGameOver() {
+function showGameOver(i) {
   ENTITIES.lines.forEach(line => {
     line.x += H/2 - 16
   })
