@@ -10,7 +10,6 @@
     <script>
 
 const INIT_FUNDS = 10000
-const RESERVE = 0.0
 const TICKS_PER_DAY = 24
 const GAME_LENGTH_DAYS = 30
 const GAME_LENGTH_TICKS = GAME_LENGTH_DAYS * TICKS_PER_DAY
@@ -78,9 +77,7 @@ var ENTITIES = defaultEntities()
 
 var ASSETS = {
   funds: INIT_FUNDS,
-  margin: null,
-  short: null,
-  long: null,
+  trade: null,
 }
 
 var priceData
@@ -178,7 +175,7 @@ function positionToColor(diff) {
   return 0xffffff
 }
 function positionToThickness() {
-  return ASSETS.short || ASSETS.long ? 2 : 1
+  return ASSETS.trade ? 4 : 1
 }
 
 function update(dt) {
@@ -209,18 +206,20 @@ function update(dt) {
     ENTITIES.lines.push(line)
     app.stage.addChild(line)
 
-    if (ASSETS.long) {
-      ASSETS.long.current = ASSETS.long.margin / ASSETS.long.strikePrice * priceData.series[i+1]
-    } else if (ASSETS.short) {
-      // ASSETS.margin dolcsi ertekben kolcsonkertem bitcoint, es rogton eladtam
-      // ennyi bitcoint adtam el eredetileg:
-      // ASSETS.margin / ASSETS.strikePrice
-      // === ennyit kell visszaadjak ma
-      // nekem meg megvan az eredeti ASSETS.margin dolcsim
-      // abbol megveszem a bitcoint mai aron, es a kulonbozetet megnyertem!
-      // bwahahaha
-      const longValue = ASSETS.short.margin / ASSETS.short.strikePrice * priceData.series[i+1]
-      ASSETS.short.current = 2*ASSETS.short.margin - longValue
+    if (ASSETS.trade) {
+      const longValue = ASSETS.trade.margin / ASSETS.trade.strikePrice * priceData.series[i+1]
+      if (ASSETS.trade.isLong) {
+        ASSETS.trade.current = longValue
+      } else {
+        // ASSETS.margin dolcsi ertekben kolcsonkertem bitcoint, es rogton eladtam
+        // ennyi bitcoint adtam el eredetileg:
+        // ASSETS.margin / ASSETS.strikePrice
+        // === ennyit kell visszaadjak ma
+        // nekem meg megvan az eredeti ASSETS.margin dolcsim
+        // abbol megveszem a bitcoint mai aron, es a kulonbozetet megnyertem!
+        // bwahahaha
+        ASSETS.trade.current = 2 * ASSETS.trade.margin - longValue
+      }
     }
 
     updateMessages(i)
@@ -237,54 +236,53 @@ function update(dt) {
 function handleInput(i) {
   if (INPUT.long && !INPUT.short) {
     // LONG
-    if (ASSETS.short) {
-      closeShort()
+    if (ASSETS.trade) {
+      if (ASSETS.trade.isLong) {
+        return
+      } else {
+        exitTrade()
+      }
     }
-    if (!ASSETS.long) {
-      openLong(i)
-    }
+    enterTrade(true, i, ASSETS.funds)
   } else if (!INPUT.long && INPUT.short) {
     // SHORT
-    if (ASSETS.long) {
-      closeLong()
+    if (ASSETS.trade) {
+      if (!ASSETS.trade.isLong) {
+        return
+      } else {
+        exitTrade()
+      }
     }
-    if (!ASSETS.short) {
-      openShort(i)
-    }
+    enterTrade(false, i, ASSETS.funds)
   } else {
     // NEUTRAL
-    if (ASSETS.short) {
-      closeShort()
-    }
-    if (ASSETS.long) {
-      closeLong()
+    if (ASSETS.trade) {
+      exitTrade()
     }
   }
 }
 
 function updateMessages(i) {
   ENTITIES.messages.summary.text = ''
-  if (ASSETS.long) {
-    ENTITIES.messages.position.text = 'long: $' + Math.round(ASSETS.long.current) + ' (' + Math.round(ASSETS.long.current - ASSETS.long.margin) + ')'
-  } else if (ASSETS.short) {
-    ENTITIES.messages.position.text = 'short: $' + Math.round(ASSETS.short.current) + ' (' + Math.round(ASSETS.short.current - ASSETS.short.margin) + ')'
+  if (ASSETS.trade) {
+    ENTITIES.messages.position.text = (ASSETS.trade.isLong ? 'long' : 'short')
+      + ': $' + Math.round(ASSETS.trade.current)
+      + ' (' + Math.round(ASSETS.trade.current - ASSETS.trade.margin) + ')'
   } else {
     ENTITIES.messages.position.text = ''
   }
 
   ENTITIES.messages.iteration.text = 'day: ' + Math.floor(i / TICKS_PER_DAY) + ' / ' + GAME_LENGTH_DAYS
-  var funds = ASSETS.funds +
-      (ASSETS.long ? ASSETS.long.current : 0) +
-      (ASSETS.short ? ASSETS.short.current : 0)
+  var equity = ASSETS.funds + (ASSETS.trade ? ASSETS.trade.current : 0)
 
-  ENTITIES.messages.funds.text = 'net worth: $' + Math.round(funds)
+  ENTITIES.messages.funds.text = 'net worth: $' + Math.round(equity)
   if (SHOW_PRICE) {
     ENTITIES.messages.price.text = 'price: $' + Math.round(priceData.series[i])
   }
   if (SHOW_DEBUG) {
     ENTITIES.messages.debug.text =
       'inputs: ' + (INPUT.short?'S':' ') + (INPUT.long?'L':' ') +
-      ' assets: ' + (ASSETS.short?'S':' ') + (ASSETS.long?'L':' ')
+      ' trade: ' + (ASSETS.trade ? (ASSETS.trade.isLong ? 'L' : 'S') : '-')
   }
 }
 
@@ -293,11 +291,8 @@ function showGameOver(i) {
     line.x += H/2 - 16
   })
   ENTITIES.player.x += H/2 - 16
-  if (ASSETS.long) {
-    closeLong()
-  }
-  if (ASSETS.short) {
-    closeShort()
+  if (ASSETS.trade) {
+    exitTrade()
   }
   ENTITIES.messages.iteration.text = 'day: ' + Math.floor(i / TICKS_PER_DAY) + ' / ' + GAME_LENGTH_DAYS
   ENTITIES.messages.funds.text = 'net worth: $' + Math.round(ASSETS.funds)
@@ -320,30 +315,18 @@ function showGameOver(i) {
   ENTITIES.messages.summary.text = summary
 }
 
-function openLong(i) {
-  ASSETS.long = {}
-  ASSETS.long.strikePrice = priceData.series[i]
-  ASSETS.long.margin = ASSETS.funds * (1-RESERVE)
-  ASSETS.long.current = ASSETS.long.margin
-  ASSETS.funds = ASSETS.funds - ASSETS.long.margin
+function enterTrade(isLong, i, margin) {
+  ASSETS.trade = {}
+  ASSETS.trade.isLong = isLong
+  ASSETS.trade.strikePrice = priceData.series[i]
+  ASSETS.trade.margin = margin
+  ASSETS.trade.current = margin
+  ASSETS.funds = ASSETS.funds - margin
 }
 
-function closeLong() {
-  ASSETS.funds = ASSETS.funds + ASSETS.long.current
-  ASSETS.long = null
-}
-
-function openShort(i) {
-  ASSETS.short = {}
-  ASSETS.short.strikePrice = priceData.series[i]
-  ASSETS.short.margin = ASSETS.funds * (1-RESERVE)
-  ASSETS.short.current = ASSETS.short.margin
-  ASSETS.funds = ASSETS.funds - ASSETS.short.margin
-}
-
-function closeShort() {
-  ASSETS.funds = ASSETS.funds + ASSETS.short.current
-  ASSETS.short = null
+function exitTrade() {
+  ASSETS.funds = ASSETS.funds + ASSETS.trade.current
+  ASSETS.trade = null
 }
 
 function parsePriceData(data) {
