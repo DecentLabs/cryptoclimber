@@ -15,7 +15,6 @@ const TICKS_PER_DAY = 24
 const GAME_LENGTH_DAYS = 30
 const GAME_LENGTH_TICKS = GAME_LENGTH_DAYS * TICKS_PER_DAY
 const GRAPH_X_GRANULARITY_PX = 5 // smaller is more dense
-const COLOR_BY_CORRECTNESS = true
 const SPEED = 10 // smaller is faster
 const SHOW_PRICE = true
 const SHOW_DEBUG = true
@@ -176,18 +175,7 @@ const INPUT = {
 }
 
 function positionToColor(diff) {
-  if (!COLOR_BY_CORRECTNESS) {
-    return (!INPUT.long && INPUT.short) ? 0xff0000 :
-        (INPUT.long && !INPUT.short) ? 0x00ff55 :
-        0xeeeeee
-  }
-  if (!ASSETS.short && !ASSETS.long) {
-    return 0xeeeeee
-  }
-  if (ASSETS.short && diff < 0 || ASSETS.long && diff > 0) {
-    return 0x00ff55
-  }
-  return 0xff0000
+  return 0xffffff
 }
 function positionToThickness() {
   return ASSETS.short || ASSETS.long ? 2 : 1
