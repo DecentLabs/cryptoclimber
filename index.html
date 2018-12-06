@@ -50,9 +50,23 @@ PIXI.loader
   .load(setup);
 
 const TEXT_STYLE = new PIXI.TextStyle({
-  fontFamily: 'Arial',
+  fontFamily: 'Helvetica, sans-serif',
   fontSize: 18,
   fill: 0xcccccc,
+});
+
+const TEXT_PROFIT_STYLE = new PIXI.TextStyle({
+  fontFamily: 'Helvetica, sans-serif',
+  fontSize: 20,
+  fontWeight: 'bold',
+  fill: 0x00ff00,
+});
+
+const TEXT_LOSS_STYLE = new PIXI.TextStyle({
+  fontFamily: 'Helvetica, sans-serif',
+  fontSize: 20,
+  fontWeight: 'bold',
+  fill: 0xff0000,
 });
 
 
@@ -251,9 +265,10 @@ function handleInput(i) {
 function updateMessages(i) {
   ENTITIES.messages.summary.text = ''
   if (ASSETS.trade) {
-    ENTITIES.messages.position.text = (ASSETS.trade.isLong ? 'long' : 'short')
-      + ': $' + Math.round(ASSETS.trade.current)
-      + ' (' + Math.round(ASSETS.trade.current - ASSETS.trade.margin) + ')'
+    const profit = Math.round(ASSETS.trade.current - ASSETS.trade.margin)
+    ENTITIES.messages.position.text = //(ASSETS.trade.isLong ? 'LONG' : 'SHORT') +
+      (profit < 0 ? ' -$' : ' +$') + Math.abs(profit)
+    ENTITIES.messages.position.style = profit < 0 ? TEXT_LOSS_STYLE : TEXT_PROFIT_STYLE
   } else {
     ENTITIES.messages.position.text = ''
   }
