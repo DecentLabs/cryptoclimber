@@ -82,8 +82,23 @@ var ASSETS = {
 var priceData
 
 function setup() {
-  addInputListeners()
   priceData = parsePriceData(PIXI.loader.resources.prices.data)
+  addInputListeners()
+  setupBackground()
+  setupPlayer();
+  setupMessages()
+  app.ticker.add(update)
+}
+
+function setupPlayer() {
+  ENTITIES.player = new PIXI.Graphics()
+  ENTITIES.player.lineStyle(2, 0xFF00FF)
+  ENTITIES.player.drawCircle(W/2, H/2, 4)
+  ENTITIES.player.endFill()
+  app.stage.addChild(ENTITIES.player)
+}
+
+function setupBackground() {
   const bgTexture = PIXI.loader.resources.bg.texture
   const w = bgTexture.width
   const h = bgTexture.height
@@ -91,23 +106,19 @@ function setup() {
     for (let j = -h; j < H; j += h) {
       let bgSprite = new PIXI.Sprite(bgTexture)
       bgSprite.position.set(i, j)
-      app.stage.addChild(bgSprite);
+      app.stage.addChild(bgSprite)
       ENTITIES.bgSprites.push(bgSprite)
     }
   }
+}
 
-  ENTITIES.player = new PIXI.Graphics()
-  ENTITIES.player.lineStyle(2, 0xFF00FF)
-  ENTITIES.player.drawCircle(W/2, H/2, 4)
-  ENTITIES.player.endFill()
-  app.stage.addChild(ENTITIES.player)
-
+function setupMessages() {
   var x = 4
   var y = 4
   const ROW_HEIGHT = 20
   ENTITIES.messages.iteration = new PIXI.Text('day: 1 / ' + GAME_LENGTH_DAYS, TEXT_STYLE)
   ENTITIES.messages.iteration.position.set(x, y)
-  app.stage.addChild(ENTITIES.messages.iteration);
+  app.stage.addChild(ENTITIES.messages.iteration)
   y += ROW_HEIGHT
 
   ENTITIES.messages.funds = new PIXI.Text('funds: $' + ASSETS.funds, TEXT_STYLE)
@@ -131,14 +142,12 @@ function setup() {
 
   ENTITIES.messages.position = new PIXI.Text('', TEXT_STYLE)
   ENTITIES.messages.position.position.set(W/2 + 32, H/2 - 12)
-  app.stage.addChild(ENTITIES.messages.position);
+  app.stage.addChild(ENTITIES.messages.position)
 
   ENTITIES.messages.summary = new PIXI.Text(INTRO, TEXT_STYLE)
   ENTITIES.messages.summary.position.set(W/2, 64)
   ENTITIES.messages.summary.anchor.set(0.5, 0)
-  app.stage.addChild(ENTITIES.messages.summary);
-
-  app.ticker.add(update);
+  app.stage.addChild(ENTITIES.messages.summary)
 }
 
 var time = 0
@@ -280,9 +289,9 @@ function update(dt) {
       ENTITIES.messages.price.text = 'price: ' + priceData.series[i]
     }
     if (SHOW_DEBUG) {
-      ENTITIES.messages.debug.text = 
+      ENTITIES.messages.debug.text =
         'inputs: ' + (INPUT.short?'S':' ') + (INPUT.long?'L':' ') +
-        ', assets: ' + (ASSETS.short?'S':' ') + (ASSETS.long?'L':' ')
+        ' assets: ' + (ASSETS.short?'S':' ') + (ASSETS.long?'L':' ')
     }
   }
   ENTITIES.lines.forEach(line => {
