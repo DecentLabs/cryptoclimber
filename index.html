@@ -303,6 +303,7 @@ function showGameOver(i) {
 
 function enterTrade(isLong, i, margin) {
   ASSETS.trade = {}
+  ASSETS.trade.barOpen = ASSETS.trade.barClose = i
   ASSETS.trade.isLong = isLong
   ASSETS.trade.strikePrice = priceData.series[i]
   ASSETS.trade.margin = margin
@@ -319,6 +320,7 @@ function updateTrade(i) {
   if (!ASSETS.trade) {
     return
   }
+  ASSETS.trade.barClose = i
   const longValue = ASSETS.trade.margin / ASSETS.trade.strikePrice * priceData.series[i+1]
   if (ASSETS.trade.isLong) {
     ASSETS.trade.current = longValue
