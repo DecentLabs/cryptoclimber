@@ -17,7 +17,8 @@ const GAME_LENGTH_TICKS = GAME_LENGTH_DAYS * TICKS_PER_DAY
 const GRAPH_X_GRANULARITY_PX = 5 // smaller is more dense
 const COLOR_BY_CORRECTNESS = true
 const SPEED = 10 // smaller is faster
-const SHOW_PRICE = true
+const SHOW_PRICE = false
+const SHOW_DEBUG = false
 
 const INTRO = 'Crypto Climber\n\n' +
   'You\'ll get a random 30 day sample of Bitcoin\'s price history.\nCan you  guess which way it will move?' +
@@ -121,6 +122,13 @@ function setup() {
     y += ROW_HEIGHT
   }
 
+  if (SHOW_DEBUG) {
+    ENTITIES.messages.debug = new PIXI.Text('inputs: ', TEXT_STYLE)
+    ENTITIES.messages.debug.position.set(x, y)
+    app.stage.addChild(ENTITIES.messages.debug)
+    y += ROW_HEIGHT
+  }
+
   ENTITIES.messages.position = new PIXI.Text('', TEXT_STYLE)
   ENTITIES.messages.position.position.set(W/2 + 32, H/2 - 12)
   app.stage.addChild(ENTITIES.messages.position);
@@ -146,8 +154,8 @@ const INPUT = {
 
 function positionToColor(diff) {
   if (!COLOR_BY_CORRECTNESS) {
-    return INPUT.short ? 0xff0000 :
-        INPUT.long ? 0x00ff55 :
+    return (!INPUT.long && INPUT.short) ? 0xff0000 :
+        (INPUT.long && !INPUT.short) ? 0x00ff55 :
         0xeeeeee
   }
   if (!ASSETS.short && !ASSETS.long) {
@@ -159,7 +167,7 @@ function positionToColor(diff) {
   return 0xff0000
 }
 function positionToThickness() {
-  return INPUT.short || INPUT.long ? 2 : 1
+  return ASSETS.short || ASSETS.long ? 2 : 1
 }
 
 function update(dt) {
@@ -184,8 +192,13 @@ function update(dt) {
       }
       ENTITIES.messages.iteration.text = 'day: ' + Math.floor(i / TICKS_PER_DAY) + ' / ' + GAME_LENGTH_DAYS
       ENTITIES.messages.funds.text = 'net worth: $' + Math.round(ASSETS.funds)
-      ENTITIES.messages.price.text = '';
+      if (SHOW_PRICE) {
+        ENTITIES.messages.price.text = ''
+      }
       ENTITIES.messages.position.text = ''
+      if (SHOW_DEBUG) {
+        ENTITIES.messages.debug.text = ''
+      }
 
       const result = ASSETS.funds - INIT_FUNDS
       const resultPercent = (result / INIT_FUNDS * 100).toFixed(1)
@@ -201,17 +214,30 @@ function update(dt) {
   }
   if (ENTITIES.lines.length === i) {
 
-    if (INPUT.long && !ASSETS.long) {
-      openLong(i)
-    }
-    if (!INPUT.long && ASSETS.long) {
-      closeLong()
-    }
-    if (INPUT.short && !ASSETS.short) {
-      openShort(i)
-    }
-    if (!INPUT.short && ASSETS.short) {
-      closeShort()
+    if (INPUT.long && !INPUT.short) {
+      // LONG
+      if (ASSETS.short) {
+        closeShort()
+      }
+      if (!ASSETS.long) {
+        openLong(i)
+      }
+    } else if (!INPUT.long && INPUT.short) {
+      // SHORT
+      if (ASSETS.long) {
+        closeLong()
+      }
+      if (!ASSETS.short) {
+        openShort(i)
+      }
+    } else {
+      // NEUTRAL
+      if (ASSETS.short) {
+        closeShort()
+      }
+      if (ASSETS.long) {
+        closeLong()
+      }
     }
 
     let line = new PIXI.Graphics();
@@ -250,7 +276,12 @@ function update(dt) {
         (ASSETS.short ? ASSETS.short.current : 0)
 
     ENTITIES.messages.funds.text = 'net worth: $' + Math.round(funds)
-    ENTITIES.messages.price.text = 'price: ' + priceData.series[i]
+    if (SHOW_PRICE) {
+      ENTITIES.messages.price.text = 'price: ' + priceData.series[i]
+    }
+    if (SHOW_DEBUG) {
+      ENTITIES.messages.input.text = 'inputs: ' + (INPUT.short?'S':' ') + (INPUT.long?'L':' ')
+    }
   }
   ENTITIES.lines.forEach(line => {
     line.x -= GRAPH_X_GRANULARITY_PX * dt2
@@ -306,10 +337,8 @@ function addInputListeners() {
     }
     if (event.key === 's') {
       INPUT.short = true
-      INPUT.long = false
     } else if (event.key === 'l') {
       INPUT.long = true
-      INPUT.short = false
     } else if (gameOver) {
       gameOver = false
       gameStarted = false
