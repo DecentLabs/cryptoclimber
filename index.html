@@ -206,21 +206,7 @@ function update(dt) {
     ENTITIES.lines.push(line)
     app.stage.addChild(line)
 
-    if (ASSETS.trade) {
-      const longValue = ASSETS.trade.margin / ASSETS.trade.strikePrice * priceData.series[i+1]
-      if (ASSETS.trade.isLong) {
-        ASSETS.trade.current = longValue
-      } else {
-        // ASSETS.margin dolcsi ertekben kolcsonkertem bitcoint, es rogton eladtam
-        // ennyi bitcoint adtam el eredetileg:
-        // ASSETS.margin / ASSETS.strikePrice
-        // === ennyit kell visszaadjak ma
-        // nekem meg megvan az eredeti ASSETS.margin dolcsim
-        // abbol megveszem a bitcoint mai aron, es a kulonbozetet megnyertem!
-        // bwahahaha
-        ASSETS.trade.current = 2 * ASSETS.trade.margin - longValue
-      }
-    }
+    updateTrade(i)
 
     updateMessages(i)
   }
@@ -327,6 +313,25 @@ function enterTrade(isLong, i, margin) {
 function exitTrade() {
   ASSETS.funds = ASSETS.funds + ASSETS.trade.current
   ASSETS.trade = null
+}
+
+function updateTrade(i) {
+  if (!ASSETS.trade) {
+    return
+  }
+  const longValue = ASSETS.trade.margin / ASSETS.trade.strikePrice * priceData.series[i+1]
+  if (ASSETS.trade.isLong) {
+    ASSETS.trade.current = longValue
+  } else {
+    // ASSETS.margin dolcsi ertekben kolcsonkertem bitcoint, es rogton eladtam
+    // ennyi bitcoint adtam el eredetileg:
+    // ASSETS.margin / ASSETS.strikePrice
+    // === ennyit kell visszaadjak ma
+    // nekem meg megvan az eredeti ASSETS.margin dolcsim
+    // abbol megveszem a bitcoint mai aron, es a kulonbozetet megnyertem!
+    // bwahahaha
+    ASSETS.trade.current = 2 * ASSETS.trade.margin - longValue
+  }
 }
 
 function parsePriceData(data) {
