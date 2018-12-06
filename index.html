@@ -17,6 +17,7 @@ const GAME_LENGTH_TICKS = GAME_LENGTH_DAYS * TICKS_PER_DAY
 const GRAPH_X_GRANULARITY_PX = 5 // smaller is more dense
 const COLOR_BY_CORRECTNESS = true
 const SPEED = 10 // smaller is faster
+const SHOW_PRICE = true
 
 const INTRO = 'Crypto Climber\n\n' +
   'You\'ll get a random 30 day sample of Bitcoin\'s price history.\nCan you  guess which way it will move?' +
@@ -111,6 +112,14 @@ function setup() {
   ENTITIES.messages.funds = new PIXI.Text('funds: $' + ASSETS.funds, TEXT_STYLE)
   ENTITIES.messages.funds.position.set(x, y)
   app.stage.addChild(ENTITIES.messages.funds);
+  y += ROW_HEIGHT
+
+  if (SHOW_PRICE) {
+    ENTITIES.messages.price = new PIXI.Text('price: ', TEXT_STYLE)
+    ENTITIES.messages.price.position.set(x, y)
+    app.stage.addChild(ENTITIES.messages.price)
+    y += ROW_HEIGHT
+  }
 
   ENTITIES.messages.position = new PIXI.Text('', TEXT_STYLE)
   ENTITIES.messages.position.position.set(W/2 + 32, H/2 - 12)
@@ -175,6 +184,7 @@ function update(dt) {
       }
       ENTITIES.messages.iteration.text = 'day: ' + Math.floor(i / TICKS_PER_DAY) + ' / ' + GAME_LENGTH_DAYS
       ENTITIES.messages.funds.text = 'net worth: $' + Math.round(ASSETS.funds)
+      ENTITIES.messages.price.text = '';
       ENTITIES.messages.position.text = ''
 
       const result = ASSETS.funds - INIT_FUNDS
@@ -240,6 +250,7 @@ function update(dt) {
         (ASSETS.short ? ASSETS.short.current : 0)
 
     ENTITIES.messages.funds.text = 'net worth: $' + Math.round(funds)
+    ENTITIES.messages.price.text = 'price: ' + priceData.series[i]
   }
   ENTITIES.lines.forEach(line => {
     line.x -= GRAPH_X_GRANULARITY_PX * dt2
