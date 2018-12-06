@@ -79,7 +79,7 @@ var ENTITIES = defaultEntities()
 
 var ASSETS = {
   funds: INIT_FUNDS,
-  volume: null,
+  margin: null,
   short: null,
   long: null,
 }
@@ -222,17 +222,17 @@ function update(dt) {
     app.stage.addChild(line)
 
     if (ASSETS.long) {
-      ASSETS.long.current = ASSETS.long.volume / ASSETS.long.strikePrice * priceData.series[i+1]
+      ASSETS.long.current = ASSETS.long.margin / ASSETS.long.strikePrice * priceData.series[i+1]
     } else if (ASSETS.short) {
-      // ASSETS.volume dolcsi ertekben kolcsonkertem bitcoint, es rogton eladtam
+      // ASSETS.margin dolcsi ertekben kolcsonkertem bitcoint, es rogton eladtam
       // ennyi bitcoint adtam el eredetileg:
-      // ASSETS.volume / ASSETS.strikePrice
+      // ASSETS.margin / ASSETS.strikePrice
       // === ennyit kell visszaadjak ma
-      // nekem meg megvan az eredeti ASSETS.volume dolcsim
+      // nekem meg megvan az eredeti ASSETS.margin dolcsim
       // abbol megveszem a bitcoint mai aron, es a kulonbozetet megnyertem!
       // bwahahaha
-      const longValue = ASSETS.short.volume / ASSETS.short.strikePrice * priceData.series[i+1]
-      ASSETS.short.current = 2*ASSETS.short.volume - longValue
+      const longValue = ASSETS.short.margin / ASSETS.short.strikePrice * priceData.series[i+1]
+      ASSETS.short.current = 2*ASSETS.short.margin - longValue
     }
 
     updateMessages(i)
@@ -277,9 +277,9 @@ function handleInput(i) {
 function updateMessages(i) {
   ENTITIES.messages.summary.text = ''
   if (ASSETS.long) {
-    ENTITIES.messages.position.text = 'long: $' + Math.round(ASSETS.long.current) + ' (' + Math.round(ASSETS.long.current - ASSETS.long.volume) + ')'
+    ENTITIES.messages.position.text = 'long: $' + Math.round(ASSETS.long.current) + ' (' + Math.round(ASSETS.long.current - ASSETS.long.margin) + ')'
   } else if (ASSETS.short) {
-    ENTITIES.messages.position.text = 'short: $' + Math.round(ASSETS.short.current) + ' (' + Math.round(ASSETS.short.current - ASSETS.short.volume) + ')'
+    ENTITIES.messages.position.text = 'short: $' + Math.round(ASSETS.short.current) + ' (' + Math.round(ASSETS.short.current - ASSETS.short.margin) + ')'
   } else {
     ENTITIES.messages.position.text = ''
   }
@@ -335,9 +335,9 @@ function showGameOver(i) {
 function openLong(i) {
   ASSETS.long = {}
   ASSETS.long.strikePrice = priceData.series[i]
-  ASSETS.long.volume = ASSETS.funds * (1-RESERVE)
-  ASSETS.long.current = ASSETS.long.volume
-  ASSETS.funds = ASSETS.funds - ASSETS.long.volume
+  ASSETS.long.margin = ASSETS.funds * (1-RESERVE)
+  ASSETS.long.current = ASSETS.long.margin
+  ASSETS.funds = ASSETS.funds - ASSETS.long.margin
 }
 
 function closeLong() {
@@ -348,9 +348,9 @@ function closeLong() {
 function openShort(i) {
   ASSETS.short = {}
   ASSETS.short.strikePrice = priceData.series[i]
-  ASSETS.short.volume = ASSETS.funds * (1-RESERVE)
-  ASSETS.short.current = ASSETS.short.volume
-  ASSETS.funds = ASSETS.funds - ASSETS.short.volume
+  ASSETS.short.margin = ASSETS.funds * (1-RESERVE)
+  ASSETS.short.current = ASSETS.short.margin
+  ASSETS.funds = ASSETS.funds - ASSETS.short.margin
 }
 
 function closeShort() {
