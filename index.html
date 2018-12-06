@@ -66,6 +66,9 @@ function defaultEntities() {
       iteration: null,
       funds: null,
       position: null,
+      summary: null,
+      price: null,
+      debug: null,
     },
     lines: [],
     baselines: [],
@@ -84,10 +87,17 @@ var ASSETS = {
 var priceData
 
 function setup() {
+  app.ticker.remove(update)
+  app.stage.removeChildren()
+
+  time = 0
+  ENTITIES = defaultEntities()
+  ASSETS.funds = INIT_FUNDS
   priceData = parsePriceData(PIXI.loader.resources.prices.data)
+
   addInputListeners()
   setupBackground()
-  addBaseLines()
+  setupBaseLines()
   setupPlayer()
   setupMessages()
   app.ticker.add(update)
@@ -127,7 +137,7 @@ function setupMessages() {
 
   ENTITIES.messages.funds = new PIXI.Text('funds: $' + ASSETS.funds, TEXT_STYLE)
   ENTITIES.messages.funds.position.set(x, y)
-  app.stage.addChild(ENTITIES.messages.funds);
+  app.stage.addChild(ENTITIES.messages.funds)
   y += ROW_HEIGHT
 
   if (SHOW_PRICE) {
@@ -200,8 +210,8 @@ function update(dt) {
   if (ENTITIES.lines.length === i) {
     handleInput(i)
 
-    let line = new PIXI.Graphics();
-    line.position.set(W/2, H/2);
+    let line = new PIXI.Graphics()
+    line.position.set(W/2, H/2)
 
     diff = priceData.series[i + 1] - priceData.series[i]
     line.lineStyle(positionToThickness(), positionToColor(diff))
@@ -265,6 +275,7 @@ function handleInput(i) {
 }
 
 function updateMessages(i) {
+  ENTITIES.messages.summary.text = ''
   if (ASSETS.long) {
     ENTITIES.messages.position.text = 'long: $' + Math.round(ASSETS.long.current) + ' (' + Math.round(ASSETS.long.current - ASSETS.long.volume) + ')'
   } else if (ASSETS.short) {
@@ -374,10 +385,6 @@ function addInputListeners() {
     } else if (gameOver) {
       gameOver = false
       gameStarted = false
-      time = 0
-      ENTITIES = defaultEntities()
-      ASSETS.funds = INIT_FUNDS
-      app.ticker.remove(update);
       setup()
     }
   }, false)
@@ -391,7 +398,7 @@ function addInputListeners() {
   }, false)
 }
 
-function addBaseLines() {
+function setupBaseLines() {
   let baselineStart = new PIXI.Graphics()
   baselineStart.position.set(0, H/2)
   baselineStart.lineStyle(1, BASELINE_COLOR)
@@ -400,7 +407,7 @@ function addBaseLines() {
   app.stage.addChild(baselineStart)
   ENTITIES.baselines.push(baselineStart)
 
-  p0 = priceData.series[0];
+  p0 = priceData.series[0]
   //console.log('p0=' + p0)
 
   for (i = 1; i <= 10; i++) {
