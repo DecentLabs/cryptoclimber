@@ -72,7 +72,7 @@ const TEXT_LOSS_STYLE = new PIXI.TextStyle({
 
 function defaultEntities() {
   return {
-    bgSprites: [],
+    background: null,
     player: null,
     messages: {
       iteration: null,
@@ -123,6 +123,7 @@ function setupPlayer() {
 }
 
 function setupBackground() {
+  ENTITIES.background = new PIXI.Container()
   const bgTexture = PIXI.loader.resources.bg.texture
   const w = bgTexture.width
   const h = bgTexture.height
@@ -131,10 +132,10 @@ function setupBackground() {
       let bgSprite = new PIXI.Sprite(bgTexture)
       bgSprite.position.set(i, j)
       bgSprite.alpha = 0.5
-      app.stage.addChild(bgSprite)
-      ENTITIES.bgSprites.push(bgSprite)
+      ENTITIES.background.addChild(bgSprite)
     }
   }
+  app.stage.addChild(ENTITIES.background)
 }
 
 function setupMessages() {
