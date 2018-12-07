@@ -213,7 +213,12 @@ function update(dt) {
     let line = new PIXI.Graphics()
     line.position.set(W/2, H/2)
 
-    diff = priceData.series[i + 1] - priceData.series[i]
+    const currentPrice = priceData.series[i]
+
+    priceData.runningMin = Math.min(priceData.runningMin, currentPrice)
+    priceData.runningMax = Math.max(priceData.runningMax, currentPrice)
+
+    diff = priceData.series[i + 1] - currentPrice
     line.lineStyle(positionToThickness(), positionToColor(diff))
         .moveTo(0, 0)
         .lineTo(GRAPH_X_GRANULARITY_PX, -priceData.scale * diff)
@@ -365,6 +370,8 @@ function parsePriceData(data) {
     series: series,
     min: min,
     max: max,
+    runningMin: series[0],
+    runningMax: series[0],
     scale: H / 2 / (max - min),
   }
 }
