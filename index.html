@@ -325,7 +325,7 @@ function enterTrade(isLong, i, margin) {
   ASSETS.trade.margin = margin
   ASSETS.trade.current = margin
   ASSETS.funds = ASSETS.funds - margin
-  ASSETS.trades.push(trade)
+  ASSETS.trades.push(ASSETS.trade)
 }
 
 function exitTrade() {
