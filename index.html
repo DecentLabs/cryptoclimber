@@ -83,7 +83,7 @@ function defaultEntities() {
       debug: null,
     },
     lines: [],
-    baselines: [],
+    baselines: null,
   }
 }
 
@@ -234,9 +234,7 @@ function update(dt) {
     line.x -= GRAPH_X_GRANULARITY_PX * dt2
     line.y += priceData.scale * diff * dt2
   })
-  ENTITIES.baselines.forEach(line => {
-    line.y += priceData.scale * diff * dt2
-  })
+  ENTITIES.baselines.y += priceData.scale * diff * dt2
 }
 
 function handleInput(i) {
@@ -404,13 +402,13 @@ function addInputListeners() {
 }
 
 function setupBaseLines() {
+  let baselines = new PIXI.Container()
   let baselineStart = new PIXI.Graphics()
   baselineStart.position.set(0, H/2)
   baselineStart.lineStyle(1, BASELINE_COLOR)
     .moveTo(0, 0)
     .lineTo(W, 0)
-  app.stage.addChild(baselineStart)
-  ENTITIES.baselines.push(baselineStart)
+  baselines.addChild(baselineStart)
 
   p0 = priceData.series[0]
   //console.log('p0=' + p0)
@@ -423,8 +421,7 @@ function setupBaseLines() {
     baselinePlus.lineStyle(1, BASELINE_COLOR)
       .moveTo(0, 0)
       .lineTo(W, 0)
-    app.stage.addChild(baselinePlus)
-    ENTITIES.baselines.push(baselinePlus)
+    baselines.addChild(baselinePlus)
 
     pmi = p0 * Math.pow(0.9, i)
     //console.log('pm_' + i + '=' + pmi)
@@ -433,9 +430,10 @@ function setupBaseLines() {
     baselineMinus.lineStyle(1, BASELINE_COLOR)
       .moveTo(0, 0)
       .lineTo(W, 0)
-    app.stage.addChild(baselineMinus)
-    ENTITIES.baselines.push(baselineMinus)
+    baselines.addChild(baselineMinus)
   }
+  ENTITIES.baselines = baselines
+  app.stage.addChild(baselines)
 }
     </script>
   </body>
