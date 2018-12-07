@@ -308,10 +308,12 @@ function showGameOver(i) {
 
   const result = ASSETS.funds - INIT_FUNDS
   const resultPercent = (result / INIT_FUNDS * 100).toFixed(1)
+  const hodlPercent = ((priceData.series[i] / priceData.series[0] - 1) * 100).toFixed(1)
   var summary = result >= 0 ?
       ('YAY! You made a return: ' + resultPercent + '%') :
       ('ONOES! You lost ' + resultPercent + '% of your investment')
-  summary += '\nPeriod: ' + priceData.from + ' - ' + priceData.to
+  summary += '\nBuy and hold: ' + hodlPercent + '%'
+  // summary += '\nPeriod: ' + priceData.from + ' - ' + priceData.to
   summary += '\nPrice range: $' + priceData.min + ' - $' + priceData.max
   summary += '\n\nPress almost any key to reset.'
   ENTITIES.messages.summary.text = summary
