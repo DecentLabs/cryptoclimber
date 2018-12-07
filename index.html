@@ -138,41 +138,45 @@ function setupBackground() {
 }
 
 function setupMessages() {
+  messagesContainer = new PIXI.Container()
+
   var x = 4
   var y = 4
   const ROW_HEIGHT = 20
   ENTITIES.messages.iteration = new PIXI.Text('day: 1 / ' + GAME_LENGTH_DAYS, TEXT_STYLE)
   ENTITIES.messages.iteration.position.set(x, y)
-  app.stage.addChild(ENTITIES.messages.iteration)
+  messagesContainer.addChild(ENTITIES.messages.iteration)
   y += ROW_HEIGHT
 
   ENTITIES.messages.funds = new PIXI.Text('funds: $' + ASSETS.funds, TEXT_STYLE)
   ENTITIES.messages.funds.position.set(x, y)
-  app.stage.addChild(ENTITIES.messages.funds)
+  messagesContainer.addChild(ENTITIES.messages.funds)
   y += ROW_HEIGHT
 
   if (SHOW_PRICE) {
     ENTITIES.messages.price = new PIXI.Text('price: $', TEXT_STYLE)
     ENTITIES.messages.price.position.set(x, y)
-    app.stage.addChild(ENTITIES.messages.price)
+    messagesContainer.addChild(ENTITIES.messages.price)
     y += ROW_HEIGHT
   }
 
   if (SHOW_DEBUG) {
     ENTITIES.messages.debug = new PIXI.Text('', TEXT_STYLE)
     ENTITIES.messages.debug.position.set(x, y)
-    app.stage.addChild(ENTITIES.messages.debug)
+    messagesContainer.addChild(ENTITIES.messages.debug)
     y += ROW_HEIGHT
   }
 
   ENTITIES.messages.position = new PIXI.Text('', TEXT_STYLE)
   ENTITIES.messages.position.position.set(W/2 + 32, H/2 - 12)
-  app.stage.addChild(ENTITIES.messages.position)
+  messagesContainer.addChild(ENTITIES.messages.position)
 
   ENTITIES.messages.summary = new PIXI.Text(INTRO, TEXT_STYLE)
   ENTITIES.messages.summary.position.set(W/2, 64)
   ENTITIES.messages.summary.anchor.set(0.5, 0)
-  app.stage.addChild(ENTITIES.messages.summary)
+  messagesContainer.addChild(ENTITIES.messages.summary)
+
+  app.stage.addChild(messagesContainer)
 }
 
 var time = 0
