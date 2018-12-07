@@ -313,6 +313,7 @@ function showGameOver(i) {
       ('YAY! You made a return: ' + resultPercent + '%') :
       ('ONOES! You lost ' + resultPercent + '% of your investment')
   summary += '\nBuy and hold: ' + hodlPercent + '%'
+  summary += '\nNumber of trades: ' + ASSETS.trades.length
   // summary += '\nPeriod: ' + priceData.from + ' - ' + priceData.to
   summary += '\nPrice range: $' + priceData.min + ' - $' + priceData.max
   summary += '\n\nPress almost any key to reset.'
