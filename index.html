@@ -34,13 +34,14 @@ const CONF = {
 };
 
 const app = new PIXI.Application(CONF);
-const W = window.innerWidth
-const H = window.innerHeight
+const SCREEN_WIDTH = window.innerWidth
+const SCREEN_HEIGHT = window.innerHeight
+
 // Full screen
 app.renderer.view.style.position = 'absolute';
 app.renderer.view.style.display = 'block';
 app.renderer.autoResize = true;
-app.renderer.resize(W, H);
+app.renderer.resize(SCREEN_WIDTH, SCREEN_HEIGHT);
 
 document.body.appendChild(app.view);
 
@@ -102,9 +103,13 @@ function setup() {
   app.stage.removeChildren()
 
   time = 0
+  tick = 0
+
   ENTITIES = defaultEntities()
   ASSETS.funds = INIT_FUNDS
   priceData = parsePriceData(PIXI.loader.resources.prices.data)
+  GAME_WIDTH = (priceData.series.length - 1) * GRAPH_X_GRANULARITY_PX
+  GAME_HEIGHT = priceData.max - priceData.min
 
   ENTITIES.screenspace = new PIXI.Container()
   ENTITIES.screenspace.addChild(createBackground())
@@ -114,7 +119,9 @@ function setup() {
   ENTITIES.gamespace = new PIXI.Container()
   ENTITIES.gamespace.addChild(createBaseLines())
   ENTITIES.gamespace.addChild(createPlayer())
+  ENTITIES.gamespace.addChild(createGraph())
   app.stage.addChild(ENTITIES.gamespace)
+  setViewPort(0,0)
 
   addInputListeners()
   app.ticker.add(update)
@@ -125,8 +132,8 @@ function createBackground() {
   const bgTexture = PIXI.loader.resources.bg.texture
   const w = bgTexture.width
   const h = bgTexture.height
-  for (let i = -w; i < W; i += w) {
-    for (let j = -h; j < H; j += h) {
+  for (let i = -w; i < SCREEN_WIDTH; i += w) {
+    for (let j = -h; j < SCREEN_HEIGHT; j += h) {
       let bgSprite = new PIXI.Sprite(bgTexture)
       bgSprite.position.set(i, j)
       bgSprite.alpha = 0.5
@@ -167,11 +174,11 @@ function createMessages() {
   }
 
   ENTITIES.messages.position = new PIXI.Text('', TEXT_STYLE)
-  ENTITIES.messages.position.position.set(W/2 + 32, H/2 - 12)
+  ENTITIES.messages.position.position.set(SCREEN_WIDTH/2 + 32, SCREEN_HEIGHT/2 - 12)
   messagesContainer.addChild(ENTITIES.messages.position)
 
   ENTITIES.messages.summary = new PIXI.Text(INTRO, TEXT_STYLE)
-  ENTITIES.messages.summary.position.set(W/2, 64)
+  ENTITIES.messages.summary.position.set(SCREEN_WIDTH/2, 64)
   ENTITIES.messages.summary.anchor.set(0.5, 0)
   messagesContainer.addChild(ENTITIES.messages.summary)
 
@@ -179,36 +186,40 @@ function createMessages() {
 }
 
 function createBaseLines() {
-  let baselines = new PIXI.Container()
-  let baselineStart = new PIXI.Graphics()
-  baselineStart.position.set(0, H/2)
-  baselineStart.lineStyle(1, BASELINE_COLOR)
-    .moveTo(0, 0)
-    .lineTo(W, 0)
-  baselines.addChild(baselineStart)
-
   p0 = priceData.series[0]
-  //console.log('p0=' + p0)
 
-  for (i = 1; i <= 10; i++) {
-    ppi = p0 * Math.pow(1.1, i)
-    //console.log('pp_' + i + '=' + ppi)
-    let baselinePlus = new PIXI.Graphics()
-    baselinePlus.position.set(0, H/2 - priceData.scale * (ppi - p0))
-    baselinePlus.lineStyle(1, BASELINE_COLOR)
-      .moveTo(0, 0)
-      .lineTo(W, 0)
-    baselines.addChild(baselinePlus)
+  let baselines = new PIXI.Container()
+  let baseline = new PIXI.Graphics()
+  baseline.position.set(0, 0)
+  baseline.lineStyle(1, BASELINE_COLOR)
+    .moveTo(0, 0)
+    .lineTo(GAME_WIDTH, 0)
+  baselines.addChild(baseline)
 
-    pmi = p0 * Math.pow(0.9, i)
-    //console.log('pm_' + i + '=' + pmi)
+  let ppi = p0
+  //for (i = 1; ppi < priceData.max; i++) {
+  for (i = 1; i <= 20; i++) {
+    ppi *= 1.1
+    let line = new PIXI.Graphics()
+    let y = ppi - p0
+    line.lineStyle(1, BASELINE_COLOR)
+      .moveTo(0, y)
+      .lineTo(GAME_WIDTH, y)
+    baselines.addChild(line)
+  }
+
+  let pmi = p0
+  //for (i = 1; pmi > priceData.min; i++) {
+  for (i = 1; i <= 20; i++) {
+    pmi *= 0.9
     let baselineMinus = new PIXI.Graphics()
-    baselineMinus.position.set(0, H/2 - priceData.scale * (pmi - p0))
+    let y = pmi - p0
     baselineMinus.lineStyle(1, BASELINE_COLOR)
-      .moveTo(0, 0)
-      .lineTo(W, 0)
+      .moveTo(0, y)
+      .lineTo(GAME_WIDTH, y)
     baselines.addChild(baselineMinus)
   }
+
   ENTITIES.baselines = baselines
   return baselines
 }
@@ -216,13 +227,41 @@ function createBaseLines() {
 function createPlayer() {
   ENTITIES.player = new PIXI.Graphics()
   ENTITIES.player.lineStyle(2, 0xFF00FF)
-  ENTITIES.player.drawCircle(W/2, H/2, 4)
+  ENTITIES.player.drawCircle(0, 0, 4)
   ENTITIES.player.endFill()
   return ENTITIES.player
 }
 
+function createGraph() {
+  p0 = priceData.series[0]
+  graph = new PIXI.Container()
+  for (i = 0; i < priceData.series.length - 1; i++) {
+    line = new PIXI.Graphics()
+    line.position.set(0, 0)
+    line.lineStyle(1, 0xffffff)
+        .moveTo(GRAPH_X_GRANULARITY_PX * i, priceData.series[i] - p0)
+        .lineTo(GRAPH_X_GRANULARITY_PX * (i + 1), priceData.series[i + 1] - p0)
+    line.visible = false
+    ENTITIES.lines.push(line)
+    graph.addChild(line)
+  }
+  return graph
+}
+
+function setViewPort(x, y) {
+  ENTITIES.gamespace.scale.x = 1
+  ENTITIES.gamespace.scale.y = -1 //-priceData.scale
+  ENTITIES.gamespace.position.x = -(x - SCREEN_WIDTH / 2)
+  ENTITIES.gamespace.position.y = -(-y - SCREEN_HEIGHT / 2)
+}
+
+function movePlayer(x, y) {
+  ENTITIES.player.x = x
+  ENTITIES.player.y = y
+}
 
 var time = 0
+var tick = 0
 
 var diff
 var gameOver = false
@@ -244,6 +283,7 @@ function update(dt) {
   if (!gameStarted) {
     return
   }
+
   dt2 = dt / SPEED
   time += dt2
   var i = Math.min(Math.floor(time), GAME_LENGTH_TICKS)
@@ -254,34 +294,25 @@ function update(dt) {
     }
     return
   }
-  if (ENTITIES.lines.length === i) {
-    handleInput(i)
 
-    let line = new PIXI.Graphics()
-    line.position.set(W/2, H/2)
+  if (i > tick) {
+    tick = i
+    ENTITIES.lines[i].visible = true
 
     const currentPrice = priceData.series[i]
-
     priceData.runningMin = Math.min(priceData.runningMin, currentPrice)
     priceData.runningMax = Math.max(priceData.runningMax, currentPrice)
 
-    diff = priceData.series[i + 1] - currentPrice
-    line.lineStyle(positionToThickness(), positionToColor(diff))
-        .moveTo(0, 0)
-        .lineTo(GRAPH_X_GRANULARITY_PX, -priceData.scale * diff)
-
-    ENTITIES.lines.push(line)
-    app.stage.addChild(line)
-
+    handleInput(i)
     updateTrade(i)
-
     updateMessages(i)
   }
-  ENTITIES.lines.forEach(line => {
-    line.x -= GRAPH_X_GRANULARITY_PX * dt2
-    line.y += priceData.scale * diff * dt2
-  })
-  ENTITIES.baselines.y += priceData.scale * diff * dt2
+
+  x = time * GRAPH_X_GRANULARITY_PX
+  y = (priceData.series[i] - priceData.series[0])
+    + (time - tick) * (priceData.series[i + 1] - priceData.series[i])
+  setViewPort(x, y)
+  movePlayer(x, y)
 }
 
 function handleInput(i) {
@@ -339,10 +370,6 @@ function updateMessages(i) {
 }
 
 function showGameOver(i) {
-  ENTITIES.lines.forEach(line => {
-    line.x += H/2 - 16
-  })
-  ENTITIES.player.x += H/2 - 16
   if (ASSETS.trade) {
     exitTrade()
   }
@@ -407,8 +434,8 @@ function updateTrade(i) {
 }
 
 function parsePriceData(data) {
-  const fromIndex = Math.floor(Math.random() * (data.values.length - GAME_LENGTH_TICKS - 2))
-  const series = data.values.slice(fromIndex, fromIndex + GAME_LENGTH_TICKS + 2)
+  const fromIndex = Math.floor(Math.random() * (data.values.length - GAME_LENGTH_TICKS - 1))
+  const series = data.values.slice(fromIndex, fromIndex + GAME_LENGTH_TICKS + 1)
   const min = Math.min(...series)
   const max = Math.max(...series)
   return {
@@ -417,7 +444,7 @@ function parsePriceData(data) {
     max: max,
     runningMin: series[0],
     runningMax: series[0],
-    scale: H / 2 / (max - min),
+    scale: SCREEN_HEIGHT / 2 / (max - min),
   }
 }
 
@@ -447,7 +474,6 @@ function addInputListeners() {
     }
   }, false)
 }
-
 
     </script>
   </body>
