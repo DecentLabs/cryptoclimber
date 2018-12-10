@@ -72,8 +72,8 @@ const TEXT_LOSS_STYLE = new PIXI.TextStyle({
 
 function defaultEntities() {
   return {
-    background: null,
-    player: null,
+    screenspace: null,
+    gamespace: null,
     messages: {
       iteration: null,
       funds: null,
@@ -82,11 +82,11 @@ function defaultEntities() {
       price: null,
       debug: null,
     },
-    lines: [],
     baselines: null,
+    lines: [],
+    player: null,
   }
 }
-
 var ENTITIES = defaultEntities()
 
 var ASSETS = {
@@ -106,24 +106,22 @@ function setup() {
   ASSETS.funds = INIT_FUNDS
   priceData = parsePriceData(PIXI.loader.resources.prices.data)
 
+  ENTITIES.screenspace = new PIXI.Container()
+  ENTITIES.screenspace.addChild(createBackground())
+  ENTITIES.screenspace.addChild(createMessages())
+  app.stage.addChild(ENTITIES.screenspace)
+
+  ENTITIES.gamespace = new PIXI.Container()
+  ENTITIES.gamespace.addChild(createBaseLines())
+  ENTITIES.gamespace.addChild(createPlayer())
+  app.stage.addChild(ENTITIES.gamespace)
+
   addInputListeners()
-  setupBackground()
-  setupBaseLines()
-  setupPlayer()
-  setupMessages()
   app.ticker.add(update)
 }
 
-function setupPlayer() {
-  ENTITIES.player = new PIXI.Graphics()
-  ENTITIES.player.lineStyle(2, 0xFF00FF)
-  ENTITIES.player.drawCircle(W/2, H/2, 4)
-  ENTITIES.player.endFill()
-  app.stage.addChild(ENTITIES.player)
-}
-
-function setupBackground() {
-  ENTITIES.background = new PIXI.Container()
+function createBackground() {
+  background = new PIXI.Container()
   const bgTexture = PIXI.loader.resources.bg.texture
   const w = bgTexture.width
   const h = bgTexture.height
@@ -132,13 +130,13 @@ function setupBackground() {
       let bgSprite = new PIXI.Sprite(bgTexture)
       bgSprite.position.set(i, j)
       bgSprite.alpha = 0.5
-      ENTITIES.background.addChild(bgSprite)
+      background.addChild(bgSprite)
     }
   }
-  app.stage.addChild(ENTITIES.background)
+  return background
 }
 
-function setupMessages() {
+function createMessages() {
   messagesContainer = new PIXI.Container()
 
   var x = 4
@@ -177,8 +175,52 @@ function setupMessages() {
   ENTITIES.messages.summary.anchor.set(0.5, 0)
   messagesContainer.addChild(ENTITIES.messages.summary)
 
-  app.stage.addChild(messagesContainer)
+  return messagesContainer
 }
+
+function createBaseLines() {
+  let baselines = new PIXI.Container()
+  let baselineStart = new PIXI.Graphics()
+  baselineStart.position.set(0, H/2)
+  baselineStart.lineStyle(1, BASELINE_COLOR)
+    .moveTo(0, 0)
+    .lineTo(W, 0)
+  baselines.addChild(baselineStart)
+
+  p0 = priceData.series[0]
+  //console.log('p0=' + p0)
+
+  for (i = 1; i <= 10; i++) {
+    ppi = p0 * Math.pow(1.1, i)
+    //console.log('pp_' + i + '=' + ppi)
+    let baselinePlus = new PIXI.Graphics()
+    baselinePlus.position.set(0, H/2 - priceData.scale * (ppi - p0))
+    baselinePlus.lineStyle(1, BASELINE_COLOR)
+      .moveTo(0, 0)
+      .lineTo(W, 0)
+    baselines.addChild(baselinePlus)
+
+    pmi = p0 * Math.pow(0.9, i)
+    //console.log('pm_' + i + '=' + pmi)
+    let baselineMinus = new PIXI.Graphics()
+    baselineMinus.position.set(0, H/2 - priceData.scale * (pmi - p0))
+    baselineMinus.lineStyle(1, BASELINE_COLOR)
+      .moveTo(0, 0)
+      .lineTo(W, 0)
+    baselines.addChild(baselineMinus)
+  }
+  ENTITIES.baselines = baselines
+  return baselines
+}
+
+function createPlayer() {
+  ENTITIES.player = new PIXI.Graphics()
+  ENTITIES.player.lineStyle(2, 0xFF00FF)
+  ENTITIES.player.drawCircle(W/2, H/2, 4)
+  ENTITIES.player.endFill()
+  return ENTITIES.player
+}
+
 
 var time = 0
 
@@ -406,40 +448,7 @@ function addInputListeners() {
   }, false)
 }
 
-function setupBaseLines() {
-  let baselines = new PIXI.Container()
-  let baselineStart = new PIXI.Graphics()
-  baselineStart.position.set(0, H/2)
-  baselineStart.lineStyle(1, BASELINE_COLOR)
-    .moveTo(0, 0)
-    .lineTo(W, 0)
-  baselines.addChild(baselineStart)
 
-  p0 = priceData.series[0]
-  //console.log('p0=' + p0)
-
-  for (i = 1; i <= 10; i++) {
-    ppi = p0 * Math.pow(1.1, i)
-    //console.log('pp_' + i + '=' + ppi)
-    let baselinePlus = new PIXI.Graphics()
-    baselinePlus.position.set(0, H/2 - priceData.scale * (ppi - p0))
-    baselinePlus.lineStyle(1, BASELINE_COLOR)
-      .moveTo(0, 0)
-      .lineTo(W, 0)
-    baselines.addChild(baselinePlus)
-
-    pmi = p0 * Math.pow(0.9, i)
-    //console.log('pm_' + i + '=' + pmi)
-    let baselineMinus = new PIXI.Graphics()
-    baselineMinus.position.set(0, H/2 - priceData.scale * (pmi - p0))
-    baselineMinus.lineStyle(1, BASELINE_COLOR)
-      .moveTo(0, 0)
-      .lineTo(W, 0)
-    baselines.addChild(baselineMinus)
-  }
-  ENTITIES.baselines = baselines
-  app.stage.addChild(baselines)
-}
     </script>
   </body>
 </html>
