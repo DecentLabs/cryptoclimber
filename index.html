@@ -74,7 +74,6 @@ const TEXT_LOSS_STYLE = new PIXI.TextStyle({
 
 function defaultEntities() {
   return {
-    screenspace: null,
     gamespace: null,
     messages: {
       iteration: null,
@@ -112,18 +111,17 @@ function setup() {
   GAME_WIDTH = (priceData.series.length - 1) * GRAPH_X_GRANULARITY_PX
   GAME_HEIGHT = priceData.max - priceData.min
 
-  ENTITIES.screenspace = new PIXI.Container()
-  ENTITIES.screenspace.addChild(createBackground())
-  ENTITIES.screenspace.addChild(createMessages())
-  app.stage.addChild(ENTITIES.screenspace)
+  app.stage.addChild(createBackground())
 
   ENTITIES.gamespace = new PIXI.Container()
   ENTITIES.gamespace.addChild(createBaseLines())
-  ENTITIES.gamespace.addChild(createPlayer())
   ENTITIES.gamespace.addChild(createGraph())
+  ENTITIES.gamespace.addChild(createPlayer())
   app.stage.addChild(ENTITIES.gamespace)
-  setViewPort(0,0)
 
+  app.stage.addChild(createMessages())
+
+  setViewPort(0,0)
   addInputListeners()
   app.ticker.add(update)
 }
