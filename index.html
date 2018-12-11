@@ -103,7 +103,7 @@ function setup() {
   app.stage.removeChildren()
 
   time = 0
-  tick = 0
+  tick = -1
 
   ENTITIES = defaultEntities()
   ASSETS.funds = INIT_FUNDS
@@ -260,7 +260,7 @@ function movePlayer(x, y) {
 }
 
 var time = 0
-var tick = 0
+var tick = -1
 
 var gameOver = false
 var gameStarted = false
@@ -301,8 +301,12 @@ function update(dt) {
     return
   }
 
-  if (i >= tick) {
+  if (i > tick) {
     tick = i
+
+    handleInput(i)
+    updateTrade(i)
+
     ENTITIES.lines[i].visible = true
     if (ASSETS.trade) {
       ENTITIES.lines[i].tint = positionToColor()
@@ -312,8 +316,6 @@ function update(dt) {
     priceData.runningMin = Math.min(priceData.runningMin, currentPrice)
     priceData.runningMax = Math.max(priceData.runningMax, currentPrice)
 
-    handleInput(i)
-    updateTrade(i)
     updatePlayer()
     updateMessages(i)
   }
