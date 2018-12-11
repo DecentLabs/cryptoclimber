@@ -272,9 +272,18 @@ const INPUT = {
   long: false,
 }
 
-function positionToColor(diff) {
-  return 0xffffff
+function positionToColor() {
+  if (ASSETS.trade) {
+    if (ASSETS.trade.isLong) {
+      return 0x00aaaa
+    } else {
+      return 0xaaaa00
+    }
+  } else {
+    return 0xaa00aa
+  }
 }
+
 function positionToThickness() {
   return ASSETS.trade ? 4 : 1
 }
@@ -298,6 +307,9 @@ function update(dt) {
   if (i >= tick) {
     tick = i
     ENTITIES.lines[i].visible = true
+    if (ASSETS.trade) {
+      ENTITIES.lines[i].tint = positionToColor()
+    }
 
     const currentPrice = priceData.series[i]
     priceData.runningMin = Math.min(priceData.runningMin, currentPrice)
@@ -346,15 +358,7 @@ function handleInput(i) {
 }
 
 function updatePlayer() {
-  if (ASSETS.trade) {
-    if (ASSETS.trade.isLong) {
-      ENTITIES.player.tint = 0x00aaaa
-    } else {
-      ENTITIES.player.tint = 0xaaaa00
-    }
-  } else {
-    ENTITIES.player.tint = 0xaa00aa
-  }
+  ENTITIES.player.tint = positionToColor()
 }
 
 function updateMessages(i) {
