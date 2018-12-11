@@ -14,8 +14,8 @@ const TICKS_PER_DAY = 24
 const GAME_LENGTH_DAYS = 30
 const GAME_LENGTH_TICKS = GAME_LENGTH_DAYS * TICKS_PER_DAY
 const GRAPH_X_GRANULARITY_PX = 5 // smaller is more dense
-const SPEED = 50 // smaller is faster
-const ZOOM = 8
+const SPEED = 15 // smaller is faster
+const ZOOM = 2
 const SHOW_PRICE = true
 const SHOW_DEBUG = true
 const BASELINE_COLOR = 0x666666
@@ -189,7 +189,6 @@ function createBaseLines() {
 
   let baselines = new PIXI.Container()
   let baseline = new PIXI.Graphics()
-  baseline.position.set(0, 0)
   baseline.lineStyle(1, BASELINE_COLOR)
     .moveTo(0, 0)
     .lineTo(GAME_WIDTH, 0)
@@ -265,6 +264,8 @@ var tick = -1
 var gameOver = false
 var gameStarted = false
 
+var currentTrade = null
+
 const INPUT = {
   short: false,
   long: false,
@@ -304,6 +305,10 @@ function update(dt) {
   if (i > tick) {
     tick = i
 
+    const currentPrice = priceData.series[i]
+    priceData.runningMin = Math.min(priceData.runningMin, currentPrice)
+    priceData.runningMax = Math.max(priceData.runningMax, currentPrice)
+
     handleInput(i)
     updateTrade(i)
 
@@ -312,9 +317,24 @@ function update(dt) {
       ENTITIES.lines[i].tint = positionToColor()
     }
 
-    const currentPrice = priceData.series[i]
-    priceData.runningMin = Math.min(priceData.runningMin, currentPrice)
-    priceData.runningMax = Math.max(priceData.runningMax, currentPrice)
+    if (ASSETS.trade) {
+      if (currentTrade) {
+        ENTITIES.gamespace.removeChild(currentTrade)
+      }
+
+      const a = ASSETS.trade.barOpen
+      const profit = Math.round(ASSETS.trade.current - ASSETS.trade.margin)
+      const color = profit < 0 ? 0xff0000 : 0x00ff00
+
+      currentTrade = new PIXI.Graphics()
+      currentTrade.lineStyle(1, color)
+        .moveTo(a * GRAPH_X_GRANULARITY_PX, priceData.scale * (priceData.series[a] - priceData.series[0]))
+        .lineTo(i * GRAPH_X_GRANULARITY_PX, priceData.scale * (priceData.series[i] - priceData.series[0]))
+      ENTITIES.gamespace.addChild(currentTrade)
+
+    } else if (currentTrade) {
+      currentTrade = null
+    }
 
     updatePlayer()
     updateMessages(i)
