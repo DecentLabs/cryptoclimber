@@ -23,7 +23,7 @@ const INTRO = 'Crypto Climber\n\n' +
   'You\'ll get a random 30 day sample of Bitcoin\'s price history.\nCan you  guess which way it will move?' +
   '\n\nHold [L] if you think the price goes up to open a long position' +
   '\nHold [S] if you think the price goes down to short sell Bitcoin' +
-  '\n\nPress any key to start!'
+  '\n\nPress SPACE key to start!'
 
 const CONF = {
   width: 1024,
@@ -393,7 +393,7 @@ function showGameOver(i) {
   summary += '\nNumber of trades: ' + ASSETS.trades.length
   // summary += '\nPeriod: ' + priceData.from + ' - ' + priceData.to
   summary += '\nPrice range: $' + priceData.min + ' - $' + priceData.max
-  summary += '\n\nPress almost any key to reset.'
+  summary += '\n\nPress SPACE key to reset.'
   ENTITIES.messages.summary.text = summary
 }
 
@@ -450,7 +450,7 @@ function parsePriceData(data) {
 
 function addInputListeners() {
   window.addEventListener('keydown', event => {
-    if (!gameStarted) {
+    if (!gameStarted && event.key === ' ') {
       gameStarted = true
       ENTITIES.messages.summary.text = ''
       return
@@ -459,7 +459,7 @@ function addInputListeners() {
       INPUT.short = true
     } else if (event.key === 'l') {
       INPUT.long = true
-    } else if (gameOver) {
+    } else if (gameOver && event.key === ' ') {
       gameOver = false
       gameStarted = false
       setup()
