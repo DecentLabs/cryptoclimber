@@ -14,8 +14,8 @@ const TICKS_PER_DAY = 24
 const GAME_LENGTH_DAYS = 30
 const GAME_LENGTH_TICKS = GAME_LENGTH_DAYS * TICKS_PER_DAY
 const GRAPH_X_GRANULARITY_PX = 5 // smaller is more dense
-const SPEED = 10 // smaller is faster
-const ZOOM = 1
+const SPEED = 50 // smaller is faster
+const ZOOM = 8
 const SHOW_PRICE = true
 const SHOW_DEBUG = true
 const BASELINE_COLOR = 0x666666
@@ -227,7 +227,7 @@ function createBaseLines() {
 
 function createPlayer() {
   ENTITIES.player = new PIXI.Graphics()
-  ENTITIES.player.lineStyle(2, 0xFF00FF)
+  ENTITIES.player.lineStyle(2, 0xffffff)
   ENTITIES.player.drawCircle(0, 0, 4)
   ENTITIES.player.endFill()
   return ENTITIES.player
@@ -264,7 +264,6 @@ function movePlayer(x, y) {
 var time = 0
 var tick = 0
 
-var diff
 var gameOver = false
 var gameStarted = false
 
@@ -306,6 +305,7 @@ function update(dt) {
 
     handleInput(i)
     updateTrade(i)
+    updatePlayer()
     updateMessages(i)
   }
 
@@ -342,6 +342,18 @@ function handleInput(i) {
     if (ASSETS.trade) {
       exitTrade()
     }
+  }
+}
+
+function updatePlayer() {
+  if (ASSETS.trade) {
+    if (ASSETS.trade.isLong) {
+      ENTITIES.player.tint = 0x00aaaa
+    } else {
+      ENTITIES.player.tint = 0xaaaa00
+    }
+  } else {
+    ENTITIES.player.tint = 0xaa00aa
   }
 }
 
