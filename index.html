@@ -15,6 +15,7 @@ const GAME_LENGTH_DAYS = 30
 const GAME_LENGTH_TICKS = GAME_LENGTH_DAYS * TICKS_PER_DAY
 const GRAPH_X_GRANULARITY_PX = 5 // smaller is more dense
 const SPEED = 10 // smaller is faster
+const ZOOM = 1
 const SHOW_PRICE = true
 const SHOW_DEBUG = true
 const BASELINE_COLOR = 0x666666
@@ -201,7 +202,7 @@ function createBaseLines() {
   for (i = 1; i <= 20; i++) {
     ppi *= 1.1
     let line = new PIXI.Graphics()
-    let y = ppi - p0
+    let y = priceData.scale * (ppi - p0)
     line.lineStyle(1, BASELINE_COLOR)
       .moveTo(0, y)
       .lineTo(GAME_WIDTH, y)
@@ -213,7 +214,7 @@ function createBaseLines() {
   for (i = 1; i <= 20; i++) {
     pmi *= 0.9
     let baselineMinus = new PIXI.Graphics()
-    let y = pmi - p0
+    let y = priceData.scale * (pmi - p0)
     baselineMinus.lineStyle(1, BASELINE_COLOR)
       .moveTo(0, y)
       .lineTo(GAME_WIDTH, y)
@@ -239,8 +240,8 @@ function createGraph() {
     line = new PIXI.Graphics()
     line.position.set(0, 0)
     line.lineStyle(1, 0xffffff)
-        .moveTo(GRAPH_X_GRANULARITY_PX * i, priceData.series[i] - p0)
-        .lineTo(GRAPH_X_GRANULARITY_PX * (i + 1), priceData.series[i + 1] - p0)
+        .moveTo(GRAPH_X_GRANULARITY_PX * i, priceData.scale * (priceData.series[i] - p0))
+        .lineTo(GRAPH_X_GRANULARITY_PX * (i + 1), priceData.scale * (priceData.series[i + 1] - p0))
     line.visible = false
     ENTITIES.lines.push(line)
     graph.addChild(line)
@@ -249,10 +250,10 @@ function createGraph() {
 }
 
 function setViewPort(x, y) {
-  ENTITIES.gamespace.scale.x = 1
-  ENTITIES.gamespace.scale.y = -1 //-priceData.scale
-  ENTITIES.gamespace.position.x = -(x - SCREEN_WIDTH / 2)
-  ENTITIES.gamespace.position.y = -(-y - SCREEN_HEIGHT / 2)
+  ENTITIES.gamespace.scale.x = ZOOM
+  ENTITIES.gamespace.scale.y = -ZOOM
+  ENTITIES.gamespace.position.x = -(x * ZOOM - SCREEN_WIDTH / 2)
+  ENTITIES.gamespace.position.y = -(-y * ZOOM - SCREEN_HEIGHT / 2)
 }
 
 function movePlayer(x, y) {
@@ -309,8 +310,8 @@ function update(dt) {
   }
 
   x = time * GRAPH_X_GRANULARITY_PX
-  y = (priceData.series[i] - priceData.series[0])
-    + (time - tick) * (priceData.series[i + 1] - priceData.series[i])
+  y = priceData.scale * ((priceData.series[i] - priceData.series[0])
+    + (time - tick) * (priceData.series[i + 1] - priceData.series[i]))
   setViewPort(x, y)
   movePlayer(x, y)
 }
