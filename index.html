@@ -293,9 +293,8 @@ function update(dt) {
     return
   }
 
-  dt2 = dt / SPEED
-  time += dt2
-  var i = Math.min(Math.floor(time), GAME_LENGTH_TICKS)
+  time += dt / SPEED
+  var i = Math.floor(time)
   if (i >= GAME_LENGTH_TICKS) {
     if (!gameOver) {
       gameOver = true
