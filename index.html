@@ -300,6 +300,14 @@ function update(dt) {
     return
   }
 
+
+  x = time * GRAPH_X_GRANULARITY_PX
+  y = priceData.scale * ((priceData.series[tick] - priceData.series[0])
+    + (time - tick) * (priceData.series[tick + 1] - priceData.series[tick]))
+  setViewPort(x, y)
+  movePlayer(x, y)
+  updateTrade(i)
+
   if (i > tick) {
     tick = i
 
@@ -308,39 +316,17 @@ function update(dt) {
     priceData.runningMax = Math.max(priceData.runningMax, currentPrice)
 
     handleInput(i)
-    updateTrade(i)
 
     ENTITIES.lines[i].visible = true
-    if (ASSETS.trade) {
-      ENTITIES.lines[i].tint = positionToColor()
-    }
+    // if (ASSETS.trade) {
+    //   ENTITIES.lines[i].tint = positionToColor()
+    // }
 
     updatePlayer()
     updateMessages(i)
   }
 
-  x = time * GRAPH_X_GRANULARITY_PX
-  y = priceData.scale * ((priceData.series[i] - priceData.series[0])
-    + (time - tick) * (priceData.series[i + 1] - priceData.series[i]))
-  setViewPort(x, y)
-  movePlayer(x, y)
 
-  if (ASSETS.trade) {
-    if (ASSETS.trade.line) {
-      ENTITIES.gamespace.removeChild(ASSETS.trade.line)
-    }
-
-    const a = ASSETS.trade.barOpen
-    const profit = Math.round(ASSETS.trade.current - ASSETS.trade.margin)
-    const color = profit < 0 ? 0xff0000 : 0x00ff00
-
-    ASSETS.trade.line = new PIXI.Graphics()
-    ASSETS.trade.line.lineStyle(1, color)
-      .moveTo(a * GRAPH_X_GRANULARITY_PX, priceData.scale * (priceData.series[a] - priceData.series[0]))
-      .lineTo(x, y)
-    ENTITIES.gamespace.addChild(ASSETS.trade.line)
-
-  }
 }
 
 function handleInput(i) {
@@ -450,6 +436,8 @@ function updateTrade(i) {
     return
   }
   ASSETS.trade.barClose = i
+
+  // TODO: interpolate estimated price between ticks
   const longValue = ASSETS.trade.margin / ASSETS.trade.strikePrice * priceData.series[i]
   if (ASSETS.trade.isLong) {
     ASSETS.trade.current = longValue
@@ -463,20 +451,37 @@ function updateTrade(i) {
     // bwahahaha
     ASSETS.trade.current = 2 * ASSETS.trade.margin - longValue
   }
+
+  // update trade line
+  if (ASSETS.trade.line) {
+    ENTITIES.gamespace.removeChild(ASSETS.trade.line)
+  }
+
+  const profit = Math.round(ASSETS.trade.current - ASSETS.trade.margin)
+  const color = profit < 0 ? 0xff0000 : 0x00ff00
+
+  ASSETS.trade.line = new PIXI.Graphics()
+  const a = ASSETS.trade.barOpen
+  ASSETS.trade.line.lineStyle(3, color)
+    .moveTo(a * GRAPH_X_GRANULARITY_PX, priceData.scale * (priceData.series[a] - priceData.series[0]))
+    .lineTo(x, y)
+  ENTITIES.gamespace.addChild(ASSETS.trade.line)
+
 }
 
 function parsePriceData(data) {
   const fromIndex = Math.floor(Math.random() * (data.values.length - GAME_LENGTH_TICKS - 1))
   const series = data.values.slice(fromIndex, fromIndex + GAME_LENGTH_TICKS + 1)
+  const first = series[0]
   const min = Math.min(...series)
   const max = Math.max(...series)
   return {
     series: series,
     min: min,
     max: max,
-    runningMin: series[0],
-    runningMax: series[0],
-    scale: SCREEN_HEIGHT / 2 / (max - min),
+    runningMin: first,
+    runningMax: first,
+    scale: SCREEN_HEIGHT / 2 / (first * 1.1 * 1.1 - first * 0.9 * 0.9),
   }
 }
 
