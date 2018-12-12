@@ -264,8 +264,6 @@ var tick = -1
 var gameOver = false
 var gameStarted = false
 
-var currentTrade = null
-
 const INPUT = {
   short: false,
   long: false,
@@ -328,22 +326,20 @@ function update(dt) {
   movePlayer(x, y)
 
   if (ASSETS.trade) {
-    if (currentTrade) {
-      ENTITIES.gamespace.removeChild(currentTrade)
+    if (ASSETS.trade.line) {
+      ENTITIES.gamespace.removeChild(ASSETS.trade.line)
     }
 
     const a = ASSETS.trade.barOpen
     const profit = Math.round(ASSETS.trade.current - ASSETS.trade.margin)
     const color = profit < 0 ? 0xff0000 : 0x00ff00
 
-    currentTrade = new PIXI.Graphics()
-    currentTrade.lineStyle(1, color)
+    ASSETS.trade.line = new PIXI.Graphics()
+    ASSETS.trade.line.lineStyle(1, color)
       .moveTo(a * GRAPH_X_GRANULARITY_PX, priceData.scale * (priceData.series[a] - priceData.series[0]))
       .lineTo(x, y)
-    ENTITIES.gamespace.addChild(currentTrade)
+    ENTITIES.gamespace.addChild(ASSETS.trade.line)
 
-  } else if (currentTrade) {
-    currentTrade = null
   }
 }
 
