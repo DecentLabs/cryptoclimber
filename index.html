@@ -55,6 +55,7 @@ const TEXT_STYLE = new PIXI.TextStyle({
   fontFamily: 'Helvetica, sans-serif',
   fontSize: 28,
   fill: 0xcccccc,
+  align: 'center',
 });
 
 const TEXT_PROFIT_STYLE = new PIXI.TextStyle({
@@ -147,12 +148,12 @@ function createMessages() {
   var x = 4
   var y = 4
   const ROW_HEIGHT = 30
-  ENTITIES.messages.iteration = new PIXI.Text('day: 1 / ' + GAME_LENGTH_DAYS, TEXT_STYLE)
+  ENTITIES.messages.iteration = new PIXI.Text('Day 1 of ' + GAME_LENGTH_DAYS, TEXT_STYLE)
   ENTITIES.messages.iteration.position.set(x, y)
   messagesContainer.addChild(ENTITIES.messages.iteration)
   y += ROW_HEIGHT
 
-  ENTITIES.messages.funds = new PIXI.Text('funds: $' + ASSETS.funds, TEXT_STYLE)
+  ENTITIES.messages.funds = new PIXI.Text('Equity $' + ASSETS.funds, TEXT_STYLE)
   ENTITIES.messages.funds.position.set(x, y)
   messagesContainer.addChild(ENTITIES.messages.funds)
   y += ROW_HEIGHT
@@ -274,7 +275,7 @@ function positionToColor() {
       return 0xaaaa00
     }
   } else {
-    return 0xaa00aa
+    return 0xffffff
   }
 }
 
@@ -362,10 +363,10 @@ function updatePlayer() {
 function updateMessages(i) {
   ENTITIES.messages.summary.text = ''
 
-  ENTITIES.messages.iteration.text = 'day: ' + Math.floor(i / TICKS_PER_DAY) + ' / ' + GAME_LENGTH_DAYS
+  ENTITIES.messages.iteration.text = 'Day ' + Math.floor(i / TICKS_PER_DAY) + ' of ' + GAME_LENGTH_DAYS
   var equity = ASSETS.funds + (ASSETS.trade ? ASSETS.trade.current : 0)
 
-  ENTITIES.messages.funds.text = 'net worth: $' + Math.round(equity)
+  ENTITIES.messages.funds.text = 'Equity $' + Math.round(equity)
   if (SHOW_PRICE) {
     ENTITIES.messages.price.text = 'price: $' + Math.round(priceData.series[i])
   }
@@ -380,21 +381,14 @@ function showGameOver(i) {
   if (ASSETS.trade) {
     exitTrade()
   }
-  ENTITIES.messages.iteration.text = 'day: ' + Math.floor(i / TICKS_PER_DAY) + ' / ' + GAME_LENGTH_DAYS
-  ENTITIES.messages.funds.text = 'net worth: $' + Math.round(ASSETS.funds)
-  if (SHOW_PRICE) {
-    ENTITIES.messages.price.text = ''
-  }
-  if (SHOW_DEBUG) {
-    ENTITIES.messages.debug.text = ''
-  }
+  updateMessages(i)
 
   const result = ASSETS.funds - INIT_FUNDS
   const resultPercent = (result / INIT_FUNDS * 100).toFixed(1)
   const hodlPercent = ((priceData.series[i] / priceData.series[0] - 1) * 100).toFixed(1)
   var summary = result >= 0 ?
-      ('YAY! You made a return: ' + resultPercent + '%') :
-      ('ONOES! You lost ' + resultPercent + '% of your investment')
+      ('YAY! You made a ' + resultPercent + '% return') :
+      ('ONOES! You lost ' + Math.abs(resultPercent) + '% of your capital')
   summary += '\nBuy and hold: ' + hodlPercent + '%'
   summary += '\nNumber of trades: ' + ASSETS.trades.length
   // summary += '\nPeriod: ' + priceData.from + ' - ' + priceData.to
