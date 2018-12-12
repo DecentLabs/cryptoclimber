@@ -21,10 +21,11 @@ const SHOW_DEBUG = false
 const BASELINE_COLOR = 0x666666
 
 const INTRO = 'Crypto Climber\n\n' +
-  'You\'ll get a random 30 day sample of Bitcoin\'s price history.\nCan you  guess which way it will move?' +
-  '\n\nHold [L] if you think the price goes up to open a long position' +
-  '\nHold [S] if you think the price goes down to short sell Bitcoin' +
-  '\n\nPress SPACE key to start!'
+  'You\'ll get a random ' + GAME_LENGTH_DAYS + ' day sample of Bitcoin\'s price history.' +
+  '\nCan you trade it like a champ?' +
+  '\n\nHold [L] if you think the price is going up to open a LONG position' +
+  '\nHold [S] if you think the price is going down to SHORT SELL Bitcoin' +
+  '\n\nPress [SPACE] to start!'
 
 const CONF = {
   width: 1024,
@@ -389,11 +390,11 @@ function showGameOver(i) {
   var summary = result >= 0 ?
       ('YAY! You made a ' + resultPercent + '% return') :
       ('ONOES! You lost ' + Math.abs(resultPercent) + '% of your capital')
-  summary += '\nBuy and hold: ' + hodlPercent + '%'
-  summary += '\nNumber of trades: ' + ASSETS.trades.length
+  summary += '\nwith ' + ASSETS.trades.length + ' trades.'
+  summary += '\n\nHODLer return ' + hodlPercent + '%'
   // summary += '\nPeriod: ' + priceData.from + ' - ' + priceData.to
-  summary += '\nPrice range: $' + priceData.min + ' - $' + priceData.max
-  summary += '\n\nPress SPACE key to reset.'
+  // summary += '\nPrice range: $' + priceData.min + ' - $' + priceData.max
+  summary += '\n\nPress [SPACE] to reset.'
   ENTITIES.messages.summary.text = summary
 }
 
