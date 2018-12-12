@@ -261,7 +261,7 @@ function createBaseLines() {
 
 function createPlayer() {
   ENTITIES.player = new PIXI.Graphics()
-  ENTITIES.player.alpha = 0.5
+  ENTITIES.player.alpha = 0.2
   ENTITIES.player.lineStyle(3, 0xffffff)
   ENTITIES.player.drawCircle(0, 0, 8)
   ENTITIES.player.endFill()
@@ -308,22 +308,6 @@ const INPUT = {
   warp: false,
 }
 
-function positionToColor() {
-  if (ASSETS.trade) {
-    if (ASSETS.trade.isLong) {
-      return 0x00aaaa
-    } else {
-      return 0xaaaa00
-    }
-  } else {
-    return 0xffffff
-  }
-}
-
-function positionToThickness() {
-  return ASSETS.trade ? 4 : 1
-}
-
 function update(dt) {
   if (!gameStarted) {
     return
@@ -364,9 +348,6 @@ function update(dt) {
     handleInput(i)
 
     ENTITIES.lines[i].visible = true
-    // if (ASSETS.trade) {
-    //   ENTITIES.lines[i].tint = positionToColor()
-    // }
 
     updatePlayer()
     updateMessages(i)
@@ -405,7 +386,7 @@ function handleInput(i) {
 }
 
 function updatePlayer() {
-  ENTITIES.player.tint = positionToColor()
+  ENTITIES.player.alpha = ASSETS.trade ? 0.5 : 0.2
 }
 
 function updateMessages(i) {
@@ -493,6 +474,7 @@ function updateTrade(i) {
   if (!ASSETS.trade.label) {
     ASSETS.trade.label = new PIXI.Text('', TEXT_STYLE)
     ASSETS.trade.label.scale.set(1 / ZOOM, -1 / ZOOM)
+    ASSETS.trade.label.zOrder = -ASSETS.trades.length
     ENTITIES.gamespace.addChild(ASSETS.trade.label)
   }
   ASSETS.trade.label.position.set(x - 15, y + (ASSETS.trade.isLong ? -10 : 20))
@@ -508,7 +490,7 @@ function updateTrade(i) {
   const color = profit < 0 ? 0xff0000 : 0x00ff00
   ASSETS.trade.line = new PIXI.Graphics()
   const a = ASSETS.trade.barOpen
-  ASSETS.trade.line.lineStyle(3, color)
+  ASSETS.trade.line.lineStyle(3, color, 0.66)
     .moveTo(a * GRAPH_X_GRANULARITY_PX, priceData.scale * (priceData.series[a] - priceData.series[0]))
     .lineTo(x, y)
   ENTITIES.gamespace.addChild(ASSETS.trade.line)
