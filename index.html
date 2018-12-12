@@ -454,7 +454,7 @@ function updateTrade(i) {
     return
   }
   ASSETS.trade.barClose = i
-  const longValue = ASSETS.trade.margin / ASSETS.trade.strikePrice * priceData.series[i+1]
+  const longValue = ASSETS.trade.margin / ASSETS.trade.strikePrice * priceData.series[i]
   if (ASSETS.trade.isLong) {
     ASSETS.trade.current = longValue
   } else {
