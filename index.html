@@ -29,11 +29,10 @@ const WARP_ZOOM_DELTA = (MAX_ZOOM - MIN_ZOOM) / 30
 var ZOOM = MAX_ZOOM
 
 const INTRO = 'Crypto Climber\n\n' +
-  'You\'ll get a random ' + GAME_LENGTH_DAYS + ' day sample of Bitcoin\'s price history.' +
-  '\nCan you trade it like a champ?' +
-  '\n\nHold [L] if you think the price is going up to open a LONG position' +
-  '\nHold [S] if you think the price is going down to SHORT SELL Bitcoin' +
-  '\nHold [SPACE] to warp' +
+  'How well can you trade a random ' + GAME_LENGTH_DAYS + ' day sample of Bitcoin\'s price history?' +
+  '\n\nHold [L] to go LONG' +
+  '\nHold [S] to sell SHORT' +
+  '\n\nHold [SPACE] for warp speed' +
   '\n\nPress [SPACE] to start!'
 
 const CONF = {
@@ -424,14 +423,18 @@ function showGameOver(i) {
   const result = ASSETS.funds - INIT_FUNDS
   const resultPercent = (result / INIT_FUNDS * 100).toFixed(1)
   const hodlPercent = ((priceData.series[i] / priceData.series[0] - 1) * 100).toFixed(1)
-  var summary = result >= 0 ?
-      ('YAY! You made a ' + resultPercent + '% return') :
-      ('ONOES! You lost ' + Math.abs(resultPercent) + '% of your capital')
-  summary += '\nwith ' + ASSETS.trades.length + ' trades.'
-  summary += '\n\nHODLers ' + (hodlPercent > 0 ? 'gained ' : 'lost ') + Math.abs(hodlPercent) + '%'
+  const beatsHodl = resultPercent > hodlPercent
+  var summary = result >= 0
+    ? (beatsHodl ? "CONGRATS!\n\n" : "")
+    : (beatsHodl ? "" : "OH NO!\n\n")
+  summary += result >= 0
+    ? ('You made a ' + resultPercent + '% return')
+    : ('You lost ' + Math.abs(resultPercent) + '% of your capital')
+  summary += '\nwith ' + ASSETS.trades.length + ' trades'
+  summary += '\n\nMeanwhile HODLers ' + (hodlPercent > 0 ? 'gained ' : 'lost ') + Math.abs(hodlPercent) + '%'
   // summary += '\nPeriod: ' + priceData.from + ' - ' + priceData.to
   // summary += '\nPrice range: $' + priceData.min + ' - $' + priceData.max
-  summary += '\n\nPress [SPACE] to reset.'
+  summary += '\n\nPress [SPACE] to restart'
   ENTITIES.messages.summary.text = summary
 }
 
