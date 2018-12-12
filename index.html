@@ -16,8 +16,8 @@ const GAME_LENGTH_TICKS = GAME_LENGTH_DAYS * TICKS_PER_DAY
 const GRAPH_X_GRANULARITY_PX = 5 // smaller is more dense
 const SPEED = 15 // smaller is faster
 const ZOOM = 2
-const SHOW_PRICE = true
-const SHOW_DEBUG = true
+const SHOW_PRICE = false
+const SHOW_DEBUG = false
 const BASELINE_COLOR = 0x666666
 
 const INTRO = 'Crypto Climber\n\n' +
@@ -78,7 +78,6 @@ function defaultEntities() {
     messages: {
       iteration: null,
       funds: null,
-      position: null,
       summary: null,
       price: null,
       debug: null,
@@ -172,10 +171,6 @@ function createMessages() {
     y += ROW_HEIGHT
   }
 
-  ENTITIES.messages.position = new PIXI.Text('', TEXT_STYLE)
-  ENTITIES.messages.position.position.set(SCREEN_WIDTH/2 + 32, SCREEN_HEIGHT/2 - 12)
-  messagesContainer.addChild(ENTITIES.messages.position)
-
   ENTITIES.messages.summary = new PIXI.Text(INTRO, TEXT_STYLE)
   ENTITIES.messages.summary.position.set(SCREEN_WIDTH/2, 64)
   ENTITIES.messages.summary.anchor.set(0.5, 0)
@@ -225,8 +220,9 @@ function createBaseLines() {
 
 function createPlayer() {
   ENTITIES.player = new PIXI.Graphics()
-  ENTITIES.player.lineStyle(2, 0xffffff)
-  ENTITIES.player.drawCircle(0, 0, 4)
+  ENTITIES.player.alpha = 0.5
+  ENTITIES.player.lineStyle(3, 0xffffff)
+  ENTITIES.player.drawCircle(0, 0, 8)
   ENTITIES.player.endFill()
   return ENTITIES.player
 }
@@ -365,14 +361,6 @@ function updatePlayer() {
 
 function updateMessages(i) {
   ENTITIES.messages.summary.text = ''
-  if (ASSETS.trade) {
-    const profit = Math.round(ASSETS.trade.current - ASSETS.trade.margin)
-    ENTITIES.messages.position.text = //(ASSETS.trade.isLong ? 'LONG' : 'SHORT') +
-      (profit < 0 ? ' -$' : ' +$') + Math.abs(profit)
-    ENTITIES.messages.position.style = profit < 0 ? TEXT_LOSS_STYLE : TEXT_PROFIT_STYLE
-  } else {
-    ENTITIES.messages.position.text = ''
-  }
 
   ENTITIES.messages.iteration.text = 'day: ' + Math.floor(i / TICKS_PER_DAY) + ' / ' + GAME_LENGTH_DAYS
   var equity = ASSETS.funds + (ASSETS.trade ? ASSETS.trade.current : 0)
@@ -397,7 +385,6 @@ function showGameOver(i) {
   if (SHOW_PRICE) {
     ENTITIES.messages.price.text = ''
   }
-  ENTITIES.messages.position.text = ''
   if (SHOW_DEBUG) {
     ENTITIES.messages.debug.text = ''
   }
@@ -453,14 +440,25 @@ function updateTrade(i) {
     ASSETS.trade.current = 2 * ASSETS.trade.margin - longValue
   }
 
+  const profit = Math.round(ASSETS.trade.current - ASSETS.trade.margin)
+
+  // update label
+  if (!ASSETS.trade.label) {
+    ASSETS.trade.label = new PIXI.Text('', TEXT_STYLE)
+    ASSETS.trade.label.scale.set(1 / ZOOM, -1 / ZOOM)
+    ENTITIES.gamespace.addChild(ASSETS.trade.label)
+  }
+  ASSETS.trade.label.position.set(x - 15, y + (ASSETS.trade.isLong ? -10 : 20))
+
+  ASSETS.trade.label.text = (profit < 0 ? ' -$' : ' +$') + Math.abs(profit)
+  ASSETS.trade.label.style = profit < 0 ? TEXT_LOSS_STYLE : TEXT_PROFIT_STYLE
+
   // update trade line
   if (ASSETS.trade.line) {
     ENTITIES.gamespace.removeChild(ASSETS.trade.line)
   }
 
-  const profit = Math.round(ASSETS.trade.current - ASSETS.trade.margin)
   const color = profit < 0 ? 0xff0000 : 0x00ff00
-
   ASSETS.trade.line = new PIXI.Graphics()
   const a = ASSETS.trade.barOpen
   ASSETS.trade.line.lineStyle(3, color)
