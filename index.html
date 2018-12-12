@@ -317,25 +317,6 @@ function update(dt) {
       ENTITIES.lines[i].tint = positionToColor()
     }
 
-    if (ASSETS.trade) {
-      if (currentTrade) {
-        ENTITIES.gamespace.removeChild(currentTrade)
-      }
-
-      const a = ASSETS.trade.barOpen
-      const profit = Math.round(ASSETS.trade.current - ASSETS.trade.margin)
-      const color = profit < 0 ? 0xff0000 : 0x00ff00
-
-      currentTrade = new PIXI.Graphics()
-      currentTrade.lineStyle(1, color)
-        .moveTo(a * GRAPH_X_GRANULARITY_PX, priceData.scale * (priceData.series[a] - priceData.series[0]))
-        .lineTo(i * GRAPH_X_GRANULARITY_PX, priceData.scale * (priceData.series[i] - priceData.series[0]))
-      ENTITIES.gamespace.addChild(currentTrade)
-
-    } else if (currentTrade) {
-      currentTrade = null
-    }
-
     updatePlayer()
     updateMessages(i)
   }
@@ -345,6 +326,25 @@ function update(dt) {
     + (time - tick) * (priceData.series[i + 1] - priceData.series[i]))
   setViewPort(x, y)
   movePlayer(x, y)
+
+  if (ASSETS.trade) {
+    if (currentTrade) {
+      ENTITIES.gamespace.removeChild(currentTrade)
+    }
+
+    const a = ASSETS.trade.barOpen
+    const profit = Math.round(ASSETS.trade.current - ASSETS.trade.margin)
+    const color = profit < 0 ? 0xff0000 : 0x00ff00
+
+    currentTrade = new PIXI.Graphics()
+    currentTrade.lineStyle(1, color)
+      .moveTo(a * GRAPH_X_GRANULARITY_PX, priceData.scale * (priceData.series[a] - priceData.series[0]))
+      .lineTo(x, y)
+    ENTITIES.gamespace.addChild(currentTrade)
+
+  } else if (currentTrade) {
+    currentTrade = null
+  }
 }
 
 function handleInput(i) {
