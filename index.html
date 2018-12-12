@@ -255,6 +255,15 @@ function createGrid() {
     grid.addChild(sprite)
   }
 
+  let days = new PIXI.Graphics()
+  days.lineStyle(1, 0x222222)
+  const mul = 24 * GRAPH_X_GRANULARITY_PX
+  for (let i = 0; i < GAME_LENGTH_DAYS; i++) {
+    days.moveTo(i * mul, -GAME_HEIGHT)
+        .lineTo(i * mul, GAME_HEIGHT)
+  }
+  grid.addChild(days)
+
   ENTITIES.grid = grid
   return grid
 }
