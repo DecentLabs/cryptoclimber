@@ -391,7 +391,7 @@ function showGameOver(i) {
       ('YAY! You made a ' + resultPercent + '% return') :
       ('ONOES! You lost ' + Math.abs(resultPercent) + '% of your capital')
   summary += '\nwith ' + ASSETS.trades.length + ' trades.'
-  summary += '\n\nHODLer return ' + hodlPercent + '%'
+  summary += '\n\nHODLers ' + (hodlPercent > 0 ? 'gained ' : 'lost ') + Math.abs(hodlPercent) + '%'
   // summary += '\nPeriod: ' + priceData.from + ' - ' + priceData.to
   // summary += '\nPrice range: $' + priceData.min + ' - $' + priceData.max
   summary += '\n\nPress [SPACE] to reset.'
