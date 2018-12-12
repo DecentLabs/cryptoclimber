@@ -203,7 +203,7 @@ function createMessages() {
   return messagesContainer
 }
 
-function gradient(w, h) {
+function gradientTexture(w, h) {
   var canvas = document.createElement('canvas')
   canvas.width = w
   canvas.height = h
@@ -213,7 +213,7 @@ function gradient(w, h) {
   gradient.addColorStop(1, "#ffffff")
   ctx.fillStyle = gradient
   ctx.fillRect(0, 0, w, h)
-  return canvas
+  return PIXI.Texture.fromCanvas(canvas)
 }
 
 function createBaseLines() {
@@ -223,7 +223,7 @@ function createBaseLines() {
   let baselines = new PIXI.Container()
 
   const gradHeight = 256
-  const grad = PIXI.Texture.fromCanvas(gradient(1, gradHeight))
+  const grad = gradientTexture(1, gradHeight)
 
   let ppi = p0
   //for (i = 1; ppi < priceData.max; i++) {
@@ -236,7 +236,7 @@ function createBaseLines() {
     sprite.x = -margin
     sprite.y = prevY
     sprite.alpha = 0.12
-    sprite.scale.set(GAME_WIDTH + margin, (y - prevY) / gradHeight)
+    sprite.scale.set(GAME_WIDTH + (2 * margin), (y - prevY) / gradHeight)
     baselines.addChild(sprite)
   }
 
@@ -251,7 +251,7 @@ function createBaseLines() {
     sprite.x = -margin
     sprite.y = y
     sprite.alpha = 0.12
-    sprite.scale.set(GAME_WIDTH + margin, (prevY - y) / gradHeight)
+    sprite.scale.set(GAME_WIDTH + (2 * margin), (prevY - y) / gradHeight)
     baselines.addChild(sprite)
   }
 
