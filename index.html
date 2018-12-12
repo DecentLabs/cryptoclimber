@@ -53,7 +53,7 @@ PIXI.loader
 
 const TEXT_STYLE = new PIXI.TextStyle({
   fontFamily: 'Helvetica, sans-serif',
-  fontSize: 18,
+  fontSize: 28,
   fill: 0xcccccc,
 });
 
@@ -147,7 +147,7 @@ function createMessages() {
 
   var x = 4
   var y = 4
-  const ROW_HEIGHT = 20
+  const ROW_HEIGHT = 30
   ENTITIES.messages.iteration = new PIXI.Text('day: 1 / ' + GAME_LENGTH_DAYS, TEXT_STYLE)
   ENTITIES.messages.iteration.position.set(x, y)
   messagesContainer.addChild(ENTITIES.messages.iteration)
@@ -187,11 +187,12 @@ function createMessages() {
 function createBaseLines() {
   p0 = priceData.series[0]
 
+  const margin = SCREEN_WIDTH * ZOOM
   let baselines = new PIXI.Container()
   let baseline = new PIXI.Graphics()
   baseline.lineStyle(1, BASELINE_COLOR)
-    .moveTo(0, 0)
-    .lineTo(GAME_WIDTH, 0)
+    .moveTo(-margin, 0)
+    .lineTo(GAME_WIDTH + margin, 0)
   baselines.addChild(baseline)
 
   let ppi = p0
@@ -201,8 +202,8 @@ function createBaseLines() {
     let line = new PIXI.Graphics()
     let y = priceData.scale * (ppi - p0)
     line.lineStyle(1, BASELINE_COLOR)
-      .moveTo(0, y)
-      .lineTo(GAME_WIDTH, y)
+      .moveTo(-margin, y)
+      .lineTo(GAME_WIDTH + margin, y)
     baselines.addChild(line)
   }
 
@@ -213,8 +214,8 @@ function createBaseLines() {
     let baselineMinus = new PIXI.Graphics()
     let y = priceData.scale * (pmi - p0)
     baselineMinus.lineStyle(1, BASELINE_COLOR)
-      .moveTo(0, y)
-      .lineTo(GAME_WIDTH, y)
+      .moveTo(-margin, y)
+      .lineTo(GAME_WIDTH + margin, y)
     baselines.addChild(baselineMinus)
   }
 
