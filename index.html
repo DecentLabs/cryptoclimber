@@ -11,7 +11,7 @@
 
 const INIT_FUNDS = 10000
 const TICKS_PER_DAY = 24
-const GAME_LENGTH_DAYS = 30
+const GAME_LENGTH_DAYS = getQueryParam('days') || 30
 const GAME_LENGTH_TICKS = GAME_LENGTH_DAYS * TICKS_PER_DAY
 const GRAPH_X_GRANULARITY_PX = 5 // smaller is more dense
 const SHOW_PRICE = false
@@ -142,17 +142,15 @@ function saveResult(returns, market) {
   q += '&return=' + encodeURIComponent(returns)
   q += '&market=' + encodeURIComponent(market)
   var t = new Date().toISOString().substr(0, 19).replace('T', ' ')
-  q += '&time=' + encodeURIComponent(t) 
+  q += '&time=' + encodeURIComponent(t)
+  q += '&start=' + encodeURIComponent(priceData.startTick)
+  q += '&stop=' + encodeURIComponent(priceData.stopTick) 
   var scr = document.createElement('script')
   scr.src = SHEET_URL + q
   document.body.appendChild(scr)
 }
 
 function setup() {
-  if (!player) {
-    player = window.prompt("Nick name?") || 'anonymous';
-  }
-
   app.ticker.remove(update)
   app.stage.removeChildren()
 
@@ -471,6 +469,9 @@ function showGameOver(i) {
   // summary += '\nPrice range: $' + priceData.min + ' - $' + priceData.max
   summary += '\n\nPress [SPACE] to restart'
   ENTITIES.messages.summary.text = summary
+  if (!player) {
+    player = window.prompt("Nick name?") || 'anonymous';
+  }
   saveResult(resultPercent, hodlPercent)
 }
 
@@ -553,6 +554,8 @@ function parsePriceData(data) {
     runningMin: first,
     runningMax: first,
     scale: SCREEN_HEIGHT / 2 / (first * 1.1 * 1.1 - first * 0.9 * 0.9),
+    startTick: fromIndex,
+    stopTick: fromIndex + GAME_LENGTH_TICKS,
   }
 }
 
