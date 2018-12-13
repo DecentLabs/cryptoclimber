@@ -471,6 +471,7 @@ function showGameOver(i) {
   // summary += '\nPrice range: $' + priceData.min + ' - $' + priceData.max
   summary += '\n\nPress [SPACE] to restart'
   ENTITIES.messages.summary.text = summary
+  saveResult(resultPercent, hodlPercent)
 }
 
 function enterTrade(isLong, i, margin) {
