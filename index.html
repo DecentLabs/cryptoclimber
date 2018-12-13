@@ -132,7 +132,7 @@ function setup() {
   ASSETS.funds = INIT_FUNDS
   priceData = parsePriceData(PIXI.loader.resources.prices.data)
   GAME_WIDTH = (priceData.series.length - 1) * GRAPH_X_GRANULARITY_PX
-  GAME_HEIGHT = priceData.max - priceData.min
+  GAME_HEIGHT = (priceData.max - priceData.min) * priceData.scale
 
   // app.stage.addChild(createBackground())
 
@@ -258,9 +258,9 @@ function createGrid() {
   let days = new PIXI.Graphics()
   days.lineStyle(1, 0x222222)
   const mul = 24 * GRAPH_X_GRANULARITY_PX
-  for (let i = 0; i < GAME_LENGTH_DAYS; i++) {
-    days.moveTo(i * mul, -GAME_HEIGHT)
-        .lineTo(i * mul, GAME_HEIGHT)
+  for (let i = 0; i < GAME_LENGTH_DAYS + 1; i++) {
+    days.moveTo(i * mul, -SCREEN_HEIGHT)
+        .lineTo(i * mul, SCREEN_HEIGHT)
   }
   grid.addChild(days)
 
