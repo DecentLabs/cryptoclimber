@@ -11,7 +11,7 @@
 
 const INIT_FUNDS = 10000
 const TICKS_PER_DAY = 24
-const GAME_LENGTH_DAYS = getQueryParam('days') || 30
+const GAME_LENGTH_DAYS = parseInt(getQueryParam('days'), 10) || 30
 const GAME_LENGTH_TICKS = GAME_LENGTH_DAYS * TICKS_PER_DAY
 const GRAPH_X_GRANULARITY_PX = 5 // smaller is more dense
 const SHOW_PRICE = false
@@ -291,7 +291,7 @@ function createGrid() {
   let days = new PIXI.Graphics()
   days.lineStyle(1, 0x222222)
   const mul = 24 * GRAPH_X_GRANULARITY_PX
-  for (let i = 0; i < GAME_LENGTH_DAYS + 1; i++) {
+  for (let i = 0; i <= GAME_LENGTH_DAYS; i++) {
     days.moveTo(i * mul, -SCREEN_HEIGHT)
         .lineTo(i * mul, SCREEN_HEIGHT)
   }
@@ -368,7 +368,7 @@ function update(dt) {
   if (i >= GAME_LENGTH_TICKS) {
     if (!gameOver) {
       gameOver = true
-      showGameOver(i - 1)
+      showGameOver()
     }
     return
   }
@@ -449,16 +449,16 @@ function updateMessages(i) {
   }
 }
 
-function showGameOver(i) {
+function showGameOver() {
   if (ASSETS.trade) {
     exitTrade()
   }
-  updateMessages(i)
+  updateMessages(GAME_LENGTH_TICKS - 1)
 
   const result = ASSETS.funds - INIT_FUNDS
   const resultRatio = result / INIT_FUNDS
   const resultPercent = (resultRatio * 100).toFixed(1)
-  const hodlRatio = priceData.series[i] / priceData.series[0] - 1
+  const hodlRatio = priceData.series[GAME_LENGTH_TICKS] / priceData.series[0] - 1
   const hodlPercent = (hodlRatio * 100).toFixed(1)
   const beatsHodl = resultPercent > hodlPercent
   var summary = result >= 0
