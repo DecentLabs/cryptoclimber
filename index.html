@@ -32,7 +32,7 @@ const INTRO = 'Crypto Climber\n\n' +
   'How well can you trade a random ' + GAME_LENGTH_DAYS + ' day sample of Bitcoin\'s price history?' +
   '\n\nHold [L] to go LONG' +
   '\nHold [S] to sell SHORT' +
-  '\n\nHold [SPACE] for warp speed' +
+  '\n\nHold [SHIFT] for warp speed' +
   '\n\nPress [SPACE] to start!'
 
 const CONF = {
@@ -570,32 +570,32 @@ function parsePriceData(data) {
 
 function addInputListeners() {
   window.addEventListener('keydown', event => {
-    if (!gameStarted && event.key === ' ') {
+    if (!gameStarted && event.code === 'Space') {
       gameStarted = true
       ENTITIES.messages.summary.text = ''
       return
     }
-    if (event.key === 's') {
+    if (event.code === 'KeyS') {
       INPUT.short = true
-    } else if (event.key === 'l') {
+    } else if (event.code === 'KeyL') {
       INPUT.long = true
-    } else if (gameOver && event.key === ' ') {
+    } else if (gameOver && event.code === 'Space') {
       gameOver = false
       gameStarted = false
       setup()
     }
-    if (event.key === ' ') {
+    if (event.key === 'Shift') {
       INPUT.warp = true
     }
   }, false)
   window.addEventListener('keyup', event => {
-    if (event.key === 's') {
+    if (event.code === 'KeyS') {
       INPUT.short = false
     }
-    if (event.key === 'l') {
+    if (event.code === 'KeyL') {
       INPUT.long = false
     }
-    if (event.key === ' ') {
+    if (event.key === 'Shift') {
       INPUT.warp = false
     }
   }, false)
