@@ -555,8 +555,9 @@ function updateTrade(i) {
 }
 
 function parsePriceData(data) {
-  const fromIndex = Math.floor(Math.random() * (data.values.length - GAME_LENGTH_TICKS - 1))
-  const series = data.values.slice(fromIndex, fromIndex + GAME_LENGTH_TICKS + 1)
+  const chunks = Math.floor(data.values.length / GAME_LENGTH_TICKS)
+  const fromIndex = GAME_LENGTH_TICKS * Math.floor(Math.random() * chunks)
+  const series = data.values.slice(fromIndex, fromIndex + GAME_LENGTH_TICKS)
   const first = series[0]
   const min = Math.min(...series)
   const max = Math.max(...series)
