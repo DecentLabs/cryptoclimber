@@ -230,8 +230,8 @@ function createMessages() {
   }
 
   ENTITIES.messages.summary = new PIXI.Text(INTRO, TEXT_STYLE)
-  ENTITIES.messages.summary.position.set(SCREEN_WIDTH/2, 64)
-  ENTITIES.messages.summary.anchor.set(0.5, 0)
+  ENTITIES.messages.summary.position.set(SCREEN_WIDTH/2, SCREEN_HEIGHT/2)
+  ENTITIES.messages.summary.anchor.set(0.5, 0.5)
   messagesContainer.addChild(ENTITIES.messages.summary)
 
   return messagesContainer
