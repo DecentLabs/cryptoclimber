@@ -161,6 +161,8 @@ function setup() {
 
   ENTITIES = defaultEntities()
   ASSETS.funds = INIT_FUNDS
+  ASSETS.trades = []
+  ASSETS.trade = null
   priceData = parsePriceData(PIXI.loader.resources.prices.data)
   GAME_WIDTH = (priceData.series.length - 1) * GRAPH_X_GRANULARITY_PX
   GAME_HEIGHT = (priceData.max - priceData.min) * priceData.scale
