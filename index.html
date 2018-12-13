@@ -46,6 +46,7 @@ const CONF = {
 const app = new PIXI.Application(CONF);
 const SCREEN_WIDTH = window.innerWidth
 const SCREEN_HEIGHT = window.innerHeight
+const SHEET_URL = 'https://script.google.com/macros/s/AKfycbyDTk5pYHGjgHartXZZX876CZbKYa_kKljZDEOJ1dylwVSn1Mk/exec'
 
 // Full screen
 app.renderer.view.style.position = 'absolute';
@@ -117,9 +118,41 @@ var ASSETS = {
   trades: [],
 }
 
+function getQueryParam(param) {
+    var query = window.location.search.substring(1);
+    var vars = query.split('&');
+    for (var i = 0; i < vars.length; i++) {
+        var pair = vars[i].split('=');
+        if (decodeURIComponent(pair[0]) == param) {
+            return decodeURIComponent(pair[1]);
+        }
+    }
+    return null;
+}
+
 var priceData
+var player = getQueryParam('player')
+
+function callback(p) {
+  console.log(p)
+}
+
+function saveResult(returns, market) {
+  var q = '?player=' + encodeURIComponent(player)
+  q += '&return=' + encodeURIComponent(returns)
+  q += '&market=' + encodeURIComponent(market)
+  var t = new Date().toISOString().substr(0, 19).replace('T', ' ')
+  q += '&time=' + encodeURIComponent(t) 
+  var scr = document.createElement('script')
+  scr.src = SHEET_URL + q
+  document.body.appendChild(scr)
+}
 
 function setup() {
+  if (!player) {
+    player = window.prompt("Nick name?") || 'anonymous';
+  }
+
   app.ticker.remove(update)
   app.stage.removeChildren()
 
