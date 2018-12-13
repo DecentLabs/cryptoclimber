@@ -480,10 +480,12 @@ function showGameOver() {
   ZOOM = SCREEN_WIDTH / GAME_WIDTH
   setViewPort(GAME_WIDTH / 2, 0)
 
-  if (!player) {
-    player = window.prompt('Nick name?') || 'anonymous';
-  }
-  saveResult(returns, hodlReturns, ASSETS.trades.length)
+  setTimeout(() => {
+    if (!player) {
+      player = window.prompt('Nick name?') || 'anonymous';
+    }
+    saveResult(returns, hodlReturns, ASSETS.trades.length)
+  })
 }
 
 function enterTrade(isLong, i, margin) {
