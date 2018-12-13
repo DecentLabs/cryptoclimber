@@ -204,7 +204,7 @@ function createMessages() {
   var x = 4
   var y = 4
   const ROW_HEIGHT = 30
-  ENTITIES.messages.iteration = new PIXI.Text('Day 0 of ' + GAME_LENGTH_DAYS, TEXT_STYLE)
+  ENTITIES.messages.iteration = new PIXI.Text('Day 1 of ' + GAME_LENGTH_DAYS, TEXT_STYLE)
   ENTITIES.messages.iteration.position.set(x, y)
   messagesContainer.addChild(ENTITIES.messages.iteration)
   y += ROW_HEIGHT
@@ -368,7 +368,7 @@ function update(dt) {
   if (i >= GAME_LENGTH_TICKS) {
     if (!gameOver) {
       gameOver = true
-      showGameOver(i)
+      showGameOver(i - 1)
     }
     return
   }
@@ -434,7 +434,7 @@ function updatePlayer() {
 function updateMessages(i) {
   ENTITIES.messages.summary.text = ''
 
-  ENTITIES.messages.iteration.text = 'Day ' + Math.floor(i / TICKS_PER_DAY) + ' of ' + GAME_LENGTH_DAYS
+  ENTITIES.messages.iteration.text = 'Day ' + (Math.floor(i / TICKS_PER_DAY) + 1) + ' of ' + GAME_LENGTH_DAYS
   var equity = ASSETS.funds + (ASSETS.trade ? ASSETS.trade.current : 0)
 
   ENTITIES.messages.funds.text = 'Equity $' + Math.round(equity)
