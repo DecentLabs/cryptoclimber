@@ -243,8 +243,8 @@ function gradientTexture(w, h) {
   canvas.height = h
   var ctx = canvas.getContext('2d')
   var gradient = ctx.createLinearGradient(0, 0, 0, h)
-  gradient.addColorStop(0, "#000000")
-  gradient.addColorStop(1, "#ffffff")
+  gradient.addColorStop(0, '#000000')
+  gradient.addColorStop(1, '#ffffff')
   ctx.fillStyle = gradient
   ctx.fillRect(0, 0, w, h)
   return PIXI.Texture.fromCanvas(canvas)
@@ -450,26 +450,28 @@ function updateMessages(i) {
   }
 }
 
+function toAbsPercent(num) {
+  return (Math.abs(num) * 100).toFixed(1) + '%'
+}
+
 function showGameOver() {
   if (ASSETS.trade) {
     exitTrade()
   }
   updateMessages(GAME_LENGTH_TICKS - 1)
 
-  const result = ASSETS.funds - INIT_FUNDS
-  const resultRatio = result / INIT_FUNDS
-  const resultPercent = (resultRatio * 100).toFixed(1)
-  const hodlRatio = priceData.series[GAME_LENGTH_TICKS] / priceData.series[0] - 1
-  const hodlPercent = (hodlRatio * 100).toFixed(1)
-  const beatsHodl = resultPercent > hodlPercent
-  var summary = result >= 0
-    ? (beatsHodl ? "CONGRATS!\n\n" : "")
-    : (beatsHodl ? "" : "OH NO!\n\n")
-  summary += result >= 0
-    ? ('You made a ' + resultPercent + '% return')
-    : ('You lost ' + Math.abs(resultPercent) + '% of your capital')
+  const profit = ASSETS.funds - INIT_FUNDS
+  const returns = profit / INIT_FUNDS
+  const hodlReturns = priceData.series[GAME_LENGTH_TICKS] / priceData.series[0] - 1
+  const beatsHodl = returns > hodlReturns
+  var summary = profit >= 0
+    ? (beatsHodl ? 'CONGRATS!\n\n' : '')
+    : (beatsHodl ? '' : 'OH NO!\n\n')
+  summary += profit >= 0
+    ? ('You made a ' + toAbsPercent(returns) + ' return')
+    : ('You lost ' + toAbsPercent(returns) + ' of your capital')
   summary += '\nwith ' + ASSETS.trades.length + ' trades'
-  summary += '\n\nMeanwhile HODLers ' + (hodlPercent > 0 ? 'gained ' : 'lost ') + Math.abs(hodlPercent) + '%'
+  summary += '\n\nMeanwhile HODLers ' + (hodlReturns > 0 ? 'gained ' : 'lost ') + toAbsPercent(hodlReturns)
   // summary += '\nPeriod: ' + priceData.from + ' - ' + priceData.to
   // summary += '\nPrice range: $' + priceData.min + ' - $' + priceData.max
   summary += '\n\nPress [SPACE] to restart'
@@ -479,9 +481,9 @@ function showGameOver() {
   setViewPort(GAME_WIDTH / 2, 0)
 
   if (!player) {
-    player = window.prompt("Nick name?") || 'anonymous';
+    player = window.prompt('Nick name?') || 'anonymous';
   }
-  saveResult(resultRatio, hodlRatio, ASSETS.trades.length)
+  saveResult(returns, hodlReturns, ASSETS.trades.length)
 }
 
 function enterTrade(isLong, i, margin) {
