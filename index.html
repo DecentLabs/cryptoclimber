@@ -290,7 +290,7 @@ function createGrid() {
   }
 
   let days = new PIXI.Graphics()
-  days.lineStyle(1, 0x222222)
+  days.lineStyle(2, 0x222222)
   const mul = 24 * GRAPH_X_GRANULARITY_PX
   for (let i = 0; i <= GAME_LENGTH_DAYS; i++) {
     days.moveTo(i * mul, -2 * SCREEN_HEIGHT)
@@ -305,7 +305,7 @@ function createGrid() {
 function createPlayer() {
   ENTITIES.player = new PIXI.Graphics()
   ENTITIES.player.alpha = 0.2
-  ENTITIES.player.lineStyle(3, 0xffffff)
+  ENTITIES.player.lineStyle(4, 0xffffff)
   ENTITIES.player.drawCircle(0, 0, 8)
   ENTITIES.player.endFill()
   return ENTITIES.player
@@ -317,7 +317,7 @@ function createGraph() {
   for (i = 0; i < priceData.series.length - 1; i++) {
     line = new PIXI.Graphics()
     line.position.set(0, 0)
-    line.lineStyle(1, 0xffffff)
+    line.lineStyle(2, 0xffffff)
         .moveTo(GRAPH_X_GRANULARITY_PX * i, priceData.scale * (priceData.series[i] - p0))
         .lineTo(GRAPH_X_GRANULARITY_PX * (i + 1), priceData.scale * (priceData.series[i + 1] - p0))
     line.visible = false
@@ -547,7 +547,7 @@ function updateTrade(i) {
   const color = profit < 0 ? 0xff0000 : 0x00ff00
   ASSETS.trade.line = new PIXI.Graphics()
   const a = ASSETS.trade.barOpen
-  ASSETS.trade.line.lineStyle(3, color, 0.66)
+  ASSETS.trade.line.lineStyle(5, color, 0.66)
     .moveTo(a * GRAPH_X_GRANULARITY_PX, priceData.scale * (priceData.series[a] - priceData.series[0]))
     .lineTo(x, y)
   ENTITIES.gamespace.addChild(ASSETS.trade.line)
