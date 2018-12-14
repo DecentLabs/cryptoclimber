@@ -150,7 +150,11 @@ function callback(p) {
   if (gameOver && data.result == 'success') {
     ENTITIES.messages.highscores.text = 'Best scores on this level'
     data.top.forEach(entry => {
-      ENTITIES.messages.highscores.text += '\n' + entry[0] + ': ' + toAbsPercent(entry[1]) + ' with ' + entry[3] + ' trades' // + ', at ' + (new Date(entry[2]).toLocaleDateString())
+      d = new Date(entry[2]);
+      ENTITIES.messages.highscores.text += '\n'
+          + entry[0] + ': ' + toAbsPercent(entry[1])
+          + ' with ' + entry[3] + ' trades ('
+          + d.toLocaleDateString() + ' ' + d.toLocaleTimeString() + ')'
     })
   }
 }
