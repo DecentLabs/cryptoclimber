@@ -580,9 +580,9 @@ function addInputListeners() {
       ENTITIES.messages.summary.text = ''
       return
     }
-    if (event.code === 'KeyS') {
+    if (event.code === 'KeyS' || event.code === 'ArrowDown') {
       INPUT.short = true
-    } else if (event.code === 'KeyL') {
+    } else if (event.code === 'KeyL' || event.code === 'ArrowUp') {
       INPUT.long = true
     } else if (gameOver && event.code === 'Space') {
       gameOver = false
@@ -594,10 +594,10 @@ function addInputListeners() {
     }
   }, false)
   window.addEventListener('keyup', event => {
-    if (event.code === 'KeyS') {
+    if (event.code === 'KeyS' || event.code === 'ArrowDown') {
       INPUT.short = false
     }
-    if (event.code === 'KeyL') {
+    if (event.code === 'KeyL' || event.code === 'ArrowUp') {
       INPUT.long = false
     }
     if (event.key === 'Shift') {
