@@ -72,6 +72,17 @@ const TEXT_STYLE = new PIXI.TextStyle({
   dropShadowDistance: 3,
 });
 
+const TEXT_HIGHSCORE_STYLE = new PIXI.TextStyle({
+  fontFamily: 'Helvetica, sans-serif',
+  fontSize: 18,
+  fill: 0xcccccc,
+  align: 'left',
+  dropShadow: true,
+  dropShadowAlpha: 0.6,
+  dropShadowBlur: 10,
+  dropShadowDistance: 3,
+});
+
 const TEXT_PROFIT_STYLE = new PIXI.TextStyle({
   fontFamily: 'Helvetica, sans-serif',
   fontSize: 20,
@@ -134,7 +145,14 @@ var priceData
 var player = getQueryParam('player')
 
 function callback(p) {
-  console.log(p)
+  console.log('callback: ' + p)
+  var data = JSON.parse(p)
+  if (gameOver && data.result == 'success') {
+    ENTITIES.messages.highscores.text = 'Best players on this level'
+    data.top.forEach(entry => {
+      ENTITIES.messages.highscores.text += '\n' + entry[0] + ': ' + entry[1]
+    })
+  }
 }
 
 function saveResult(returns, hodl, trades) {
@@ -145,7 +163,7 @@ function saveResult(returns, hodl, trades) {
   var t = new Date().toISOString().substr(0, 19).replace('T', ' ')
   q += '&time=' + encodeURIComponent(t)
   q += '&start=' + encodeURIComponent(priceData.startTick)
-  q += '&stop=' + encodeURIComponent(priceData.stopTick) 
+  q += '&stop=' + encodeURIComponent(priceData.stopTick)
   var scr = document.createElement('script')
   scr.src = SHEET_URL + q
   document.body.appendChild(scr)
@@ -233,6 +251,10 @@ function createMessages() {
   ENTITIES.messages.summary.position.set(SCREEN_WIDTH/2, SCREEN_HEIGHT/2)
   ENTITIES.messages.summary.anchor.set(0.5, 0.5)
   messagesContainer.addChild(ENTITIES.messages.summary)
+
+  ENTITIES.messages.highscores = new PIXI.Text('', TEXT_HIGHSCORE_STYLE)
+  ENTITIES.messages.highscores.position.set(x, y + ROW_HEIGHT)
+  messagesContainer.addChild(ENTITIES.messages.highscores)
 
   return messagesContainer
 }
