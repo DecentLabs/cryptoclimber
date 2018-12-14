@@ -152,7 +152,7 @@ function callback(p) {
     data.top.forEach(entry => {
       d = new Date(entry[2]);
       ENTITIES.messages.highscores.text += '\n'
-          + entry[0] + ': ' + toAbsPercent(entry[1])
+          + entry[0] + ': ' + toPercent(entry[1])
           + ' with ' + entry[3] + ' trades ('
           + d.toLocaleDateString() + ' ' + d.toLocaleTimeString() + ')'
     })
@@ -478,6 +478,10 @@ function updateMessages(i) {
 
 function toAbsPercent(num) {
   return (Math.abs(num) * 100).toFixed(1) + '%'
+}
+
+function toPercent(num) {
+  return (num * 100).toFixed(1) + '%'
 }
 
 function showGameOver() {
