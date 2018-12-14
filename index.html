@@ -596,6 +596,9 @@ function parsePriceData(data) {
 }
 
 function addInputListeners() {
+  window.addEventListener('blur', event => {
+    INPUT.short = INPUT.long = INPUT.warp = false
+  }, false)
   window.addEventListener('keydown', event => {
     if (!gameStarted && event.code === 'Space') {
       gameStarted = true
