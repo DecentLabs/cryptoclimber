@@ -150,7 +150,7 @@ function callback(p) {
   if (gameOver && data.result == 'success') {
     ENTITIES.messages.highscores.text = 'Best players on this level'
     data.top.forEach(entry => {
-      ENTITIES.messages.highscores.text += '\n' + entry[0] + ': ' + entry[1]
+      ENTITIES.messages.highscores.text += '\n' + entry[0] + ': ' + toAbsPercent(entry[1])
     })
   }
 }
