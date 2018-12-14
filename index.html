@@ -148,9 +148,9 @@ function callback(p) {
   console.log('callback: ' + p)
   var data = JSON.parse(p)
   if (gameOver && data.result == 'success') {
-    ENTITIES.messages.highscores.text = 'Best players on this level'
+    ENTITIES.messages.highscores.text = 'Best scores on this level'
     data.top.forEach(entry => {
-      ENTITIES.messages.highscores.text += '\n' + entry[0] + ': ' + toAbsPercent(entry[1])
+      ENTITIES.messages.highscores.text += '\n' + entry[0] + ': ' + toAbsPercent(entry[1]) + ' with ' + entry[3] + ' trades' // + ', at ' + (new Date(entry[2]).toLocaleDateString())
     })
   }
 }
