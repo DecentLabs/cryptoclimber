@@ -154,9 +154,9 @@ function callback(p) {
     data.top.forEach(entry => {
       d = new Date(entry[2]);
       ENTITIES.messages.highscores.text += '\n'
-          + entry[0] + ': ' + toPercent(entry[1])
-          + ' with ' + entry[3] + ' trades ('
-          + d.toLocaleDateString() + ' ' + d.toLocaleTimeString() + ')'
+          + entry[0] + ' ' + toPercent(entry[1])
+          + ' (' + entry[3] + ' trades)'
+          // + ' (' + d.toLocaleDateString() + ' ' + d.toLocaleTimeString() + ')'
     })
   }
 }
