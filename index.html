@@ -57,19 +57,22 @@ app.renderer.view.style.display = 'block';
 app.renderer.autoResize = true;
 app.renderer.resize(SCREEN_WIDTH, SCREEN_HEIGHT);
 
-WebFont.load({
-  google: {
-    families: ['B612 Mono']
-  },
-  timeout: 2000
-});
 
 document.body.appendChild(app.view);
 
 PIXI.loader
-  .add('bg', 'bg_tile.jpg')
-  .add('prices', 'btc1h.json')
-  .load(setup);
+.add('bg', 'bg_tile.jpg')
+.add('prices', 'btc1h.json')
+.load(() => {
+  // TODO: load font concurrently with resources
+  WebFont.load({
+    google: {
+      families: ['B612 Mono']
+    },
+    active: setup
+  })
+});
+
 
 const TEXT_STYLE = new PIXI.TextStyle({
   fontFamily: '"B612 Mono", monospace',
