@@ -5,6 +5,7 @@
     <title>Crypto Climber</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/4.8.2/pixi.min.js"></script>
     <style>* {padding: 0; margin: 0}</style>
+    <script src="https://ajax.googleapis.com/ajax/libs/webfont/1.6.26/webfont.js"></script>
   </head>
   <body>
     <script>
@@ -56,6 +57,13 @@ app.renderer.view.style.display = 'block';
 app.renderer.autoResize = true;
 app.renderer.resize(SCREEN_WIDTH, SCREEN_HEIGHT);
 
+WebFont.load({
+  google: {
+    families: ['B612 Mono']
+  },
+  timeout: 2000
+});
+
 document.body.appendChild(app.view);
 
 PIXI.loader
@@ -64,7 +72,7 @@ PIXI.loader
   .load(setup);
 
 const TEXT_STYLE = new PIXI.TextStyle({
-  fontFamily: 'Helvetica, sans-serif',
+  fontFamily: '"B612 Mono", monospace',
   fontSize: 28,
   fill: 0xffffff,
   align: 'center',
@@ -75,7 +83,7 @@ const TEXT_STYLE = new PIXI.TextStyle({
 });
 
 const TEXT_HIGHSCORE_STYLE = new PIXI.TextStyle({
-  fontFamily: 'Helvetica, sans-serif',
+  fontFamily: '"B612 Mono", monospace',
   fontSize: 18,
   fill: 0xffffff,
   align: 'left',
@@ -86,7 +94,7 @@ const TEXT_HIGHSCORE_STYLE = new PIXI.TextStyle({
 });
 
 const TEXT_PROFIT_STYLE = new PIXI.TextStyle({
-  fontFamily: 'Helvetica, sans-serif',
+  fontFamily: '"B612 Mono", monospace',
   fontSize: 20,
   fontWeight: 'bold',
   fill: 0x00ff00,
@@ -97,7 +105,7 @@ const TEXT_PROFIT_STYLE = new PIXI.TextStyle({
 });
 
 const TEXT_LOSS_STYLE = new PIXI.TextStyle({
-  fontFamily: 'Helvetica, sans-serif',
+  fontFamily: '"B612 Mono", monospace',
   fontSize: 20,
   fontWeight: 'bold',
   fill: 0xff0000,
