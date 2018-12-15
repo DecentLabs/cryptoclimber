@@ -163,7 +163,7 @@ function callback(p) {
       d = new Date(entry[2]);
       ENTITIES.messages.highscores.text += '\n'
           + entry[0] + ' ' + toPercent(entry[1])
-          + ' (' + entry[3] + ' trades)'
+          + ' (' + toTrades(entry[3]) + ')'
           // + ' (' + d.toLocaleDateString() + ' ' + d.toLocaleTimeString() + ')'
     })
   }
@@ -486,12 +486,18 @@ function updateMessages(i) {
   }
 }
 
-function toAbsPercent(num) {
-  return (Math.abs(num) * 100).toFixed(1) + '%'
+function toTrades(num) {
+  return num === 0 ? 'no trades' :
+    num === 1 ? '1 trade' :
+    num + 'trades'
 }
 
 function toPercent(num) {
   return (num * 100).toFixed(1) + '%'
+}
+
+function toAbsPercent(num) {
+  return toPercent(Math.abs(num))
 }
 
 function showGameOver() {
@@ -510,7 +516,7 @@ function showGameOver() {
   summary += profit >= 0
     ? ('You made a ' + toAbsPercent(returns) + ' return')
     : ('You lost ' + toAbsPercent(returns) + ' of your capital')
-  summary += '\nwith ' + ASSETS.trades.length + ' trades'
+  summary += '\nwith ' + toTrades(ASSETS.trades.length)
   summary += '\n\nMeanwhile HODLers ' + (hodlReturns > 0 ? 'gained ' : 'lost ') + toAbsPercent(hodlReturns)
   // summary += '\nPeriod: ' + priceData.from + ' - ' + priceData.to
   // summary += '\nPrice range: $' + priceData.min + ' - $' + priceData.max
