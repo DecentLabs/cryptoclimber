@@ -140,6 +140,7 @@ var ASSETS = {
   funds: INIT_FUNDS,
   trade: null,
   trades: [],
+  scores: [],
 }
 
 function getQueryParam(param) {
@@ -158,18 +159,36 @@ var priceData
 var player = getQueryParam('player')
 
 function callback(p) {
-  console.log('callback: ' + p)
   var data = JSON.parse(p)
   if (gameOver && data.result == 'success') {
-    ENTITIES.messages.highscores.text = 'Best scores on this level'
     data.top.forEach(entry => {
-      d = new Date(entry[2]);
-      ENTITIES.messages.highscores.text += '\n'
-          + entry[0] + ' ' + toPercent(entry[1])
-          + ' (' + toTrades(entry[3]) + ')'
-          // + ' (' + d.toLocaleDateString() + ' ' + d.toLocaleTimeString() + ')'
+      addScore(entry[0], entry[1], entry[3])
     })
+    showScores()
   }
+}
+
+function addScore(player, result, trades) {
+  ASSETS.scores.push({
+    player: player,
+    result: Math.round(result * 1000) / 1000,
+    trades: trades
+  })
+}
+
+function uniqueSorted(arr, cmp) {
+  return arr.sort(cmp).filter((e, i, arr) => !i || cmp.apply(null, [e, arr[i - 1]]) != 0)
+}
+
+function showScores() {
+  ENTITIES.messages.highscores.text = 'Best results for this period\n'
+  ASSETS.scores = uniqueSorted(ASSETS.scores, (a, b) => b.result - a.result || a.player.localeCompare(b.player))
+  ASSETS.scores.forEach(e => {
+    ENTITIES.messages.highscores.text += '\n'
+        + e.player.padEnd(12, ' ')
+        + toPercent(e.result).padStart(7, ' ')
+        + ' (' + toTrades(e.trades) + ')'
+  })
 }
 
 function saveResult(returns, hodl, trades) {
@@ -198,6 +217,7 @@ function setup() {
   ENTITIES = defaultEntities()
   ASSETS.funds = INIT_FUNDS
   ASSETS.trades = []
+  ASSETS.scores = []
   ASSETS.trade = null
   priceData = parsePriceData(PIXI.loader.resources.prices.data)
   GAME_WIDTH = (priceData.series.length - 1) * GRAPH_X_GRANULARITY_PX
@@ -533,6 +553,9 @@ function showGameOver() {
     if (!player) {
       player = window.prompt('Nick name?') || 'anonymous';
     }
+    addScore(player, returns, ASSETS.trades.length)
+    addScore("Buy and hold", hodlReturns, 1)
+    showScores()
     saveResult(returns, hodlReturns, ASSETS.trades.length)
   })
 }
