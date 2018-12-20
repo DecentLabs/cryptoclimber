@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <title>Crypto Climber</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/4.8.2/pixi.min.js"></script>
+    <script src="pixi-multistyle-text/0.6.0/pixi-multistyle-text.umd.js"></script>
     <style>* {padding: 0; margin: 0}</style>
     <script src="https://ajax.googleapis.com/ajax/libs/webfont/1.6.26/webfont.js"></script>
   </head>
@@ -37,6 +38,8 @@ const INTRO = 'Crypto Climber\n\n' +
   '\nHold [S] to sell SHORT' +
   '\n\nHold [SHIFT] for warp speed' +
   '\n\nPress [SPACE] to start!'
+
+const HODL_NAME = 'Buy and hold'
 
 const CONF = {
   width: 1024,
@@ -85,16 +88,39 @@ const TEXT_STYLE = new PIXI.TextStyle({
   dropShadowDistance: 3,
 });
 
-const TEXT_HIGHSCORE_STYLE = new PIXI.TextStyle({
-  fontFamily: '"B612 Mono", monospace',
-  fontSize: 18,
-  fill: 0xffffff,
-  align: 'left',
-  dropShadow: true,
-  dropShadowAlpha: 0.6,
-  dropShadowBlur: 10,
-  dropShadowDistance: 3,
-});
+const TEXT_HIGHSCORE_STYLE = {
+  'default': {
+    fontFamily: '"B612 Mono", monospace',
+    fontSize: 18,
+    fill: 0xffffff,
+    align: 'left',
+    dropShadow: true,
+    dropShadowAlpha: 0.6,
+    dropShadowBlur: 10,
+    dropShadowDistance: 3,
+  },
+  'b': {
+    fontWeight: 'bold',
+  },
+  'self': {
+    fontWeight: 'bold',
+    fill: '#ffff00',
+  },
+  'hodl': {
+    fill: '#cccccc',
+  },
+  'profit': {
+    fontWeight: 'bold',
+    fill: 0x00ff00,
+  },
+  'loss': {
+    fontWeight: 'bold',
+    fill: 0xff0000,
+  },
+  'tr': {
+    fill: 0x666666,
+  },
+};
 
 const TEXT_PROFIT_STYLE = new PIXI.TextStyle({
   fontFamily: '"B612 Mono", monospace',
@@ -180,15 +206,24 @@ function uniqueSorted(arr, cmp) {
   return arr.sort(cmp).filter((e, i, arr) => !i || cmp.apply(null, [e, arr[i - 1]]) != 0)
 }
 
+function tag(tag, string) {
+  return (tag ? '<' + tag + '>' : '')
+    + string
+    + (tag ? '</' + tag + '>' : '')
+}
+
 function showScores() {
-  ENTITIES.messages.highscores.text = 'Best results for this period\n'
+  let text = '<b>Best results for this period:</b>\n'
   ASSETS.scores = uniqueSorted(ASSETS.scores, (a, b) => b.result - a.result || a.player.localeCompare(b.player))
   ASSETS.scores.forEach(e => {
-    ENTITIES.messages.highscores.text += '\n'
-        + e.player.padEnd(12, ' ')
-        + toPercent(e.result).padStart(7, ' ')
-        + ' (' + toTrades(e.trades) + ')'
+    text += '\n'
+      + tag(e.player == player ? 'self' : (e.player == HODL_NAME ? 'hodl' : null),
+        e.player.padEnd(12, ' ')
+        + tag(e.result >= 0 ? 'profit' : 'loss', toPercent(e.result).padStart(7, ' '))
+        + tag('tr', ' (' + toTrades(e.trades) + ')')
+      )
   })
+  ENTITIES.messages.highscores.text = text
 }
 
 function saveResult(returns, hodl, trades) {
@@ -289,7 +324,7 @@ function createMessages() {
   ENTITIES.messages.summary.anchor.set(0.5, 0.5)
   messagesContainer.addChild(ENTITIES.messages.summary)
 
-  ENTITIES.messages.highscores = new PIXI.Text('', TEXT_HIGHSCORE_STYLE)
+  ENTITIES.messages.highscores = new MultiStyleText('', TEXT_HIGHSCORE_STYLE)
   ENTITIES.messages.highscores.position.set(x, y + ROW_HEIGHT)
   messagesContainer.addChild(ENTITIES.messages.highscores)
 
@@ -554,7 +589,7 @@ function showGameOver() {
       player = window.prompt('Nick name?') || 'anonymous';
     }
     addScore(player, returns, ASSETS.trades.length)
-    addScore("Buy and hold", hodlReturns, 1)
+    addScore(HODL_NAME, hodlReturns, 1)
     showScores()
     saveResult(returns, hodlReturns, ASSETS.trades.length)
   })
