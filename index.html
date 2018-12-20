@@ -30,14 +30,17 @@ const MAX_ZOOM = 2
 const WARP_ZOOM_DELTA = (MAX_ZOOM - MIN_ZOOM) / 30
 var ZOOM = MAX_ZOOM
 
-const INTRO = 'Crypto Climber\n\n' +
+const INTRO =
+  '<title>Crypto Climber</title>\n\n' +
   'How good are you at trading' +
   '\na ' + GAME_LENGTH_DAYS + ' day sample of' +
   '\nhistorical Bitcoin prices?' +
+  '<strong>' +
   '\n\nHold [L] to go LONG' +
   '\nHold [S] to sell SHORT' +
+  '</strong>' +
   '\n\nHold [SHIFT] for warp speed' +
-  '\n\nPress [SPACE] to start!'
+  '\n\n<strong>Press [SPACE] to start!</strong>'
 
 const HODL_NAME = 'Buy and hold'
 
