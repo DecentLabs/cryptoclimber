@@ -426,6 +426,15 @@ function createGraph() {
     ENTITIES.lines.push(line)
     graph.addChild(line)
   }
+  const past = priceData.pastSeries.length
+  for (let i = 0; i < past; i++) {
+    let line = new PIXI.Graphics()
+    line.position.set(0, 0)
+    line.lineStyle(2, 0x666666)
+        .moveTo(GRAPH_X_GRANULARITY_PX * (i + 1 - past) , priceData.scale * (priceData.pastSeries[i] - p0))
+        .lineTo(GRAPH_X_GRANULARITY_PX * (i + 2 - past), priceData.scale * (priceData.pastSeries[i + 1] - p0))
+    graph.addChild(line)
+  }
   return graph
 }
 
@@ -659,8 +668,9 @@ function updateTrade(i) {
 
 function parsePriceData(data) {
   const chunks = Math.floor(data.values.length / GAME_LENGTH_TICKS)
-  const fromIndex = GAME_LENGTH_TICKS * Math.floor(Math.random() * chunks)
+  const fromIndex = GAME_LENGTH_TICKS * (Math.floor(Math.random() * (chunks - 1)) + 1)
   const series = data.values.slice(fromIndex, fromIndex + GAME_LENGTH_TICKS + 1)
+  const pastSeries = data.values.slice(fromIndex - GAME_LENGTH_TICKS, fromIndex + 1)
   const first = series[0]
   return {
     series: series,
