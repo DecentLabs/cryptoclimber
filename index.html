@@ -16,6 +16,8 @@ const TICKS_PER_DAY = 24
 const GAME_LENGTH_DAYS = parseInt(getQueryParam('days'), 10) || 30
 const GAME_LENGTH_TICKS = GAME_LENGTH_DAYS * TICKS_PER_DAY
 const GRAPH_X_GRANULARITY_PX = 5 // smaller is more dense
+const OFFSET_X = 0.33
+
 const SHOW_PRICE = false
 const SHOW_DEBUG = false
 
@@ -278,7 +280,7 @@ function setup() {
 
   app.stage.addChild(createMessages())
 
-  setViewPort(0,0)
+  setViewPort(0, 0, OFFSET_X)
   addInputListeners()
   app.ticker.add(update)
 }
@@ -427,10 +429,10 @@ function createGraph() {
   return graph
 }
 
-function setViewPort(x, y) {
+function setViewPort(x, y, xOffset) {
   ENTITIES.gamespace.scale.x = ZOOM
   ENTITIES.gamespace.scale.y = -ZOOM
-  ENTITIES.gamespace.position.x = -(x * ZOOM - SCREEN_WIDTH / 2)
+  ENTITIES.gamespace.position.x = -(x * ZOOM - SCREEN_WIDTH / 2 - (SCREEN_WIDTH * xOffset))
   ENTITIES.gamespace.position.y = -(-y * ZOOM - SCREEN_HEIGHT / 2)
 }
 
@@ -477,7 +479,7 @@ function update(dt) {
   x = time * GRAPH_X_GRANULARITY_PX
   y = priceData.scale * ((priceData.series[tick] - priceData.series[0])
     + (time - tick) * (priceData.series[tick + 1] - priceData.series[tick]))
-  setViewPort(x, y)
+  setViewPort(x, y, OFFSET_X)
   movePlayer(x, y)
   updateTrade(i)
 
@@ -576,7 +578,7 @@ function showGameOver() {
   const beatsHodl = returns > hodlReturns
 
   ZOOM = SCREEN_WIDTH / GAME_WIDTH
-  setViewPort(GAME_WIDTH / 2, 0)
+  setViewPort(GAME_WIDTH / 2, 0, 0)
 
   setTimeout(() => {
     if (!player) {
