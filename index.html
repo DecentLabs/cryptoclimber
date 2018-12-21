@@ -414,10 +414,10 @@ function createPlayer() {
 }
 
 function createGraph() {
-  p0 = priceData.series[0]
-  graph = new PIXI.Container()
-  for (i = 0; i < priceData.series.length - 1; i++) {
-    line = new PIXI.Graphics()
+  let p0 = priceData.series[0]
+  let graph = new PIXI.Container()
+  for (let i = 0; i < priceData.series.length - 1; i++) {
+    let line = new PIXI.Graphics()
     line.position.set(0, 0)
     line.lineStyle(2, 0xffffff)
         .moveTo(GRAPH_X_GRANULARITY_PX * i, priceData.scale * (priceData.series[i] - p0))
