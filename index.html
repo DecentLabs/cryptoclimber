@@ -392,10 +392,10 @@ function createGrid() {
   }
 
   let days = new PIXI.Graphics()
-  days.lineStyle(2, 0x222222)
   const mul = 24 * GRAPH_X_GRANULARITY_PX
-  for (let i = 0; i <= GAME_LENGTH_DAYS; i++) {
-    days.moveTo(i * mul, -2 * SCREEN_HEIGHT)
+  for (let i = -priceData.pastSeries.length; i <= GAME_LENGTH_DAYS; i++) {
+    days.lineStyle(2, i < 0 ? 0x222222 : 0x333333)
+        .moveTo(i * mul, -2 * SCREEN_HEIGHT)
         .lineTo(i * mul, 2 * SCREEN_HEIGHT)
   }
   grid.addChild(days)
