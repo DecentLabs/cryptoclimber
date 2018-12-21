@@ -662,12 +662,11 @@ function parsePriceData(data) {
   const fromIndex = GAME_LENGTH_TICKS * Math.floor(Math.random() * chunks)
   const series = data.values.slice(fromIndex, fromIndex + GAME_LENGTH_TICKS + 1)
   const first = series[0]
-  const min = Math.min(...series)
-  const max = Math.max(...series)
   return {
     series: series,
-    min: min,
-    max: max,
+    pastSeries: pastSeries,
+    min: Math.min(...series),
+    max: Math.max(...series),
     runningMin: first,
     runningMax: first,
     scale: SCREEN_HEIGHT / 2 / (first * 1.1 * 1.1 - first * 0.9 * 0.9),
