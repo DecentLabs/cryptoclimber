@@ -243,8 +243,6 @@ function saveResult(returns, hodl, trades) {
   q += '&return=' + encodeURIComponent(returns.toFixed(3))
   q += '&hodl=' + encodeURIComponent(hodl.toFixed(3))
   q += '&trades=' + encodeURIComponent(trades)
-  var t = new Date().toISOString().substr(0, 19).replace('T', ' ')
-  q += '&time=' + encodeURIComponent(t)
   q += '&start=' + encodeURIComponent(priceData.startTick)
   q += '&stop=' + encodeURIComponent(priceData.stopTick)
   var scr = document.createElement('script')
