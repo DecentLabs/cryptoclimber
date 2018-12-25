@@ -199,14 +199,15 @@ function callback(p) {
   var data = JSON.parse(p)
   if (gameOver && data.result == 'success') {
     data.top.forEach(entry => {
-      addScore(entry[0], entry[1], entry[3])
+      addScore(false, entry[0], entry[1], entry[3])
     })
     showScores()
   }
 }
 
-function addScore(player, result, trades) {
+function addScore(self, player, result, trades) {
   ASSETS.scores.push({
+    self: self,
     player: player,
     result: Math.round(result * 1000) / 1000,
     trades: trades
@@ -228,7 +229,7 @@ function showScores() {
   ASSETS.scores = uniqueSorted(ASSETS.scores, (a, b) => b.result - a.result || a.player.localeCompare(b.player))
   ASSETS.scores.forEach(e => {
     text += '\n'
-      + tag(e.player == player ? 'self' : (e.player == HODL_NAME ? 'hodl' : null),
+      + tag(e.self ? 'self' : (e.player == HODL_NAME ? 'hodl' : null),
         e.player.slice(0, 14).padEnd(14, ' ')
         + tag(e.result >= 0 ? 'profit' : 'loss', toPercent(e.result).padStart(8, ' '))
         + tag('tr', (' (' + toTrades(e.trades) + ')').padEnd(14, ' '))
@@ -591,8 +592,8 @@ function showGameOver() {
     if (!player) {
       player = window.prompt('Nick name?') || 'anonymous';
     }
-    addScore(player, returns, ASSETS.trades.length)
-    addScore(HODL_NAME, hodlReturns, 1)
+    addScore(true, player, returns, ASSETS.trades.length)
+    addScore(false, HODL_NAME, hodlReturns, 1)
     showScores()
     saveResult(returns, hodlReturns, ASSETS.trades.length)
   })
