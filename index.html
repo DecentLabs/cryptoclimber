@@ -255,6 +255,9 @@ function setup() {
   app.ticker.remove(update)
   app.stage.removeChildren()
 
+  gameOver = false
+  gameStarted = false
+
   time = 0
   tick = -1
   SPEED = MIN_SPEED
@@ -684,14 +687,18 @@ function parsePriceData(data) {
   }
 }
 
+function startGame() {
+  gameStarted = true
+  ENTITIES.messages.summary.text = ''
+}
+
 function addInputListeners() {
   window.addEventListener('blur', event => {
     INPUT.short = INPUT.long = INPUT.warp = false
   }, false)
   window.addEventListener('keydown', event => {
     if (!gameStarted && event.code === 'Space') {
-      gameStarted = true
-      ENTITIES.messages.summary.text = ''
+      startGame()
       return
     }
     if (event.code === 'KeyS' || event.code === 'ArrowDown') {
@@ -699,8 +706,6 @@ function addInputListeners() {
     } else if (event.code === 'KeyL' || event.code === 'ArrowUp') {
       INPUT.long = true
     } else if (gameOver && event.code === 'Space') {
-      gameOver = false
-      gameStarted = false
       setup()
     }
     if (event.key === 'Shift') {
