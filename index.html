@@ -68,7 +68,6 @@ app.renderer.resize(SCREEN_WIDTH, SCREEN_HEIGHT);
 document.body.appendChild(app.view);
 
 PIXI.loader
-.add('bg', 'bg_tile.jpg')
 .add('prices', 'btc1h.json')
 .load(() => {
   // TODO: load font concurrently with resources
@@ -272,8 +271,6 @@ function setup() {
   GAME_WIDTH = (priceData.series.length - 1) * GRAPH_X_GRANULARITY_PX
   GAME_HEIGHT = (priceData.max - priceData.min) * priceData.scale
 
-  // app.stage.addChild(createBackground())
-
   ENTITIES.gamespace = new PIXI.Container()
   ENTITIES.gamespace.addChild(createGrid())
   ENTITIES.gamespace.addChild(createGraph())
@@ -285,22 +282,6 @@ function setup() {
   setViewPort(0, 0, OFFSET_X)
   addInputListeners()
   app.ticker.add(update)
-}
-
-function createBackground() {
-  background = new PIXI.Container()
-  const bgTexture = PIXI.loader.resources.bg.texture
-  const w = bgTexture.width
-  const h = bgTexture.height
-  for (let i = -w; i < SCREEN_WIDTH; i += w) {
-    for (let j = -h; j < SCREEN_HEIGHT; j += h) {
-      let bgSprite = new PIXI.Sprite(bgTexture)
-      bgSprite.position.set(i, j)
-      bgSprite.alpha = 0.5
-      background.addChild(bgSprite)
-    }
-  }
-  return background
 }
 
 function createMessages() {
