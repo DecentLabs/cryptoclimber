@@ -284,6 +284,18 @@ function setup() {
   app.ticker.add(update)
 }
 
+function onWarp(pressed) {
+  INPUT.warp = pressed
+}
+
+function onLong(pressed) {
+  INPUT.long = pressed
+}
+
+function onShort(pressed) {
+  INPUT.short = pressed
+}
+
 function createMessages() {
   let messagesContainer = new PIXI.Container()
 
@@ -676,7 +688,9 @@ function startGame() {
 
 function addInputListeners() {
   window.addEventListener('blur', event => {
-    INPUT.short = INPUT.long = INPUT.warp = false
+    onLong(false)
+    onShort(false)
+    onWarp(false)
   }, false)
   window.addEventListener('keydown', event => {
     if (!gameStarted && event.code === 'Space') {
@@ -684,25 +698,25 @@ function addInputListeners() {
       return
     }
     if (event.code === 'KeyS' || event.code === 'ArrowDown') {
-      INPUT.short = true
+      onShort(true)
     } else if (event.code === 'KeyL' || event.code === 'ArrowUp') {
-      INPUT.long = true
+      onLong(true)
     } else if (gameOver && event.code === 'Space') {
       setup()
     }
     if (event.key === 'Shift') {
-      INPUT.warp = true
+      onWarp(true)
     }
   }, false)
   window.addEventListener('keyup', event => {
     if (event.code === 'KeyS' || event.code === 'ArrowDown') {
-      INPUT.short = false
+      onShort(false)
     }
     if (event.code === 'KeyL' || event.code === 'ArrowUp') {
-      INPUT.long = false
+      onLong(false)
     }
     if (event.key === 'Shift') {
-      INPUT.warp = false
+      onWarp(false)
     }
   }, false)
 }
