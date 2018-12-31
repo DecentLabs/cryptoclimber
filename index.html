@@ -279,6 +279,16 @@ function setup() {
 
   app.stage.addChild(createMessages())
 
+  ENTITIES.longButton = createButton("Long", SCREEN_WIDTH - 200, SCREEN_HEIGHT - 200, 160, 80, onLong)
+  ENTITIES.shortButton = createButton("Short", SCREEN_WIDTH - 200, SCREEN_HEIGHT - 100, 160, 80, onShort)
+  ENTITIES.warpButton = createButton("Warp", 40, SCREEN_HEIGHT - 150, 160, 80, onWarp)
+
+  showControls(false)
+
+  app.stage.addChild(ENTITIES.longButton)
+  app.stage.addChild(ENTITIES.shortButton)
+  app.stage.addChild(ENTITIES.warpButton)
+
   setViewPort(0, 0, OFFSET_X)
   addInputListeners()
   app.ticker.add(update)
@@ -286,14 +296,69 @@ function setup() {
 
 function onWarp(pressed) {
   INPUT.warp = pressed
+  ENTITIES.warpButton.tint = pressed ?  0xffff00 : 0xffffff
 }
 
 function onLong(pressed) {
   INPUT.long = pressed
+  ENTITIES.longButton.tint = pressed ?  0xff00ff : 0xffffff
 }
 
 function onShort(pressed) {
   INPUT.short = pressed
+  ENTITIES.shortButton.tint = pressed ?  0xff00ff : 0xffffff
+}
+
+function showControls(show) {
+  ENTITIES.longButton.visible = ENTITIES.shortButton.visible = ENTITIES.warpButton.visible = show
+}
+
+function createButton(text, x, y, w, h, callback) {
+  const g = new PIXI.Graphics()
+
+  const txt = new PIXI.Text(text, TEXT_STYLE)
+  txt.x = (w - txt.width) / 2
+  txt.y = (h - txt.height) / 2
+  g.addChild(txt)
+
+  g.lineStyle(2, 0xffffff, 1);
+  g.beginFill(0xffffff, 0.25);
+  g.drawRoundedRect(0, 0, w, h, 15);
+  g.endFill();
+
+  g.x = x
+  g.y = y
+
+  g.buttonMode = true
+  g.interactive = true
+  g.buttonStates = new Set()
+  g.buttonLastState = false
+
+  // hacks to ensure reasonable multitouch behavior
+  const f = e => {
+    const release = e.type == 'pointerup' || e.type == 'pointerupoutside' || e.type =='pointercancel'
+    const pressing = !release && app.renderer.plugins.interaction.hitTest(e.data.global, g) && e.data.buttons == 1
+    const id = e.data.pointerId
+    if (pressing) {
+      g.buttonStates.add(id)
+    } else {
+      g.buttonStates.delete(id)
+    }
+    // console.log(text, pressing, g.buttonStates, e.type, id)
+    const state = g.buttonStates.size != 0
+    if (g.buttonLastState != state) {
+      g.buttonLastState = state
+      callback(state)
+    } 
+  }
+  app.stage.interactive = true
+  app.stage.on('pointermove', f)
+  app.stage.on('pointerdown', f)
+  app.stage.on('pointerup', f)
+  app.stage.on('pointerupoutside', f)
+  app.stage.on('pointercancel', f)
+
+  return g
 }
 
 function createMessages() {
@@ -572,6 +637,7 @@ function toAbsPercent(num) {
 }
 
 function showGameOver() {
+  showControls(false)
   if (ASSETS.trade) {
     exitTrade()
   }
@@ -684,6 +750,7 @@ function parsePriceData(data) {
 function startGame() {
   gameStarted = true
   ENTITIES.messages.summary.text = ''
+  showControls(true)
 }
 
 function addInputListeners() {
@@ -691,6 +758,15 @@ function addInputListeners() {
     onLong(false)
     onShort(false)
     onWarp(false)
+  }, false)
+  window.addEventListener('touchstart', event => {
+    if (!gameStarted) {
+      startGame()
+    } else {
+      if (gameOver) {
+        setup()
+      }
+    }
   }, false)
   window.addEventListener('keydown', event => {
     if (!gameStarted && event.code === 'Space') {
