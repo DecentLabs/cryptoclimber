@@ -102,6 +102,9 @@ const TEXT_MULTI_STYLE = {
     dropShadowBlur: 10,
     dropShadowDistance: 3,
   },
+  'b': {
+    fontWeight: 'bold',
+  },
   'strong': {
     fontWeight: 'bold',
     fill: 0xffffff,
@@ -228,7 +231,7 @@ function showScores() {
   ASSETS.scores = uniqueSorted(ASSETS.scores, (a, b) => b.result - a.result || a.player.localeCompare(b.player))
   ASSETS.scores.forEach(e => {
     text += '\n'
-      + tag(e.self ? 'self' : (e.player == HODL_NAME ? 'hodl' : null),
+      + tag(e.self ? 'self' : (e.player == HODL_NAME ? 'hodl' : 'b'),
         e.player.slice(0, 14).padEnd(14, ' ')
         + tag(e.result >= 0 ? 'profit' : 'loss', toPercent(e.result).padStart(8, ' '))
         + tag('tr', (' (' + toTrades(e.trades) + ')').padEnd(14, ' '))
