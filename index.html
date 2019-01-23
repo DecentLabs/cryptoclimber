@@ -37,8 +37,9 @@ const INTRO =
   '\na ' + GAME_LENGTH_DAYS + ' day sample of' +
   '\nhistorical Bitcoin prices?' +
   '<strong>' +
-  '\n\nHold [L] to go LONG' +
-  '\nHold [S] to sell SHORT' +
+  '\n\nPress [L] to go LONG' +
+  '\nPress [S] to sell SHORT' +
+  '\nPress [SPACE] to close position ' +
   '</strong>' +
   '\n\nHold [SHIFT] for warp speed' +
   '\n\n<strong>Press [SPACE] to start!</strong>'
@@ -281,13 +282,15 @@ function setup() {
 
   app.stage.addChild(createMessages())
 
-  ENTITIES.longButton = createButton("Long", SCREEN_WIDTH - 200, SCREEN_HEIGHT - 200, 160, 80, onLong)
+  ENTITIES.longButton = createButton("Long", SCREEN_WIDTH - 200, SCREEN_HEIGHT - 300, 160, 80, onLong)
+  ENTITIES.neutralButton = createButton("-", SCREEN_WIDTH - 200, SCREEN_HEIGHT - 200, 160, 80, onNeutral)
   ENTITIES.shortButton = createButton("Short", SCREEN_WIDTH - 200, SCREEN_HEIGHT - 100, 160, 80, onShort)
   ENTITIES.warpButton = createButton("Warp", 40, SCREEN_HEIGHT - 150, 160, 80, onWarp)
 
   showControls(false)
 
   app.stage.addChild(ENTITIES.longButton)
+  app.stage.addChild(ENTITIES.neutralButton)
   app.stage.addChild(ENTITIES.shortButton)
   app.stage.addChild(ENTITIES.warpButton)
 
@@ -302,17 +305,38 @@ function onWarp(pressed) {
 }
 
 function onLong(pressed) {
-  INPUT.long = pressed
-  ENTITIES.longButton.tint = pressed ? 0xff00ff : 0xffffff
+  if (pressed) {
+    INPUT.short = false
+    INPUT.long = true
+    ENTITIES.longButton.tint = 0xff00ff
+    ENTITIES.shortButton.tint = 0xffffff
+  }
 }
 
 function onShort(pressed) {
-  INPUT.short = pressed
-  ENTITIES.shortButton.tint = pressed ? 0xff00ff : 0xffffff
+  if (pressed) {
+    INPUT.short = true
+    INPUT.long = false
+    ENTITIES.longButton.tint = 0xffffff
+    ENTITIES.shortButton.tint = 0xff00ff
+  }
+}
+
+function onNeutral(pressed) {
+  if (pressed) {
+    INPUT.long = false
+    INPUT.short = false
+    ENTITIES.longButton.tint = 0xffffff
+    ENTITIES.shortButton.tint = 0xffffff
+  }
 }
 
 function showControls(show) {
-  ENTITIES.longButton.visible = ENTITIES.shortButton.visible = ENTITIES.warpButton.visible = show
+  ENTITIES.longButton.visible =
+  ENTITIES.neutralButton.visible =
+  ENTITIES.shortButton.visible =
+  ENTITIES.warpButton.visible =
+  show
 }
 
 function createButton(text, x, y, w, h, callback) {
@@ -757,8 +781,7 @@ function startGame() {
 
 function addInputListeners() {
   window.addEventListener('blur', event => {
-    onLong(false)
-    onShort(false)
+    onNeutral(true)
     onWarp(false)
   }, false)
   window.addEventListener('touchstart', event => {
@@ -781,18 +804,14 @@ function addInputListeners() {
       onLong(true)
     } else if (gameOver && event.code === 'Space') {
       setup()
+    } else if (event.code === 'Space') {
+      onNeutral(true)
     }
     if (event.key === 'Shift') {
       onWarp(true)
     }
   }, false)
   window.addEventListener('keyup', event => {
-    if (event.code === 'KeyS' || event.code === 'ArrowDown') {
-      onShort(false)
-    }
-    if (event.code === 'KeyL' || event.code === 'ArrowUp') {
-      onLong(false)
-    }
     if (event.key === 'Shift') {
       onWarp(false)
     }
