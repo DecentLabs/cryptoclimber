@@ -282,10 +282,10 @@ function setup() {
 
   app.stage.addChild(createMessages())
 
-  ENTITIES.longButton = createButton("Long", SCREEN_WIDTH - 200, SCREEN_HEIGHT - 300, 160, 80, onLong)
+  ENTITIES.longButton = createButton("\u25B3 Long ", SCREEN_WIDTH - 200, SCREEN_HEIGHT - 300, 160, 80, onLong)
   ENTITIES.neutralButton = createButton("Neutral", SCREEN_WIDTH - 200, SCREEN_HEIGHT - 200, 160, 80, onNeutral)
-  ENTITIES.shortButton = createButton("Short", SCREEN_WIDTH - 200, SCREEN_HEIGHT - 100, 160, 80, onShort)
-  ENTITIES.warpButton = createButton("Warp", 40, SCREEN_HEIGHT - 150, 160, 80, onWarp)
+  ENTITIES.shortButton = createButton("\u25BD Short", SCREEN_WIDTH - 200, SCREEN_HEIGHT - 100, 160, 80, onShort)
+  ENTITIES.warpButton = createButton("\u232A\u232AWarp", 40, SCREEN_HEIGHT - 150, 160, 80, onWarp)
 
   onNeutral(true);
   showControls(false)
