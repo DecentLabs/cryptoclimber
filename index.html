@@ -307,21 +307,29 @@ function onWarp(pressed) {
 
 function onLong(pressed) {
   if (pressed) {
-    INPUT.short = false
-    INPUT.long = true
-    ENTITIES.longButton.tint = 0xff00ff
-    ENTITIES.neutralButton.tint = 0xffffff
-    ENTITIES.shortButton.tint = 0xffffff
+    if (INPUT.short) {
+      onNeutral(true)
+    } else {
+      INPUT.short = false
+      INPUT.long = true
+      ENTITIES.longButton.tint = 0xff00ff
+      ENTITIES.neutralButton.tint = 0xffffff
+      ENTITIES.shortButton.tint = 0xffffff
+    }
   }
 }
 
 function onShort(pressed) {
   if (pressed) {
-    INPUT.short = true
-    INPUT.long = false
-    ENTITIES.longButton.tint = 0xffffff
-    ENTITIES.neutralButton.tint = 0xffffff
-    ENTITIES.shortButton.tint = 0xff00ff
+    if (INPUT.long) {
+      onNeutral(true)
+    } else {
+      INPUT.short = true
+      INPUT.long = false
+      ENTITIES.longButton.tint = 0xffffff
+      ENTITIES.neutralButton.tint = 0xffffff
+      ENTITIES.shortButton.tint = 0xff00ff
+    }
   }
 }
 
