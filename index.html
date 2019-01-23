@@ -579,6 +579,7 @@ function update(dt) {
   if (i >= GAME_LENGTH_TICKS) {
     if (!gameOver) {
       gameOver = true
+      gameStarted = false
       showGameOver()
     }
     return
@@ -605,8 +606,6 @@ function update(dt) {
     updatePlayer()
     updateMessages(i)
   }
-
-
 }
 
 function handleInput(i) {
@@ -675,6 +674,7 @@ function toAbsPercent(num) {
 }
 
 function showGameOver() {
+  onNeutral(true)
   showControls(false)
   if (ASSETS.trade) {
     exitTrade()
@@ -806,18 +806,27 @@ function addInputListeners() {
     }
   }, false)
   window.addEventListener('keydown', event => {
-    if (!gameStarted && event.code === 'Space') {
-      startGame()
+    if (gameOver) {
+      if (event.code === 'Space') {
+        setup()
+      }
       return
     }
     if (event.code === 'KeyS' || event.code === 'ArrowDown') {
       onShort(true)
+      if (!gameStarted) {
+        startGame()
+      }
     } else if (event.code === 'KeyL' || event.code === 'ArrowUp') {
       onLong(true)
-    } else if (gameOver && event.code === 'Space') {
-      setup()
+      if (!gameStarted) {
+        startGame()
+      }
     } else if (event.code === 'Space') {
       onNeutral(true)
+      if (!gameStarted) {
+        startGame()
+      }
     }
     if (event.key === 'Shift') {
       onWarp(true)
