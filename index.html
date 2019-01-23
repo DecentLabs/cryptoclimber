@@ -37,8 +37,8 @@ const INTRO =
   '\na ' + GAME_LENGTH_DAYS + ' day sample of' +
   '\nhistorical Bitcoin prices?' +
   '<strong>' +
-  '\n\nPress [L] to go LONG' +
-  '\nPress [S] to sell SHORT' +
+  '\n\nPress [UP] to go LONG' +
+  '\nPress [DOWN] to sell SHORT' +
   '\nPress [SPACE] to close position ' +
   '</strong>' +
   '\n\nHold [SHIFT] for warp speed' +
@@ -283,10 +283,11 @@ function setup() {
   app.stage.addChild(createMessages())
 
   ENTITIES.longButton = createButton("Long", SCREEN_WIDTH - 200, SCREEN_HEIGHT - 300, 160, 80, onLong)
-  ENTITIES.neutralButton = createButton("-", SCREEN_WIDTH - 200, SCREEN_HEIGHT - 200, 160, 80, onNeutral)
+  ENTITIES.neutralButton = createButton("Neutral", SCREEN_WIDTH - 200, SCREEN_HEIGHT - 200, 160, 80, onNeutral)
   ENTITIES.shortButton = createButton("Short", SCREEN_WIDTH - 200, SCREEN_HEIGHT - 100, 160, 80, onShort)
   ENTITIES.warpButton = createButton("Warp", 40, SCREEN_HEIGHT - 150, 160, 80, onWarp)
 
+  onNeutral(true);
   showControls(false)
 
   app.stage.addChild(ENTITIES.longButton)
@@ -309,6 +310,7 @@ function onLong(pressed) {
     INPUT.short = false
     INPUT.long = true
     ENTITIES.longButton.tint = 0xff00ff
+    ENTITIES.neutralButton.tint = 0xffffff
     ENTITIES.shortButton.tint = 0xffffff
   }
 }
@@ -318,6 +320,7 @@ function onShort(pressed) {
     INPUT.short = true
     INPUT.long = false
     ENTITIES.longButton.tint = 0xffffff
+    ENTITIES.neutralButton.tint = 0xffffff
     ENTITIES.shortButton.tint = 0xff00ff
   }
 }
@@ -327,6 +330,7 @@ function onNeutral(pressed) {
     INPUT.long = false
     INPUT.short = false
     ENTITIES.longButton.tint = 0xffffff
+    ENTITIES.neutralButton.tint = 0xff00ff
     ENTITIES.shortButton.tint = 0xffffff
   }
 }
