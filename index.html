@@ -282,12 +282,12 @@ function setup() {
 
   app.stage.addChild(createMessages())
 
-  ENTITIES.longButton = createButton("\u25B3 Long ", SCREEN_WIDTH - 200, SCREEN_HEIGHT - 300, 160, 80, onLong)
-  ENTITIES.neutralButton = createButton("Neutral", SCREEN_WIDTH - 200, SCREEN_HEIGHT - 200, 160, 80, onNeutral)
-  ENTITIES.shortButton = createButton("\u25BD Short", SCREEN_WIDTH - 200, SCREEN_HEIGHT - 100, 160, 80, onShort)
+  ENTITIES.longButton = createButton("\u25B3 Long ", SCREEN_WIDTH - 200, SCREEN_HEIGHT - 300, 160, 80, onLongButton)
+  ENTITIES.neutralButton = createButton("Neutral", SCREEN_WIDTH - 200, SCREEN_HEIGHT - 200, 160, 80, onNeutralButton)
+  ENTITIES.shortButton = createButton("\u25BD Short", SCREEN_WIDTH - 200, SCREEN_HEIGHT - 100, 160, 80, onShortButton)
   ENTITIES.warpButton = createButton("\u232A\u232AWarp", 40, SCREEN_HEIGHT - 150, 160, 80, onWarp)
 
-  onNeutral(true);
+  onNeutral()
   showControls(false)
 
   app.stage.addChild(ENTITIES.longButton)
@@ -305,43 +305,71 @@ function onWarp(pressed) {
   ENTITIES.warpButton.tint = pressed ? 0xffff00 : 0xffffff
 }
 
-function onLong(pressed) {
-  if (pressed) {
-    if (INPUT.short) {
-      onNeutral(true)
-    } else {
-      INPUT.short = false
-      INPUT.long = true
-      ENTITIES.longButton.tint = 0xff00ff
-      ENTITIES.neutralButton.tint = 0xffffff
-      ENTITIES.shortButton.tint = 0xffffff
-    }
+
+function onLongKey() {
+  if (INPUT.short) {
+    onNeutral()
+  } else {
+    onLong()
   }
 }
 
-function onShort(pressed) {
-  if (pressed) {
-    if (INPUT.long) {
-      onNeutral(true)
-    } else {
-      INPUT.short = true
-      INPUT.long = false
-      ENTITIES.longButton.tint = 0xffffff
-      ENTITIES.neutralButton.tint = 0xffffff
-      ENTITIES.shortButton.tint = 0xff00ff
-    }
+function onShortKey() {
+  if (INPUT.long) {
+    onNeutral()
+  } else {
+    onShort()
   }
 }
 
-function onNeutral(pressed) {
+function onNeutralKey() {
+  onNeutral()
+}
+
+
+function onLongButton(pressed) {
   if (pressed) {
-    INPUT.long = false
-    INPUT.short = false
-    ENTITIES.longButton.tint = 0xffffff
-    ENTITIES.neutralButton.tint = 0xff00ff
-    ENTITIES.shortButton.tint = 0xffffff
+    onLong()
   }
 }
+
+function onShortButton(pressed) {
+  if (pressed) {
+    onShort()
+  }
+}
+
+function onNeutralButton(pressed) {
+  if (pressed) {
+    onNeutral()
+  }
+}
+
+
+function onLong() {
+  INPUT.short = false
+  INPUT.long = true
+  ENTITIES.longButton.tint = 0xff00ff
+  ENTITIES.neutralButton.tint = 0xffffff
+  ENTITIES.shortButton.tint = 0xffffff
+}
+
+function onShort() {
+  INPUT.short = true
+  INPUT.long = false
+  ENTITIES.longButton.tint = 0xffffff
+  ENTITIES.neutralButton.tint = 0xffffff
+  ENTITIES.shortButton.tint = 0xff00ff
+}
+
+function onNeutral() {
+  INPUT.long = false
+  INPUT.short = false
+  ENTITIES.longButton.tint = 0xffffff
+  ENTITIES.neutralButton.tint = 0xff00ff
+  ENTITIES.shortButton.tint = 0xffffff
+}
+
 
 function showControls(show) {
   ENTITIES.longButton.visible =
@@ -674,7 +702,8 @@ function toAbsPercent(num) {
 }
 
 function showGameOver() {
-  onNeutral(true)
+  onNeutral()
+  onWarp(false)
   showControls(false)
   if (ASSETS.trade) {
     exitTrade()
@@ -795,7 +824,7 @@ function startGame() {
 // ===== event listeners =====
 
 const listenerBlur = event => {
-  onNeutral(true)
+  onNeutral()
   onWarp(false)
 }
 
@@ -817,17 +846,17 @@ const listenerKeyDown = event => {
     return
   }
   if (event.code === 'KeyS' || event.code === 'ArrowDown') {
-    onShort(true)
+    onShortKey()
     if (!gameStarted) {
       startGame()
     }
   } else if (event.code === 'KeyL' || event.code === 'ArrowUp') {
-    onLong(true)
+    onLongKey()
     if (!gameStarted) {
       startGame()
     }
   } else if (event.code === 'Space') {
-    onNeutral(true)
+    onNeutralKey()
     if (!gameStarted) {
       startGame()
     }
