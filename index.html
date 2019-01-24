@@ -305,28 +305,6 @@ function onWarp(pressed) {
   ENTITIES.warpButton.tint = pressed ? 0xffff00 : 0xffffff
 }
 
-
-function onLongKey() {
-  if (INPUT.short) {
-    onNeutral()
-  } else {
-    onLong()
-  }
-}
-
-function onShortKey() {
-  if (INPUT.long) {
-    onNeutral()
-  } else {
-    onShort()
-  }
-}
-
-function onNeutralKey() {
-  onNeutral()
-}
-
-
 function onLongButton(pressed) {
   if (pressed) {
     onLong()
@@ -846,17 +824,25 @@ const listenerKeyDown = event => {
     return
   }
   if (event.code === 'KeyS' || event.code === 'ArrowDown') {
-    onShortKey()
+    if (INPUT.long) {
+      onNeutral()
+    } else {
+      onShort()
+    }
     if (!gameStarted) {
       startGame()
     }
   } else if (event.code === 'KeyL' || event.code === 'ArrowUp') {
-    onLongKey()
+    if (INPUT.short) {
+      onNeutral()
+    } else {
+      onLong()
+    }
     if (!gameStarted) {
       startGame()
     }
   } else if (event.code === 'Space') {
-    onNeutralKey()
+    onNeutral()
     if (!gameStarted) {
       startGame()
     }
