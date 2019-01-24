@@ -654,7 +654,7 @@ function updateMessages(i) {
   if (SHOW_DEBUG) {
     ENTITIES.messages.debug.text =
       'inputs: ' + (INPUT.short?'S':' ') + (INPUT.long?'L':' ') + (INPUT.warp?'W':' ')
-      + ' trade: ' + (ASSETS.trade ? (ASSETS.trade.isLong ? 'L' : 'S') : '-')
+      + ' trade: ' + (ASSETS.trade ? (ASSETS.trade.isLong ? 'L' : 'S') : 'N')
       + ' speed: ' + (SPEED.toFixed(2)) + ' zoom: ' + (ZOOM.toFixed(2))
   }
 }
@@ -791,52 +791,63 @@ function startGame() {
   showControls(true)
 }
 
-function addInputListeners() {
-  window.addEventListener('blur', event => {
-    onNeutral(true)
-    onWarp(false)
-  }, false)
-  window.addEventListener('touchstart', event => {
+
+// ===== event listeners =====
+
+const listenerBlur = event => {
+  onNeutral(true)
+  onWarp(false)
+}
+
+const listenerTouchStart = event => {
+  if (gameOver) {
+    setup()
+    return
+  }
+  if (!gameStarted) {
+    startGame()
+  }
+}
+
+const listenerKeyDown = event => {
+  if (gameOver) {
+    if (event.code === 'Space') {
+      setup()
+    }
+    return
+  }
+  if (event.code === 'KeyS' || event.code === 'ArrowDown') {
+    onShort(true)
     if (!gameStarted) {
       startGame()
-    } else {
-      if (gameOver) {
-        setup()
-      }
     }
-  }, false)
-  window.addEventListener('keydown', event => {
-    if (gameOver) {
-      if (event.code === 'Space') {
-        setup()
-      }
-      return
+  } else if (event.code === 'KeyL' || event.code === 'ArrowUp') {
+    onLong(true)
+    if (!gameStarted) {
+      startGame()
     }
-    if (event.code === 'KeyS' || event.code === 'ArrowDown') {
-      onShort(true)
-      if (!gameStarted) {
-        startGame()
-      }
-    } else if (event.code === 'KeyL' || event.code === 'ArrowUp') {
-      onLong(true)
-      if (!gameStarted) {
-        startGame()
-      }
-    } else if (event.code === 'Space') {
-      onNeutral(true)
-      if (!gameStarted) {
-        startGame()
-      }
+  } else if (event.code === 'Space') {
+    onNeutral(true)
+    if (!gameStarted) {
+      startGame()
     }
-    if (event.key === 'Shift') {
-      onWarp(true)
-    }
-  }, false)
-  window.addEventListener('keyup', event => {
-    if (event.key === 'Shift') {
-      onWarp(false)
-    }
-  }, false)
+  }
+  if (event.key === 'Shift') {
+    onWarp(true)
+  }
+}
+
+const listenerKeyUp = event => {
+  if (event.key === 'Shift') {
+    onWarp(false)
+  }
+}
+
+function addInputListeners() {
+  window.addEventListener('blur', listenerBlur, false)
+  window.addEventListener('touchstart', listenerTouchStart, false)
+  window.addEventListener('keydown', listenerKeyDown, false)
+  window.addEventListener('keyup', listenerKeyUp, false)
 }
 
     </script>
