@@ -17,6 +17,7 @@ const GAME_LENGTH_DAYS = parseInt(getQueryParam('days'), 10) || 30
 const GAME_LENGTH_TICKS = GAME_LENGTH_DAYS * TICKS_PER_DAY
 const GRAPH_X_GRANULARITY_PX = 5 // smaller is more dense
 const OFFSET_X = 0.25
+const SMOOTH_FACTOR_Y = 50
 
 const SHOW_PRICE = false
 const SHOW_DEBUG = false
@@ -543,7 +544,12 @@ function createGraph() {
   return graph
 }
 
+let viewPortX = 0
+let viewPortY = 0
+
 function setViewPort(x, y, xOffset) {
+  viewPortX = x
+  viewPortY = y
   ENTITIES.gamespace.scale.x = ZOOM
   ENTITIES.gamespace.scale.y = -ZOOM
   ENTITIES.gamespace.position.x = -(x * ZOOM - SCREEN_WIDTH / 2 - (SCREEN_WIDTH * xOffset))
@@ -591,12 +597,15 @@ function update(dt) {
     return
   }
 
-  x = time * GRAPH_X_GRANULARITY_PX
-  y = priceData.scale * ((priceData.series[tick] - priceData.series[0])
-    + (time - tick) * (priceData.series[tick + 1] - priceData.series[tick]))
-  setViewPort(x, y, OFFSET_X)
-  movePlayer(x, y)
-  updateTrade(i)
+  if (tick >= 0) {
+    x = time * GRAPH_X_GRANULARITY_PX
+    y = priceData.scale * ((priceData.series[tick] - priceData.series[0])
+      + (time - tick) * (priceData.series[tick + 1] - priceData.series[tick]))
+
+    setViewPort(x, (viewPortY + (y - viewPortY) / SMOOTH_FACTOR_Y), OFFSET_X)
+    movePlayer(x, y)
+    updateTrade(i)
+  }
 
   if (i > tick) {
     tick = i
@@ -659,9 +668,11 @@ function updateMessages(i) {
   }
   if (SHOW_DEBUG) {
     ENTITIES.messages.debug.text =
-      'inputs: ' + (INPUT.short?'S':' ') + (INPUT.long?'L':' ') + (INPUT.warp?'W':' ')
-      + ' trade: ' + (ASSETS.trade ? (ASSETS.trade.isLong ? 'L' : 'S') : 'N')
-      + ' speed: ' + (SPEED.toFixed(2)) + ' zoom: ' + (ZOOM.toFixed(2))
+      'inputs:' + (INPUT.short?'S':' ') + (INPUT.long?'L':' ') + (INPUT.warp?'W':' ')
+      + ' trade:' + (ASSETS.trade ? (ASSETS.trade.isLong ? 'L' : 'S') : 'N')
+      + ' speed:' + (SPEED.toFixed(2)) + ' zoom:' + (ZOOM.toFixed(2))
+      + ' x:' + viewPortX.toFixed(2) + ' y:' + viewPortY.toFixed(2)
+      + ' tick:' + tick
   }
 }
 
