@@ -187,6 +187,7 @@ function defaultEntities() {
       price: null,
       debug: null,
     },
+    logos: null,
     lines: [],
     player: null,
   }
@@ -299,6 +300,9 @@ function setup() {
   app.stage.addChild(ENTITIES.gamespace)
 
   app.stage.addChild(createMessages())
+
+  ENTITIES.logos = createLogos()
+  app.stage.addChild(ENTITIES.logos)
 
   ENTITIES.longButton = createButton("\u25B3 Long ", SCREEN_WIDTH - 200, SCREEN_HEIGHT - 300, 160, 80, onLongButton)
   ENTITIES.neutralButton = createButton("Neutral", SCREEN_WIDTH - 200, SCREEN_HEIGHT - 200, 160, 80, onNeutralButton)
@@ -459,6 +463,27 @@ function createMessages() {
   messagesContainer.addChild(ENTITIES.messages.summary)
 
   return messagesContainer
+}
+
+function createLogos() {
+  let logoContainer = new PIXI.Container()
+
+  let logo = new PIXI.Sprite.from('logo.png')
+  logo.position.set(SCREEN_WIDTH, 0)
+  logo.anchor.set(1.0, 0.0)
+  logo.scale.set(0.25)
+  logoContainer.addChild(logo)
+
+  let createdBy = new PIXI.Sprite.from('created_by_badge.png')
+  createdBy.position.set(0, SCREEN_HEIGHT)
+  createdBy.anchor.set(0.0, 1.0)
+  createdBy.scale.set(0.125)
+  createdBy.interactive = true
+  createdBy.buttonMode = true
+  createdBy.on('click', () => { window.location.href='https://decent.org/' })
+  logoContainer.addChild(createdBy)
+
+  return logoContainer
 }
 
 function gradientTexture(w, h) {
@@ -824,6 +849,7 @@ function startGame() {
   gameStarted = true
   ENTITIES.messages.summary.text = ''
   showControls(true)
+  ENTITIES.logos.visible = false
 }
 
 
