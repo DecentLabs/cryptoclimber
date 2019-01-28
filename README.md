@@ -1,7 +1,7 @@
 # Crypto Climber
 
-Crypto trading simulator implemented in PIXI.js
+Crypto trading simulator implemented with PIXI.js
 
 ## Run the game
 
-See https://decentlabs.github.io/cryptoclimber/
+See https://cryptoclimber.decent.org/
