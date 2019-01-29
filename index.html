@@ -433,18 +433,18 @@ function createMessages() {
   var x = 4
   var y = 4
   const ROW_HEIGHT = 30
-  ENTITIES.messages.iteration = new PIXI.Text('Day 1 of ' + GAME_LENGTH_DAYS, TEXT_STYLE)
+  ENTITIES.messages.iteration = new PIXI.Text('', TEXT_STYLE)
   ENTITIES.messages.iteration.position.set(x, y)
   messagesContainer.addChild(ENTITIES.messages.iteration)
   y += ROW_HEIGHT
 
-  ENTITIES.messages.funds = new PIXI.Text('Equity $' + ASSETS.funds, TEXT_STYLE)
+  ENTITIES.messages.funds = new PIXI.Text('', TEXT_STYLE)
   ENTITIES.messages.funds.position.set(x, y)
   messagesContainer.addChild(ENTITIES.messages.funds)
   y += ROW_HEIGHT
 
   if (SHOW_PRICE) {
-    ENTITIES.messages.price = new PIXI.Text('price: $', TEXT_STYLE)
+    ENTITIES.messages.price = new PIXI.Text('', TEXT_STYLE)
     ENTITIES.messages.price.position.set(x, y)
     messagesContainer.addChild(ENTITIES.messages.price)
     y += ROW_HEIGHT
