@@ -462,7 +462,7 @@ function createMessages() {
   }
 
   ENTITIES.messages.summary = new MultiStyleText(INTRO, TEXT_MULTI_STYLE)
-  ENTITIES.messages.summary.position.set(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + 15)
+  ENTITIES.messages.summary.position.set(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + EDGE_MARGIN)
   ENTITIES.messages.summary.anchor.set(0.5, 0.0)
   messagesContainer.addChild(ENTITIES.messages.summary)
 
@@ -473,7 +473,7 @@ function createLogos() {
   let logoContainer = new PIXI.Container()
 
   let logo = new PIXI.Sprite.from('logo_vertical.png')
-  logo.position.set(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 15)
+  logo.position.set(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - EDGE_MARGIN)
   logo.anchor.set(0.5, 1.0)
   logoContainer.addChild(logo)
 
