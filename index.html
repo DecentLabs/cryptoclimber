@@ -303,6 +303,9 @@ function setup() {
   ENTITIES.logos = createLogos()
   app.stage.addChild(ENTITIES.logos)
 
+  ENTITIES.smallLogo = createSmallLogo()
+  app.stage.addChild(ENTITIES.smallLogo)
+
   ENTITIES.longButton = createButton("\u25B3 Long ", SCREEN_WIDTH - 200, SCREEN_HEIGHT - 300, 160, 80, onLongButton)
   ENTITIES.neutralButton = createButton("Neutral", SCREEN_WIDTH - 200, SCREEN_HEIGHT - 200, 160, 80, onNeutralButton)
   ENTITIES.shortButton = createButton("\u25BD Short", SCREEN_WIDTH - 200, SCREEN_HEIGHT - 100, 160, 80, onShortButton)
@@ -482,6 +485,15 @@ function createLogos() {
   logoContainer.addChild(createdBy)
 
   return logoContainer
+}
+
+function createSmallLogo() {
+  let logo = new PIXI.Sprite.from('logo_small.png')
+  logo.position.set(SCREEN_WIDTH, 0)
+  logo.anchor.set(1.0, 0.0)
+  logo.scale.set(0.5)
+  logo.visible = false
+  return logo
 }
 
 function gradientTexture(w, h) {
@@ -848,6 +860,7 @@ function startGame() {
   ENTITIES.messages.summary.text = ''
   showControls(true)
   ENTITIES.logos.visible = false
+  ENTITIES.smallLogo.visible = true
 }
 
 
