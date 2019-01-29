@@ -65,11 +65,11 @@ const INTRO =
 const HODL_NAME = 'Buy and hold'
 
 const CONF = {
-  width: 1024,
-  height: 768,
+  width: window.innerWidth,
+  height: window.innerHeight,
   antialias: true,
   transparent: false,
-  resolution: 1
+  resolution: window.devicePixelRatio,
 };
 
 const app = new PIXI.Application(CONF);
@@ -471,13 +471,13 @@ function createLogos() {
   let logo = new PIXI.Sprite.from('logo.png')
   logo.position.set(SCREEN_WIDTH, 0)
   logo.anchor.set(1.0, 0.0)
-  logo.scale.set(0.25)
+  logo.scale.set(0.5)
   logoContainer.addChild(logo)
 
-  let createdBy = new PIXI.Sprite.from('created_by_badge.png')
+  let createdBy = new PIXI.Sprite.from('created.png')
   createdBy.position.set(0, SCREEN_HEIGHT)
   createdBy.anchor.set(0.0, 1.0)
-  createdBy.scale.set(0.125)
+  createdBy.scale.set(0.5)
   createdBy.interactive = true
   createdBy.buttonMode = true
   createdBy.on('click', () => { window.location.href='https://decent.org/' })
