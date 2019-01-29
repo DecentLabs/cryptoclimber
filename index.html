@@ -35,7 +35,10 @@ const GAME_LENGTH_TICKS = GAME_LENGTH_DAYS * TICKS_PER_DAY
 const GRAPH_X_GRANULARITY_PX = 5 // smaller is more dense
 const OFFSET_X = 0.25
 const SMOOTH_FACTOR_Y = 50
-const EDGE_MARGIN = 5
+
+const MARGIN = 5
+const BUTTON_WIDTH = 160
+const BUTTON_HEIGHT = 80
 
 const SHOW_PRICE = false
 const SHOW_DEBUG = false
@@ -307,10 +310,18 @@ function setup() {
   ENTITIES.smallLogo = createSmallLogo()
   app.stage.addChild(ENTITIES.smallLogo)
 
-  ENTITIES.longButton = createButton("\u25B3 Long ", SCREEN_WIDTH - 200, SCREEN_HEIGHT - 300, 160, 80, onLongButton)
-  ENTITIES.neutralButton = createButton("Neutral", SCREEN_WIDTH - 200, SCREEN_HEIGHT - 200, 160, 80, onNeutralButton)
-  ENTITIES.shortButton = createButton("\u25BD Short", SCREEN_WIDTH - 200, SCREEN_HEIGHT - 100, 160, 80, onShortButton)
-  ENTITIES.warpButton = createButton("\u232A\u232AWarp", 40, SCREEN_HEIGHT - 150, 160, 80, onWarp)
+  ENTITIES.longButton = createButton("\u25B3 Long ",
+    SCREEN_WIDTH - BUTTON_WIDTH - MARGIN, SCREEN_HEIGHT - 3 * BUTTON_HEIGHT - 5 * MARGIN,
+    BUTTON_WIDTH, BUTTON_HEIGHT, onLongButton)
+  ENTITIES.neutralButton = createButton("Neutral",
+    SCREEN_WIDTH - BUTTON_WIDTH - MARGIN, SCREEN_HEIGHT - 2 * BUTTON_HEIGHT - 3 * MARGIN,
+    BUTTON_WIDTH, BUTTON_HEIGHT, onNeutralButton)
+  ENTITIES.shortButton = createButton("\u25BD Short",
+    SCREEN_WIDTH - BUTTON_WIDTH - MARGIN, SCREEN_HEIGHT - BUTTON_HEIGHT - MARGIN,
+    BUTTON_WIDTH, BUTTON_HEIGHT, onShortButton)
+  ENTITIES.warpButton = createButton("\u232A\u232AWarp",
+    MARGIN, SCREEN_HEIGHT - BUTTON_HEIGHT - MARGIN,
+    BUTTON_WIDTH, BUTTON_HEIGHT, onWarp)
 
   onNeutral()
   showControls(false)
@@ -433,8 +444,8 @@ function createButton(text, x, y, w, h, callback) {
 function createMessages() {
   let messagesContainer = new PIXI.Container()
 
-  var x = EDGE_MARGIN
-  var y = EDGE_MARGIN
+  var x = MARGIN
+  var y = MARGIN
 
   const ROW_HEIGHT = 30
   ENTITIES.messages.iteration = new PIXI.Text('', TEXT_STYLE)
@@ -462,7 +473,7 @@ function createMessages() {
   }
 
   ENTITIES.messages.summary = new MultiStyleText(INTRO, TEXT_MULTI_STYLE)
-  ENTITIES.messages.summary.position.set(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + EDGE_MARGIN)
+  ENTITIES.messages.summary.position.set(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + MARGIN)
   ENTITIES.messages.summary.anchor.set(0.5, 0.0)
   messagesContainer.addChild(ENTITIES.messages.summary)
 
@@ -473,12 +484,12 @@ function createLogos() {
   let logoContainer = new PIXI.Container()
 
   let logo = new PIXI.Sprite.from('logo_vertical.png')
-  logo.position.set(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - EDGE_MARGIN)
+  logo.position.set(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - MARGIN)
   logo.anchor.set(0.5, 1.0)
   logoContainer.addChild(logo)
 
   let createdBy = new PIXI.Sprite.from('created.png')
-  createdBy.position.set(EDGE_MARGIN, SCREEN_HEIGHT - EDGE_MARGIN)
+  createdBy.position.set(MARGIN, SCREEN_HEIGHT - MARGIN)
   createdBy.anchor.set(0.0, 1.0)
   createdBy.scale.set(0.5)
   createdBy.interactive = true
@@ -491,7 +502,7 @@ function createLogos() {
 
 function createSmallLogo() {
   let logo = new PIXI.Sprite.from('logo_small.png')
-  logo.position.set(SCREEN_WIDTH - EDGE_MARGIN, EDGE_MARGIN)
+  logo.position.set(SCREEN_WIDTH - MARGIN, MARGIN)
   logo.anchor.set(1.0, 0.0)
   logo.scale.set(0.5)
   logo.visible = false
