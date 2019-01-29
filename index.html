@@ -35,6 +35,7 @@ const GAME_LENGTH_TICKS = GAME_LENGTH_DAYS * TICKS_PER_DAY
 const GRAPH_X_GRANULARITY_PX = 5 // smaller is more dense
 const OFFSET_X = 0.25
 const SMOOTH_FACTOR_Y = 50
+const EDGE_MARGIN = 5
 
 const SHOW_PRICE = false
 const SHOW_DEBUG = false
@@ -432,8 +433,9 @@ function createButton(text, x, y, w, h, callback) {
 function createMessages() {
   let messagesContainer = new PIXI.Container()
 
-  var x = 4
-  var y = 4
+  var x = EDGE_MARGIN
+  var y = EDGE_MARGIN
+
   const ROW_HEIGHT = 30
   ENTITIES.messages.iteration = new PIXI.Text('', TEXT_STYLE)
   ENTITIES.messages.iteration.position.set(x, y)
@@ -476,7 +478,7 @@ function createLogos() {
   logoContainer.addChild(logo)
 
   let createdBy = new PIXI.Sprite.from('created.png')
-  createdBy.position.set(0, SCREEN_HEIGHT)
+  createdBy.position.set(EDGE_MARGIN, SCREEN_HEIGHT - EDGE_MARGIN)
   createdBy.anchor.set(0.0, 1.0)
   createdBy.scale.set(0.5)
   createdBy.interactive = true
@@ -489,7 +491,7 @@ function createLogos() {
 
 function createSmallLogo() {
   let logo = new PIXI.Sprite.from('logo_small.png')
-  logo.position.set(SCREEN_WIDTH, 0)
+  logo.position.set(SCREEN_WIDTH - EDGE_MARGIN, EDGE_MARGIN)
   logo.anchor.set(1.0, 0.0)
   logo.scale.set(0.5)
   logo.visible = false
