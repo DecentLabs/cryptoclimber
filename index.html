@@ -50,7 +50,6 @@ const WARP_ZOOM_DELTA = (MAX_ZOOM - MIN_ZOOM) / 30
 var ZOOM = MAX_ZOOM
 
 const INTRO =
-  '<title>Crypto Climber</title>\n\n' +
   'How good are you at trading' +
   '\na ' + GAME_LENGTH_DAYS + ' day sample of' +
   '\nhistorical Bitcoin prices?' +
@@ -458,8 +457,8 @@ function createMessages() {
   }
 
   ENTITIES.messages.summary = new MultiStyleText(INTRO, TEXT_MULTI_STYLE)
-  ENTITIES.messages.summary.position.set(SCREEN_WIDTH/2, SCREEN_HEIGHT/2)
-  ENTITIES.messages.summary.anchor.set(0.5, 0.5)
+  ENTITIES.messages.summary.position.set(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + 15)
+  ENTITIES.messages.summary.anchor.set(0.5, 0.0)
   messagesContainer.addChild(ENTITIES.messages.summary)
 
   return messagesContainer
@@ -468,10 +467,9 @@ function createMessages() {
 function createLogos() {
   let logoContainer = new PIXI.Container()
 
-  let logo = new PIXI.Sprite.from('logo.png')
-  logo.position.set(SCREEN_WIDTH, 0)
-  logo.anchor.set(1.0, 0.0)
-  logo.scale.set(0.5)
+  let logo = new PIXI.Sprite.from('logo_vertical.png')
+  logo.position.set(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 15)
+  logo.anchor.set(0.5, 1.0)
   logoContainer.addChild(logo)
 
   let createdBy = new PIXI.Sprite.from('created.png')
