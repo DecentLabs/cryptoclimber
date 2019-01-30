@@ -28,10 +28,14 @@
   <body>
     <script>
 
+
+// ===== constants =====
+
 const INIT_FUNDS = 10000
 const TICKS_PER_DAY = 24
 const GAME_LENGTH_DAYS = parseInt(getQueryParam('days'), 10) || 30
 const GAME_LENGTH_TICKS = GAME_LENGTH_DAYS * TICKS_PER_DAY
+
 const GRAPH_X_GRANULARITY_PX = 5 // smaller is more dense
 const OFFSET_X = 0.25
 const SMOOTH_FACTOR_Y = 50
@@ -46,12 +50,10 @@ const SHOW_DEBUG = false
 const MIN_SPEED = 12 // smaller is faster
 const MAX_SPEED = 4 // smaller is faster
 const WARP_SPEED_DELTA = (MIN_SPEED - MAX_SPEED) / 30
-var SPEED = MIN_SPEED
 
 const MIN_ZOOM = 0.75
 const MAX_ZOOM = 1.25
 const WARP_ZOOM_DELTA = (MAX_ZOOM - MIN_ZOOM) / 30
-var ZOOM = MAX_ZOOM
 
 const INTRO =
   'How good are you at trading' +
@@ -67,6 +69,49 @@ const INTRO =
 
 const HODL_NAME = 'Buy and hold'
 
+const SHEET_URL = 'https://script.google.com/macros/s/AKfycbyDTk5pYHGjgHartXZZX876CZbKYa_kKljZDEOJ1dylwVSn1Mk/exec'
+
+
+// ===== global variables =====
+
+const SCREEN_WIDTH = window.innerWidth
+const SCREEN_HEIGHT = window.innerHeight
+
+var SPEED = MIN_SPEED
+var ZOOM = MAX_ZOOM
+
+var ENTITIES = defaultEntities()
+
+var ASSETS = {
+  funds: INIT_FUNDS,
+  trade: null,
+  trades: [],
+  scores: [],
+}
+
+var priceData
+var player = getQueryParam('player')
+
+
+let viewPortX = 0
+let viewPortY = 0
+
+
+var time = 0
+var tick = -1
+
+var gameOver = false
+var gameStarted = false
+
+const INPUT = {
+  short: false,
+  long: false,
+  warp: false,
+}
+
+
+// ===== startup code =====
+
 const CONF = {
   width: window.innerWidth,
   height: window.innerHeight,
@@ -76,16 +121,13 @@ const CONF = {
 };
 
 const app = new PIXI.Application(CONF);
-const SCREEN_WIDTH = window.innerWidth
-const SCREEN_HEIGHT = window.innerHeight
-const SHEET_URL = 'https://script.google.com/macros/s/AKfycbyDTk5pYHGjgHartXZZX876CZbKYa_kKljZDEOJ1dylwVSn1Mk/exec'
+
 
 // Full screen
 app.renderer.view.style.position = 'absolute';
 app.renderer.view.style.display = 'block';
 app.renderer.autoResize = true;
 app.renderer.resize(SCREEN_WIDTH, SCREEN_HEIGHT);
-
 
 document.body.appendChild(app.view);
 
@@ -99,84 +141,6 @@ PIXI.loader
     },
     active: setup
   })
-});
-
-
-const TEXT_STYLE = new PIXI.TextStyle({
-  fontFamily: '"B612 Mono", monospace',
-  fontSize: 28,
-  fill: 0xffffff,
-  align: 'center',
-  dropShadow: true,
-  dropShadowAlpha: 0.6,
-  dropShadowBlur: 10,
-  dropShadowDistance: 3,
-});
-
-const TEXT_MULTI_STYLE = {
-  'default': {
-    fontFamily: '"B612 Mono", monospace',
-    fontSize: 20,
-    fill: 0xcccccc,
-    align: 'center',
-    dropShadow: true,
-    dropShadowAlpha: 0.6,
-    dropShadowBlur: 10,
-    dropShadowDistance: 3,
-  },
-  'b': {
-    fontWeight: 'bold',
-  },
-  'strong': {
-    fontWeight: 'bold',
-    fill: 0xffffff,
-  },
-  'title': {
-    fontSize: 28,
-    fontWeight: 'bold',
-    fill: 0xffff00,
-  },
-  'self': {
-    fontWeight: 'bold',
-    fill: 0xffff00,
-  },
-  'hodl': {
-    fontWeight: 'bold',
-    fill: 0xffffff,
-  },
-  'profit': {
-    fontWeight: 'bold',
-    fill: 0x00ff00,
-  },
-  'loss': {
-    fontWeight: 'bold',
-    fill: 0xff0000,
-  },
-  'tr': {
-    fill: 0x666666,
-  },
-};
-
-const TEXT_PROFIT_STYLE = new PIXI.TextStyle({
-  fontFamily: '"B612 Mono", monospace',
-  fontSize: 20,
-  fontWeight: 'bold',
-  fill: 0x00ff00,
-  dropShadow: true,
-  dropShadowAlpha: 0.6,
-  dropShadowBlur: 10,
-  dropShadowDistance: 3,
-});
-
-const TEXT_LOSS_STYLE = new PIXI.TextStyle({
-  fontFamily: '"B612 Mono", monospace',
-  fontSize: 20,
-  fontWeight: 'bold',
-  fill: 0xff0000,
-  dropShadow: true,
-  dropShadowAlpha: 0.6,
-  dropShadowBlur: 10,
-  dropShadowDistance: 3,
 });
 
 
@@ -195,73 +159,35 @@ function defaultEntities() {
     player: null,
   }
 }
-var ENTITIES = defaultEntities()
 
-var ASSETS = {
-  funds: INIT_FUNDS,
-  trade: null,
-  trades: [],
-  scores: [],
-}
-
-function getQueryParam(param) {
-    var query = window.location.search.substring(1);
-    var vars = query.split('&');
-    for (var i = 0; i < vars.length; i++) {
-        var pair = vars[i].split('=');
-        if (decodeURIComponent(pair[0]) == param) {
-            return decodeURIComponent(pair[1]);
-        }
-    }
-    return null;
-}
-
-var priceData
-var player = getQueryParam('player')
-
-function callback(p) {
-  var data = JSON.parse(p)
-  if (gameOver && data.result == 'success') {
-    data.top.forEach(entry => {
-      addScore(false, entry[0], entry[1], entry[3])
-    })
-    showScores()
+function parsePriceData(data) {
+  const chunks = Math.floor(data.values.length / GAME_LENGTH_TICKS)
+  const fromIndex = GAME_LENGTH_TICKS * (Math.floor(Math.random() * (chunks - 1)) + 1)
+  const series = data.values.slice(fromIndex, fromIndex + GAME_LENGTH_TICKS + 1)
+  const pastSeries = data.values.slice(fromIndex - GAME_LENGTH_TICKS, fromIndex + 1)
+  const first = series[0]
+  return {
+    series: series,
+    pastSeries: pastSeries,
+    min: Math.min(...series),
+    max: Math.max(...series),
+    runningMin: first,
+    runningMax: first,
+    scale: SCREEN_HEIGHT / 2 / (first * 1.1 * 1.1 - first * 0.9 * 0.9),
+    startTick: fromIndex,
+    stopTick: fromIndex + GAME_LENGTH_TICKS,
   }
 }
 
-function addScore(self, player, result, trades) {
-  ASSETS.scores.push({
-    self: self,
-    player: player,
-    result: Math.round(result * 1000) / 1000,
-    trades: trades
-  })
+function startGame() {
+  gameStarted = true
+  ENTITIES.messages.summary.text = ''
+  showControls(true)
+  ENTITIES.logos.visible = false
+  ENTITIES.smallLogo.visible = true
 }
 
-function uniqueSorted(arr, cmp) {
-  return arr.sort(cmp).filter((e, i, arr) => !i || cmp.apply(null, [e, arr[i - 1]]) != 0)
-}
 
-function tag(tag, string) {
-  return (tag ? '<' + tag + '>' : '')
-    + string
-    + (tag ? '</' + tag + '>' : '')
-}
-
-function showScores() {
-  let text = '<strong>RESULTS</strong>\nfor the same time period\n'
-  ASSETS.scores = uniqueSorted(ASSETS.scores, (a, b) => b.result - a.result || a.player.localeCompare(b.player))
-  ASSETS.scores.forEach(e => {
-    text += '\n'
-      + tag(e.self ? 'self' : (e.player == HODL_NAME ? 'hodl' : 'b'),
-        e.player.slice(0, 14).padEnd(14, ' ')
-        + tag(e.result >= 0 ? 'profit' : 'loss', toPercent(e.result).padStart(8, ' '))
-        + tag('tr', (' (' + toTrades(e.trades) + ')').padEnd(14, ' '))
-      )
-  })
-  text += '\n\nPress [SPACE] to restart'
-  ENTITIES.messages.summary.text = text
-}
 
 function saveResult(returns, hodl, trades) {
   var q = '?player=' + encodeURIComponent(player)
@@ -609,9 +535,6 @@ function createGraph() {
   return graph
 }
 
-let viewPortX = 0
-let viewPortY = 0
-
 function setViewPort(x, y, xOffset) {
   viewPortX = x
   viewPortY = y
@@ -624,18 +547,6 @@ function setViewPort(x, y, xOffset) {
 function movePlayer(x, y) {
   ENTITIES.player.x = x
   ENTITIES.player.y = y
-}
-
-var time = 0
-var tick = -1
-
-var gameOver = false
-var gameStarted = false
-
-const INPUT = {
-  short: false,
-  long: false,
-  warp: false,
 }
 
 function update(dt) {
@@ -741,20 +652,6 @@ function updateMessages(i) {
   }
 }
 
-function toTrades(num) {
-  return num === 0 ? 'no trades' :
-    num === 1 ? '1 trade' :
-    num + ' trades'
-}
-
-function toPercent(num) {
-  return (num * 100).toFixed(1) + '%'
-}
-
-function toAbsPercent(num) {
-  return toPercent(Math.abs(num))
-}
-
 function showGameOver() {
   onNeutral()
   onWarp(false)
@@ -782,6 +679,9 @@ function showGameOver() {
     saveResult(returns, hodlReturns, ASSETS.trades.length)
   })
 }
+
+
+// ===== trades =====
 
 function enterTrade(isLong, i, margin) {
   ASSETS.trade = {}
@@ -846,34 +746,43 @@ function updateTrade(i) {
     .moveTo(a * GRAPH_X_GRANULARITY_PX, priceData.scale * (priceData.series[a] - priceData.series[0]))
     .lineTo(x, y)
   ENTITIES.gamespace.addChild(ASSETS.trade.line)
-
 }
 
-function parsePriceData(data) {
-  const chunks = Math.floor(data.values.length / GAME_LENGTH_TICKS)
-  const fromIndex = GAME_LENGTH_TICKS * (Math.floor(Math.random() * (chunks - 1)) + 1)
-  const series = data.values.slice(fromIndex, fromIndex + GAME_LENGTH_TICKS + 1)
-  const pastSeries = data.values.slice(fromIndex - GAME_LENGTH_TICKS, fromIndex + 1)
-  const first = series[0]
-  return {
-    series: series,
-    pastSeries: pastSeries,
-    min: Math.min(...series),
-    max: Math.max(...series),
-    runningMin: first,
-    runningMax: first,
-    scale: SCREEN_HEIGHT / 2 / (first * 1.1 * 1.1 - first * 0.9 * 0.9),
-    startTick: fromIndex,
-    stopTick: fromIndex + GAME_LENGTH_TICKS,
+
+// ===== high scores =====
+
+function callback(p) {
+  var data = JSON.parse(p)
+  if (gameOver && data.result == 'success') {
+    data.top.forEach(entry => {
+      addScore(false, entry[0], entry[1], entry[3])
+    })
+    showScores()
   }
 }
 
-function startGame() {
-  gameStarted = true
-  ENTITIES.messages.summary.text = ''
-  showControls(true)
-  ENTITIES.logos.visible = false
-  ENTITIES.smallLogo.visible = true
+function addScore(self, player, result, trades) {
+  ASSETS.scores.push({
+    self: self,
+    player: player,
+    result: Math.round(result * 1000) / 1000,
+    trades: trades
+  })
+}
+
+function showScores() {
+  let text = '<strong>RESULTS</strong>\nfor the same time period\n'
+  ASSETS.scores = uniqueSorted(ASSETS.scores, (a, b) => b.result - a.result || a.player.localeCompare(b.player))
+  ASSETS.scores.forEach(e => {
+    text += '\n'
+      + tag(e.self ? 'self' : (e.player == HODL_NAME ? 'hodl' : 'b'),
+        e.player.slice(0, 14).padEnd(14, ' ')
+        + tag(e.result >= 0 ? 'profit' : 'loss', toPercent(e.result).padStart(8, ' '))
+        + tag('tr', (' (' + toTrades(e.trades) + ')').padEnd(14, ' '))
+      )
+  })
+  text += '\n\nPress [SPACE] to restart'
+  ENTITIES.messages.summary.text = text
 }
 
 
@@ -942,6 +851,125 @@ function addInputListeners() {
   window.addEventListener('keydown', listenerKeyDown, false)
   window.addEventListener('keyup', listenerKeyUp, false)
 }
+
+
+// ===== generic utility functions =====
+
+function getQueryParam(param) {
+  var query = window.location.search.substring(1)
+  var vars = query.split('&')
+  for (var i = 0; i < vars.length; i++) {
+      var pair = vars[i].split('=')
+      if (decodeURIComponent(pair[0]) == param) {
+          return decodeURIComponent(pair[1])
+      }
+  }
+  return null
+}
+
+function uniqueSorted(arr, cmp) {
+  return arr.sort(cmp).filter((e, i, arr) => !i || cmp.apply(null, [e, arr[i - 1]]) != 0)
+}
+
+function tag(tag, string) {
+  return (tag ? '<' + tag + '>' : '')
+    + string
+    + (tag ? '</' + tag + '>' : '')
+}
+
+function toPercent(num) {
+  return (num * 100).toFixed(1) + '%'
+}
+
+function toAbsPercent(num) {
+  return toPercent(Math.abs(num))
+}
+
+function toTrades(num) {
+  return num === 0 ? 'no trades' :
+    num === 1 ? '1 trade' :
+    num + ' trades'
+}
+
+
+// ===== text styles =====
+
+const TEXT_STYLE = new PIXI.TextStyle({
+  fontFamily: '"B612 Mono", monospace',
+  fontSize: 28,
+  fill: 0xffffff,
+  align: 'center',
+  dropShadow: true,
+  dropShadowAlpha: 0.6,
+  dropShadowBlur: 10,
+  dropShadowDistance: 3,
+});
+
+const TEXT_MULTI_STYLE = {
+  'default': {
+    fontFamily: '"B612 Mono", monospace',
+    fontSize: 20,
+    fill: 0xcccccc,
+    align: 'center',
+    dropShadow: true,
+    dropShadowAlpha: 0.6,
+    dropShadowBlur: 10,
+    dropShadowDistance: 3,
+  },
+  'b': {
+    fontWeight: 'bold',
+  },
+  'strong': {
+    fontWeight: 'bold',
+    fill: 0xffffff,
+  },
+  'title': {
+    fontSize: 28,
+    fontWeight: 'bold',
+    fill: 0xffff00,
+  },
+  'self': {
+    fontWeight: 'bold',
+    fill: 0xffff00,
+  },
+  'hodl': {
+    fontWeight: 'bold',
+    fill: 0xffffff,
+  },
+  'profit': {
+    fontWeight: 'bold',
+    fill: 0x00ff00,
+  },
+  'loss': {
+    fontWeight: 'bold',
+    fill: 0xff0000,
+  },
+  'tr': {
+    fill: 0x666666,
+  },
+};
+
+const TEXT_PROFIT_STYLE = new PIXI.TextStyle({
+  fontFamily: '"B612 Mono", monospace',
+  fontSize: 20,
+  fontWeight: 'bold',
+  fill: 0x00ff00,
+  dropShadow: true,
+  dropShadowAlpha: 0.6,
+  dropShadowBlur: 10,
+  dropShadowDistance: 3,
+});
+
+const TEXT_LOSS_STYLE = new PIXI.TextStyle({
+  fontFamily: '"B612 Mono", monospace',
+  fontSize: 20,
+  fontWeight: 'bold',
+  fill: 0xff0000,
+  dropShadow: true,
+  dropShadowAlpha: 0.6,
+  dropShadowBlur: 10,
+  dropShadowDistance: 3,
+});
 
     </script>
   </body>
