@@ -164,6 +164,8 @@ function defaultEntities() {
 
 // =====  =====
 
+// =====  =====
+
 
 function setup() {
   app.ticker.remove(update)
@@ -802,6 +804,15 @@ function showScores() {
 
 
 // ===== event listeners =====
+
+window.onresize = function (event) {
+  clearTimeout(arguments.callee.timerId)
+  arguments.callee.timerId = setTimeout(function() {
+    SCREEN_WIDTH = window.innerWidth
+    SCREEN_HEIGHT = window.innerHeight
+    app.renderer.resize(SCREEN_WIDTH, SCREEN_HEIGHT)
+  }, 500)
+}
 
 const listenerBlur = event => {
   onNeutral()
