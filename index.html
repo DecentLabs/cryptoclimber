@@ -202,13 +202,31 @@ function setup() {
 
   ENTITIES.longButton = createButton("\u25B3 Long ",
     SCREEN_WIDTH - BUTTON_WIDTH - MARGIN, SCREEN_HEIGHT - 3 * BUTTON_HEIGHT - 5 * MARGIN,
-    BUTTON_WIDTH, BUTTON_HEIGHT, onLongButton)
+    BUTTON_WIDTH, BUTTON_HEIGHT,
+    (pressed) => {
+      if (pressed) {
+        onLong()
+      }
+    })
+
   ENTITIES.neutralButton = createButton("Neutral",
     SCREEN_WIDTH - BUTTON_WIDTH - MARGIN, SCREEN_HEIGHT - 2 * BUTTON_HEIGHT - 3 * MARGIN,
-    BUTTON_WIDTH, BUTTON_HEIGHT, onNeutralButton)
+    BUTTON_WIDTH, BUTTON_HEIGHT,
+    (pressed) => {
+      if (pressed) {
+        onNeutral()
+      }
+    })
+
   ENTITIES.shortButton = createButton("\u25BD Short",
     SCREEN_WIDTH - BUTTON_WIDTH - MARGIN, SCREEN_HEIGHT - BUTTON_HEIGHT - MARGIN,
-    BUTTON_WIDTH, BUTTON_HEIGHT, onShortButton)
+    BUTTON_WIDTH, BUTTON_HEIGHT,
+    (pressed) => {
+      if (pressed) {
+        onShort()
+      }
+    })
+
   ENTITIES.warpButton = createButton("\u232A\u232AWarp",
     MARGIN, SCREEN_HEIGHT - BUTTON_HEIGHT - MARGIN,
     BUTTON_WIDTH, BUTTON_HEIGHT, onWarp)
@@ -236,29 +254,10 @@ function startGame() {
   gameStarted = true
 }
 
-function onWarp(pressed) {
-  INPUT.warp = pressed
-  ENTITIES.warpButton.tint = pressed ? 0xffff00 : 0xffffff
+function onWarp(warpState) {
+  INPUT.warp = warpState
+  ENTITIES.warpButton.tint = warpState ? 0xffff00 : 0xffffff
 }
-
-function onLongButton(pressed) {
-  if (pressed) {
-    onLong()
-  }
-}
-
-function onShortButton(pressed) {
-  if (pressed) {
-    onShort()
-  }
-}
-
-function onNeutralButton(pressed) {
-  if (pressed) {
-    onNeutral()
-  }
-}
-
 
 function onLong() {
   INPUT.short = false
@@ -445,7 +444,6 @@ function showGameOver() {
 
 
 // ===== 'create' methods =====
-
 
 function createGraph() {
   let p0 = priceData.series[0]
