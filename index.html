@@ -161,47 +161,9 @@ function defaultEntities() {
   }
 }
 
-function parsePriceData(data) {
-  const chunks = Math.floor(data.values.length / GAME_LENGTH_TICKS)
-  const fromIndex = GAME_LENGTH_TICKS * (Math.floor(Math.random() * (chunks - 1)) + 1)
-  const series = data.values.slice(fromIndex, fromIndex + GAME_LENGTH_TICKS + 1)
-  const pastSeries = data.values.slice(fromIndex - GAME_LENGTH_TICKS, fromIndex + 1)
-  const first = series[0]
-  return {
-    series: series,
-    pastSeries: pastSeries,
-    min: Math.min(...series),
-    max: Math.max(...series),
-    runningMin: first,
-    runningMax: first,
-    scale: SCREEN_HEIGHT / 2 / (first * 1.1 * 1.1 - first * 0.9 * 0.9),
-    startTick: fromIndex,
-    stopTick: fromIndex + GAME_LENGTH_TICKS,
-  }
-}
 
-function startGame() {
-  ENTITIES.messages.summary.text = ''
-  ENTITIES.messages.highscores.text = ''
-  ENTITIES.logos.visible = false
-  ENTITIES.smallLogo.visible = true
-  showControls(true)
-  gameStarted = true
-}
+// =====  =====
 
-
-
-function saveResult(returns, hodl, trades) {
-  var q = '?player=' + encodeURIComponent(player)
-  q += '&return=' + encodeURIComponent(returns.toFixed(3))
-  q += '&hodl=' + encodeURIComponent(hodl.toFixed(3))
-  q += '&trades=' + encodeURIComponent(trades)
-  q += '&start=' + encodeURIComponent(priceData.startTick)
-  q += '&stop=' + encodeURIComponent(priceData.stopTick)
-  var scr = document.createElement('script')
-  scr.src = SHEET_URL + q
-  document.body.appendChild(scr)
-}
 
 function setup() {
   app.ticker.remove(update)
@@ -264,6 +226,16 @@ function setup() {
   app.ticker.add(update)
 }
 
+
+function startGame() {
+  ENTITIES.messages.summary.text = ''
+  ENTITIES.messages.highscores.text = ''
+  ENTITIES.logos.visible = false
+  ENTITIES.smallLogo.visible = true
+  showControls(true)
+  gameStarted = true
+}
+
 function onWarp(pressed) {
   INPUT.warp = pressed
   ENTITIES.warpButton.tint = pressed ? 0xffff00 : 0xffffff
@@ -321,226 +293,7 @@ function showControls(show) {
   show
 }
 
-function createButton(text, x, y, w, h, callback) {
-  const g = new PIXI.Graphics()
 
-  const txt = new PIXI.Text(text, TEXT_STYLE)
-  txt.x = (w - txt.width) / 2
-  txt.y = (h - txt.height) / 2
-  g.addChild(txt)
-
-  g.lineStyle(2, 0xffffff, 1);
-  g.beginFill(0xffffff, 0.25);
-  g.drawRoundedRect(0, 0, w, h, 15);
-  g.endFill();
-
-  g.x = x
-  g.y = y
-
-  g.buttonMode = true
-  g.interactive = true
-  g.buttonStates = new Set()
-  g.buttonLastState = false
-
-  // hacks to ensure reasonable multitouch behavior
-  const f = e => {
-    const release = e.type == 'pointerup' || e.type == 'pointerupoutside' || e.type =='pointercancel'
-    const pressing = !release && app.renderer.plugins.interaction.hitTest(e.data.global, g) && e.data.buttons == 1
-    const id = e.data.pointerId
-    if (pressing) {
-      g.buttonStates.add(id)
-    } else {
-      g.buttonStates.delete(id)
-    }
-    // console.log(text, pressing, g.buttonStates, e.type, id)
-    const state = g.buttonStates.size != 0
-    if (g.buttonLastState != state) {
-      g.buttonLastState = state
-      callback(state)
-    } 
-  }
-  app.stage.interactive = true
-  app.stage.on('pointermove', f)
-  app.stage.on('pointerdown', f)
-  app.stage.on('pointerup', f)
-  app.stage.on('pointerupoutside', f)
-  app.stage.on('pointercancel', f)
-
-  return g
-}
-
-function createMessages() {
-  let messagesContainer = new PIXI.Container()
-
-  var x = MARGIN
-  var y = MARGIN
-
-  const ROW_HEIGHT = 30
-  ENTITIES.messages.iteration = new PIXI.Text('', TEXT_STYLE)
-  ENTITIES.messages.iteration.position.set(x, y)
-  messagesContainer.addChild(ENTITIES.messages.iteration)
-  y += ROW_HEIGHT
-
-  ENTITIES.messages.funds = new PIXI.Text('', TEXT_STYLE)
-  ENTITIES.messages.funds.position.set(x, y)
-  messagesContainer.addChild(ENTITIES.messages.funds)
-  y += ROW_HEIGHT
-
-  if (SHOW_PRICE) {
-    ENTITIES.messages.price = new PIXI.Text('', TEXT_STYLE)
-    ENTITIES.messages.price.position.set(x, y)
-    messagesContainer.addChild(ENTITIES.messages.price)
-    y += ROW_HEIGHT
-  }
-
-  if (SHOW_DEBUG) {
-    ENTITIES.messages.debug = new PIXI.Text('', TEXT_STYLE)
-    ENTITIES.messages.debug.position.set(x, y)
-    messagesContainer.addChild(ENTITIES.messages.debug)
-    y += ROW_HEIGHT
-  }
-
-  ENTITIES.messages.summary = new MultiStyleText(INTRO, TEXT_MULTI_STYLE)
-  ENTITIES.messages.summary.position.set(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + MARGIN)
-  ENTITIES.messages.summary.anchor.set(0.5, 0.0)
-  messagesContainer.addChild(ENTITIES.messages.summary)
-
-  ENTITIES.messages.highscores = new MultiStyleText('', TEXT_MULTI_STYLE)
-  ENTITIES.messages.highscores.position.set(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2)
-  ENTITIES.messages.highscores.anchor.set(0.5, 0.5)
-  messagesContainer.addChild(ENTITIES.messages.highscores)
-
-  return messagesContainer
-}
-
-function createLogos() {
-  let logoContainer = new PIXI.Container()
-
-  let logo = new PIXI.Sprite.from('logo_vertical.png')
-  logo.position.set(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - MARGIN)
-  logo.anchor.set(0.5, 1.0)
-  logoContainer.addChild(logo)
-
-  let createdBy = new PIXI.Sprite.from('created.png')
-  createdBy.position.set(MARGIN, SCREEN_HEIGHT - MARGIN)
-  createdBy.anchor.set(0.0, 1.0)
-  createdBy.scale.set(0.5)
-  createdBy.interactive = true
-  createdBy.buttonMode = true
-  createdBy.on('click', () => { window.location.href='https://decent.org/' })
-  logoContainer.addChild(createdBy)
-
-  return logoContainer
-}
-
-function createSmallLogo() {
-  let logo = new PIXI.Sprite.from('logo_small.png')
-  logo.position.set(SCREEN_WIDTH - MARGIN, MARGIN)
-  logo.anchor.set(1.0, 0.0)
-  logo.scale.set(0.5)
-  logo.visible = false
-  return logo
-}
-
-function gradientTexture(w, h) {
-  var canvas = document.createElement('canvas')
-  canvas.width = w
-  canvas.height = h
-  var ctx = canvas.getContext('2d')
-  var gradient = ctx.createLinearGradient(0, 0, 0, h)
-  gradient.addColorStop(0, '#000000')
-  gradient.addColorStop(1, '#ffffff')
-  ctx.fillStyle = gradient
-  ctx.fillRect(0, 0, w, h)
-  return PIXI.Texture.fromCanvas(canvas)
-}
-
-function createGrid() {
-  const p0 = priceData.series[0]
-
-  const margin = SCREEN_WIDTH * ZOOM
-  let grid = new PIXI.Container()
-
-  const gradHeight = 256
-  const grad = gradientTexture(1, gradHeight)
-
-  const bands = 20
-  const alpha = 0.12
-  let ppi = p0
-  //for (i = 1; ppi < priceData.max; i++) {
-  for (let i = 1; i <= bands; i++) {
-    let prevY = priceData.scale * (ppi - p0)
-    ppi *= 1.1
-    let y = priceData.scale * (ppi - p0)
-  
-    var sprite = new PIXI.Sprite(grad)
-    sprite.x = -margin
-    sprite.y = prevY
-    sprite.alpha = alpha - (i * alpha / bands)
-    sprite.scale.set(GAME_WIDTH + (2 * margin), (y - prevY) / gradHeight)
-    grid.addChild(sprite)
-  }
-
-  let pmi = p0
-  //for (i = 1; pmi > priceData.min; i++) {
-  for (let i = 1; i <= bands; i++) {
-    let prevY = priceData.scale * (pmi - p0)
-    pmi *= 0.9
-    let y = priceData.scale * (pmi - p0)
-
-    var sprite = new PIXI.Sprite(grad)
-    sprite.x = -margin
-    sprite.y = y
-    sprite.alpha = alpha - (i * alpha / bands)
-    sprite.scale.set(GAME_WIDTH + (2 * margin), (prevY - y) / gradHeight)
-    grid.addChild(sprite)
-  }
-
-  let days = new PIXI.Graphics()
-  const mul = 24 * GRAPH_X_GRANULARITY_PX
-  for (let i = -priceData.pastSeries.length; i <= GAME_LENGTH_DAYS; i++) {
-    days.lineStyle(2, i < 0 ? 0x222222 : 0x333333)
-        .moveTo(i * mul, -2 * SCREEN_HEIGHT)
-        .lineTo(i * mul, 2 * SCREEN_HEIGHT)
-  }
-  grid.addChild(days)
-
-  return grid
-}
-
-function createPlayer() {
-  ENTITIES.player = new PIXI.Graphics()
-  ENTITIES.player.alpha = 0.2
-  ENTITIES.player.lineStyle(4, 0xffffff)
-  ENTITIES.player.drawCircle(0, 0, 8)
-  ENTITIES.player.endFill()
-  return ENTITIES.player
-}
-
-function createGraph() {
-  let p0 = priceData.series[0]
-  let graph = new PIXI.Container()
-  for (let i = 0; i < priceData.series.length - 1; i++) {
-    let line = new PIXI.Graphics()
-    line.position.set(0, 0)
-    line.lineStyle(2, 0xffffff)
-        .moveTo(GRAPH_X_GRANULARITY_PX * i, priceData.scale * (priceData.series[i] - p0))
-        .lineTo(GRAPH_X_GRANULARITY_PX * (i + 1), priceData.scale * (priceData.series[i + 1] - p0))
-    line.visible = false
-    ENTITIES.lines.push(line)
-    graph.addChild(line)
-  }
-  const past = priceData.pastSeries.length
-  for (let i = 0; i < past; i++) {
-    let line = new PIXI.Graphics()
-    line.position.set(0, 0)
-    line.lineStyle(2, 0x666666)
-        .moveTo(GRAPH_X_GRANULARITY_PX * (i + 1 - past) , priceData.scale * (priceData.pastSeries[i] - p0))
-        .lineTo(GRAPH_X_GRANULARITY_PX * (i + 2 - past), priceData.scale * (priceData.pastSeries[i + 1] - p0))
-    graph.addChild(line)
-  }
-  return graph
-}
 
 function setViewPort(x, y, xOffset) {
   viewPortX = x
@@ -555,6 +308,9 @@ function movePlayer(x, y) {
   ENTITIES.player.x = x
   ENTITIES.player.y = y
 }
+
+
+
 
 function update(dt) {
   if (!gameStarted) {
@@ -688,6 +444,231 @@ function showGameOver() {
 }
 
 
+// ===== 'create' methods =====
+
+
+function createGraph() {
+  let p0 = priceData.series[0]
+  let graph = new PIXI.Container()
+  for (let i = 0; i < priceData.series.length - 1; i++) {
+    let line = new PIXI.Graphics()
+    line.position.set(0, 0)
+    line.lineStyle(2, 0xffffff)
+        .moveTo(GRAPH_X_GRANULARITY_PX * i, priceData.scale * (priceData.series[i] - p0))
+        .lineTo(GRAPH_X_GRANULARITY_PX * (i + 1), priceData.scale * (priceData.series[i + 1] - p0))
+    line.visible = false
+    ENTITIES.lines.push(line)
+    graph.addChild(line)
+  }
+  const past = priceData.pastSeries.length
+  for (let i = 0; i < past; i++) {
+    let line = new PIXI.Graphics()
+    line.position.set(0, 0)
+    line.lineStyle(2, 0x666666)
+        .moveTo(GRAPH_X_GRANULARITY_PX * (i + 1 - past) , priceData.scale * (priceData.pastSeries[i] - p0))
+        .lineTo(GRAPH_X_GRANULARITY_PX * (i + 2 - past), priceData.scale * (priceData.pastSeries[i + 1] - p0))
+    graph.addChild(line)
+  }
+  return graph
+}
+
+function createButton(text, x, y, w, h, callback) {
+  const g = new PIXI.Graphics()
+
+  const txt = new PIXI.Text(text, TEXT_STYLE)
+  txt.x = (w - txt.width) / 2
+  txt.y = (h - txt.height) / 2
+  g.addChild(txt)
+
+  g.lineStyle(2, 0xffffff, 1);
+  g.beginFill(0xffffff, 0.25);
+  g.drawRoundedRect(0, 0, w, h, 15);
+  g.endFill();
+
+  g.x = x
+  g.y = y
+
+  g.buttonMode = true
+  g.interactive = true
+  g.buttonStates = new Set()
+  g.buttonLastState = false
+
+  // hacks to ensure reasonable multitouch behavior
+  const f = e => {
+    const release = e.type == 'pointerup' || e.type == 'pointerupoutside' || e.type =='pointercancel'
+    const pressing = !release && app.renderer.plugins.interaction.hitTest(e.data.global, g) && e.data.buttons == 1
+    const id = e.data.pointerId
+    if (pressing) {
+      g.buttonStates.add(id)
+    } else {
+      g.buttonStates.delete(id)
+    }
+    // console.log(text, pressing, g.buttonStates, e.type, id)
+    const state = g.buttonStates.size != 0
+    if (g.buttonLastState != state) {
+      g.buttonLastState = state
+      callback(state)
+    } 
+  }
+  app.stage.interactive = true
+  app.stage.on('pointermove', f)
+  app.stage.on('pointerdown', f)
+  app.stage.on('pointerup', f)
+  app.stage.on('pointerupoutside', f)
+  app.stage.on('pointercancel', f)
+
+  return g
+}
+
+function createMessages() {
+  let messagesContainer = new PIXI.Container()
+
+  var x = MARGIN
+  var y = MARGIN
+
+  const ROW_HEIGHT = 30
+  ENTITIES.messages.iteration = new PIXI.Text('', TEXT_STYLE)
+  ENTITIES.messages.iteration.position.set(x, y)
+  messagesContainer.addChild(ENTITIES.messages.iteration)
+  y += ROW_HEIGHT
+
+  ENTITIES.messages.funds = new PIXI.Text('', TEXT_STYLE)
+  ENTITIES.messages.funds.position.set(x, y)
+  messagesContainer.addChild(ENTITIES.messages.funds)
+  y += ROW_HEIGHT
+
+  if (SHOW_PRICE) {
+    ENTITIES.messages.price = new PIXI.Text('', TEXT_STYLE)
+    ENTITIES.messages.price.position.set(x, y)
+    messagesContainer.addChild(ENTITIES.messages.price)
+    y += ROW_HEIGHT
+  }
+
+  if (SHOW_DEBUG) {
+    ENTITIES.messages.debug = new PIXI.Text('', TEXT_STYLE)
+    ENTITIES.messages.debug.position.set(x, y)
+    messagesContainer.addChild(ENTITIES.messages.debug)
+    y += ROW_HEIGHT
+  }
+
+  ENTITIES.messages.summary = new MultiStyleText(INTRO, TEXT_MULTI_STYLE)
+  ENTITIES.messages.summary.position.set(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + MARGIN)
+  ENTITIES.messages.summary.anchor.set(0.5, 0.0)
+  messagesContainer.addChild(ENTITIES.messages.summary)
+
+  ENTITIES.messages.highscores = new MultiStyleText('', TEXT_MULTI_STYLE)
+  ENTITIES.messages.highscores.position.set(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2)
+  ENTITIES.messages.highscores.anchor.set(0.5, 0.5)
+  messagesContainer.addChild(ENTITIES.messages.highscores)
+
+  return messagesContainer
+}
+
+function createLogos() {
+  let logoContainer = new PIXI.Container()
+
+  let logo = new PIXI.Sprite.from('logo_vertical.png')
+  logo.position.set(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - MARGIN)
+  logo.anchor.set(0.5, 1.0)
+  logoContainer.addChild(logo)
+
+  let createdBy = new PIXI.Sprite.from('created.png')
+  createdBy.position.set(MARGIN, SCREEN_HEIGHT - MARGIN)
+  createdBy.anchor.set(0.0, 1.0)
+  createdBy.scale.set(0.5)
+  createdBy.interactive = true
+  createdBy.buttonMode = true
+  createdBy.on('click', () => { window.location.href='https://decent.org/' })
+  logoContainer.addChild(createdBy)
+
+  return logoContainer
+}
+
+function createSmallLogo() {
+  let logo = new PIXI.Sprite.from('logo_small.png')
+  logo.position.set(SCREEN_WIDTH - MARGIN, MARGIN)
+  logo.anchor.set(1.0, 0.0)
+  logo.scale.set(0.5)
+  logo.visible = false
+  return logo
+}
+
+function createGrid() {
+  const p0 = priceData.series[0]
+
+  const margin = SCREEN_WIDTH * ZOOM
+  let grid = new PIXI.Container()
+
+  const gradHeight = 256
+  const grad = gradientTexture(1, gradHeight)
+
+  const bands = 20
+  const alpha = 0.12
+  let ppi = p0
+  //for (i = 1; ppi < priceData.max; i++) {
+  for (let i = 1; i <= bands; i++) {
+    let prevY = priceData.scale * (ppi - p0)
+    ppi *= 1.1
+    let y = priceData.scale * (ppi - p0)
+  
+    var sprite = new PIXI.Sprite(grad)
+    sprite.x = -margin
+    sprite.y = prevY
+    sprite.alpha = alpha - (i * alpha / bands)
+    sprite.scale.set(GAME_WIDTH + (2 * margin), (y - prevY) / gradHeight)
+    grid.addChild(sprite)
+  }
+
+  let pmi = p0
+  //for (i = 1; pmi > priceData.min; i++) {
+  for (let i = 1; i <= bands; i++) {
+    let prevY = priceData.scale * (pmi - p0)
+    pmi *= 0.9
+    let y = priceData.scale * (pmi - p0)
+
+    var sprite = new PIXI.Sprite(grad)
+    sprite.x = -margin
+    sprite.y = y
+    sprite.alpha = alpha - (i * alpha / bands)
+    sprite.scale.set(GAME_WIDTH + (2 * margin), (prevY - y) / gradHeight)
+    grid.addChild(sprite)
+  }
+
+  let days = new PIXI.Graphics()
+  const mul = 24 * GRAPH_X_GRANULARITY_PX
+  for (let i = -priceData.pastSeries.length; i <= GAME_LENGTH_DAYS; i++) {
+    days.lineStyle(2, i < 0 ? 0x222222 : 0x333333)
+        .moveTo(i * mul, -2 * SCREEN_HEIGHT)
+        .lineTo(i * mul, 2 * SCREEN_HEIGHT)
+  }
+  grid.addChild(days)
+
+  return grid
+}
+
+function gradientTexture(w, h) {
+  var canvas = document.createElement('canvas')
+  canvas.width = w
+  canvas.height = h
+  var ctx = canvas.getContext('2d')
+  var gradient = ctx.createLinearGradient(0, 0, 0, h)
+  gradient.addColorStop(0, '#000000')
+  gradient.addColorStop(1, '#ffffff')
+  ctx.fillStyle = gradient
+  ctx.fillRect(0, 0, w, h)
+  return PIXI.Texture.fromCanvas(canvas)
+}
+
+function createPlayer() {
+  ENTITIES.player = new PIXI.Graphics()
+  ENTITIES.player.alpha = 0.2
+  ENTITIES.player.lineStyle(4, 0xffffff)
+  ENTITIES.player.drawCircle(0, 0, 8)
+  ENTITIES.player.endFill()
+  return ENTITIES.player
+}
+
+
 // ===== trades =====
 
 function enterTrade(isLong, i, margin) {
@@ -757,6 +738,18 @@ function updateTrade(i) {
 
 
 // ===== high scores =====
+
+function saveResult(returns, hodl, trades) {
+  var q = '?player=' + encodeURIComponent(player)
+  q += '&return=' + encodeURIComponent(returns.toFixed(3))
+  q += '&hodl=' + encodeURIComponent(hodl.toFixed(3))
+  q += '&trades=' + encodeURIComponent(trades)
+  q += '&start=' + encodeURIComponent(priceData.startTick)
+  q += '&stop=' + encodeURIComponent(priceData.stopTick)
+  var scr = document.createElement('script')
+  scr.src = SHEET_URL + q
+  document.body.appendChild(scr)
+}
 
 function callback(p) {
   var data = JSON.parse(p)
@@ -860,7 +853,7 @@ function addInputListeners() {
 }
 
 
-// ===== generic utility functions =====
+// ===== utilities (stateless, pure functions) =====
 
 function getQueryParam(param) {
   var query = window.location.search.substring(1)
@@ -896,6 +889,25 @@ function toTrades(num) {
   return num === 0 ? 'no trades' :
     num === 1 ? '1 trade' :
     num + ' trades'
+}
+
+function parsePriceData(data) {
+  const chunks = Math.floor(data.values.length / GAME_LENGTH_TICKS)
+  const fromIndex = GAME_LENGTH_TICKS * (Math.floor(Math.random() * (chunks - 1)) + 1)
+  const series = data.values.slice(fromIndex, fromIndex + GAME_LENGTH_TICKS + 1)
+  const pastSeries = data.values.slice(fromIndex - GAME_LENGTH_TICKS, fromIndex + 1)
+  const first = series[0]
+  return {
+    series: series,
+    pastSeries: pastSeries,
+    min: Math.min(...series),
+    max: Math.max(...series),
+    runningMin: first,
+    runningMax: first,
+    scale: SCREEN_HEIGHT / 2 / (first * 1.1 * 1.1 - first * 0.9 * 0.9),
+    startTick: fromIndex,
+    stopTick: fromIndex + GAME_LENGTH_TICKS,
+  }
 }
 
 
