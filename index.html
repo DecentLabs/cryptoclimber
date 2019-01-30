@@ -80,7 +80,20 @@ let SCREEN_HEIGHT = window.innerHeight
 let SPEED = MIN_SPEED
 let ZOOM = MAX_ZOOM
 
-let ENTITIES = defaultEntities()
+let ENTITIES = {
+  gamespace: null,
+  messages: {
+    iteration: null,
+    funds: null,
+    summary: null,
+    highscores: null,
+    price: null,
+    debug: null,
+  },
+  logos: null,
+  lines: [],
+  player: null,
+}
 
 let ASSETS = {
   funds: INIT_FUNDS,
@@ -92,10 +105,8 @@ let ASSETS = {
 let priceData = {}
 let player = getQueryParam('player')
 
-
 let viewPortX = 0
 let viewPortY = 0
-
 
 let time = 0
 let tick = -1
@@ -112,16 +123,13 @@ let INPUT = {
 
 // ===== startup code =====
 
-const CONF = {
+const app = new PIXI.Application({
   width: window.innerWidth,
   height: window.innerHeight,
   antialias: true,
   transparent: false,
   resolution: window.devicePixelRatio,
-};
-
-const app = new PIXI.Application(CONF);
-
+});
 
 // Full screen
 app.renderer.view.style.position = 'absolute';
@@ -132,35 +140,16 @@ app.renderer.resize(SCREEN_WIDTH, SCREEN_HEIGHT);
 document.body.appendChild(app.view);
 
 PIXI.loader
-.add('prices', 'btc1h.json')
-.load(() => {
-  // TODO: load font concurrently with resources
-  WebFont.load({
-    google: {
-      families: ['B612 Mono']
-    },
-    active: setup
-  })
-});
-
-
-function defaultEntities() {
-  return {
-    gamespace: null,
-    messages: {
-      iteration: null,
-      funds: null,
-      summary: null,
-      highscores: null,
-      price: null,
-      debug: null,
-    },
-    logos: null,
-    lines: [],
-    player: null,
-  }
-}
-
+  .add('prices', 'btc1h.json')
+  .load(() => {
+    // TODO: load font concurrently with resources
+    WebFont.load({
+      google: {
+        families: ['B612 Mono']
+      },
+      active: setup
+    })
+  });
 
 // =====  =====
 
@@ -179,7 +168,6 @@ function setup() {
   SPEED = MIN_SPEED
   ZOOM = MAX_ZOOM
 
-  ENTITIES = defaultEntities()
   ASSETS.funds = INIT_FUNDS
   ASSETS.trades = []
   ASSETS.scores = []
