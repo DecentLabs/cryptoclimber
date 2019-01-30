@@ -199,14 +199,14 @@ function setup() {
 
   app.stage.addChild(ENTITIES.gamespace)
 
-  let {messagesContainer, messages} = createMessages()
+  let {messagesContainer, messages} = createMessages(SCREEN_WIDTH, SCREEN_HEIGHT, MARGIN)
   app.stage.addChild(messagesContainer)
   ENTITIES.messages = messages
 
-  ENTITIES.logos = createLogos()
+  ENTITIES.logos = createLogos(SCREEN_WIDTH, SCREEN_HEIGHT, MARGIN)
   app.stage.addChild(ENTITIES.logos)
 
-  ENTITIES.smallLogo = createSmallLogo()
+  ENTITIES.smallLogo = createSmallLogo(SCREEN_WIDTH, SCREEN_HEIGHT, MARGIN)
   app.stage.addChild(ENTITIES.smallLogo)
 
   ENTITIES.longButton = createButton("\u25B3 Long ",
@@ -531,7 +531,7 @@ function createButton(text, x, y, w, h, callback) {
   return g
 }
 
-function createMessages() {
+function createMessages(width, height, margin) {
   let messagesContainer = new PIXI.Container()
   let messages = {}
 
@@ -576,7 +576,7 @@ function createMessages() {
   return {messagesContainer, messages}
 }
 
-function createLogos() {
+function createLogos(width, height, margin) {
   let logoContainer = new PIXI.Container()
 
   let logo = new PIXI.Sprite.from('logo_vertical.png')
@@ -596,7 +596,7 @@ function createLogos() {
   return logoContainer
 }
 
-function createSmallLogo() {
+function createSmallLogo(width, height, margin) {
   let logo = new PIXI.Sprite.from('logo_small.png')
   logo.position.set(SCREEN_WIDTH - MARGIN, MARGIN)
   logo.anchor.set(1.0, 0.0)
