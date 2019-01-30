@@ -151,10 +151,8 @@ PIXI.loader
     })
   });
 
-// =====  =====
 
-// =====  =====
-
+// ===== setup and layout =====
 
 function setup() {
   app.ticker.remove(update)
@@ -241,46 +239,6 @@ function setup() {
   app.ticker.add(update)
 }
 
-
-function startGame() {
-  ENTITIES.messages.summary.text = ''
-  ENTITIES.messages.highscores.text = ''
-  ENTITIES.logos.visible = false
-  ENTITIES.smallLogo.visible = true
-  showControls(true)
-  gameStarted = true
-}
-
-function onWarp(warpState) {
-  INPUT.warp = warpState
-  ENTITIES.warpButton.tint = warpState ? 0xffff00 : 0xffffff
-}
-
-function onLong() {
-  INPUT.short = false
-  INPUT.long = true
-  ENTITIES.longButton.tint = 0xff00ff
-  ENTITIES.neutralButton.tint = 0xffffff
-  ENTITIES.shortButton.tint = 0xffffff
-}
-
-function onShort() {
-  INPUT.short = true
-  INPUT.long = false
-  ENTITIES.longButton.tint = 0xffffff
-  ENTITIES.neutralButton.tint = 0xffffff
-  ENTITIES.shortButton.tint = 0xff00ff
-}
-
-function onNeutral() {
-  INPUT.long = false
-  INPUT.short = false
-  ENTITIES.longButton.tint = 0xffffff
-  ENTITIES.neutralButton.tint = 0xff00ff
-  ENTITIES.shortButton.tint = 0xffffff
-}
-
-
 function showControls(show) {
   ENTITIES.longButton.visible =
   ENTITIES.neutralButton.visible =
@@ -290,23 +248,7 @@ function showControls(show) {
 }
 
 
-
-function setViewPort(x, y, xOffset) {
-  viewPortX = x
-  viewPortY = y
-  ENTITIES.gamespace.scale.x = ZOOM
-  ENTITIES.gamespace.scale.y = -ZOOM
-  ENTITIES.gamespace.position.x = -(x * ZOOM - SCREEN_WIDTH / 2 - (SCREEN_WIDTH * xOffset))
-  ENTITIES.gamespace.position.y = -(-y * ZOOM - SCREEN_HEIGHT / 2)
-}
-
-function movePlayer(x, y) {
-  ENTITIES.player.x = x
-  ENTITIES.player.y = y
-}
-
-
-
+// ===== update loop =====
 
 function update(dt) {
   if (!gameStarted) {
@@ -356,6 +298,58 @@ function update(dt) {
     updatePlayer()
     updateMessages(i)
   }
+}
+
+function setViewPort(x, y, xOffset) {
+  viewPortX = x
+  viewPortY = y
+  ENTITIES.gamespace.scale.x = ZOOM
+  ENTITIES.gamespace.scale.y = -ZOOM
+  ENTITIES.gamespace.position.x = -(x * ZOOM - SCREEN_WIDTH / 2 - (SCREEN_WIDTH * xOffset))
+  ENTITIES.gamespace.position.y = -(-y * ZOOM - SCREEN_HEIGHT / 2)
+}
+
+function movePlayer(x, y) {
+  ENTITIES.player.x = x
+  ENTITIES.player.y = y
+}
+
+function startGame() {
+  ENTITIES.messages.summary.text = ''
+  ENTITIES.messages.highscores.text = ''
+  ENTITIES.logos.visible = false
+  ENTITIES.smallLogo.visible = true
+  showControls(true)
+  gameStarted = true
+}
+
+function onWarp(warpState) {
+  INPUT.warp = warpState
+  ENTITIES.warpButton.tint = warpState ? 0xffff00 : 0xffffff
+}
+
+function onLong() {
+  INPUT.short = false
+  INPUT.long = true
+  ENTITIES.longButton.tint = 0xff00ff
+  ENTITIES.neutralButton.tint = 0xffffff
+  ENTITIES.shortButton.tint = 0xffffff
+}
+
+function onShort() {
+  INPUT.short = true
+  INPUT.long = false
+  ENTITIES.longButton.tint = 0xffffff
+  ENTITIES.neutralButton.tint = 0xffffff
+  ENTITIES.shortButton.tint = 0xff00ff
+}
+
+function onNeutral() {
+  INPUT.long = false
+  INPUT.short = false
+  ENTITIES.longButton.tint = 0xffffff
+  ENTITIES.neutralButton.tint = 0xff00ff
+  ENTITIES.shortButton.tint = 0xffffff
 }
 
 function handleInput(i) {
