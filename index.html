@@ -74,36 +74,36 @@ const SHEET_URL = 'https://script.google.com/macros/s/AKfycbyDTk5pYHGjgHartXZZX8
 
 // ===== global variables =====
 
-const SCREEN_WIDTH = window.innerWidth
-const SCREEN_HEIGHT = window.innerHeight
+let SCREEN_WIDTH = window.innerWidth
+let SCREEN_HEIGHT = window.innerHeight
 
-var SPEED = MIN_SPEED
-var ZOOM = MAX_ZOOM
+let SPEED = MIN_SPEED
+let ZOOM = MAX_ZOOM
 
-var ENTITIES = defaultEntities()
+let ENTITIES = defaultEntities()
 
-var ASSETS = {
+let ASSETS = {
   funds: INIT_FUNDS,
   trade: null,
   trades: [],
   scores: [],
 }
 
-var priceData
-var player = getQueryParam('player')
+let priceData = {}
+let player = getQueryParam('player')
 
 
 let viewPortX = 0
 let viewPortY = 0
 
 
-var time = 0
-var tick = -1
+let time = 0
+let tick = -1
 
-var gameOver = false
-var gameStarted = false
+let gameOver = false
+let gameStarted = false
 
-const INPUT = {
+let INPUT = {
   short: false,
   long: false,
   warp: false,
@@ -184,8 +184,6 @@ function setup() {
   ASSETS.trade = null
 
   priceData = parsePriceData(PIXI.loader.resources.prices.data, GAME_LENGTH_TICKS)
-  GAME_WIDTH = (priceData.series.length - 1) * GRAPH_X_GRANULARITY_PX
-  GAME_HEIGHT = (priceData.max - priceData.min) * priceData.scale
 
   ENTITIES.gamespace = new PIXI.Container()
   ENTITIES.gamespace.addChild(createGrid())
@@ -346,7 +344,7 @@ function update(dt) {
 
   if (tick >= 0) {
     x = time * GRAPH_X_GRANULARITY_PX
-    y = priceData.scale * ((priceData.series[tick] - priceData.series[0])
+    y = SCREEN_HEIGHT * priceData.scale * ((priceData.series[tick] - priceData.series[0])
       + (time - tick) * (priceData.series[tick + 1] - priceData.series[tick]))
 
     setViewPort(x, (viewPortY + (y - viewPortY) / SMOOTH_FACTOR_Y), OFFSET_X)
@@ -437,8 +435,8 @@ function showGameOver() {
   const hodlReturns = priceData.series[GAME_LENGTH_TICKS] / priceData.series[0] - 1
   const beatsHodl = returns > hodlReturns
 
-  ZOOM = SCREEN_WIDTH / GAME_WIDTH
-  setViewPort(GAME_WIDTH / 2, 0, 0)
+  ZOOM = SCREEN_WIDTH / (GAME_LENGTH_TICKS * GRAPH_X_GRANULARITY_PX)
+  setViewPort(GAME_LENGTH_TICKS * GRAPH_X_GRANULARITY_PX / 2, 0, 0)
 
   setTimeout(() => {
     if (!player) {
@@ -463,8 +461,8 @@ function createGraph() {
     let line = new PIXI.Graphics()
     line.position.set(0, 0)
     line.lineStyle(2, 0xffffff)
-        .moveTo(GRAPH_X_GRANULARITY_PX * i, priceData.scale * (priceData.series[i] - p0))
-        .lineTo(GRAPH_X_GRANULARITY_PX * (i + 1), priceData.scale * (priceData.series[i + 1] - p0))
+        .moveTo(GRAPH_X_GRANULARITY_PX * i, SCREEN_HEIGHT * priceData.scale * (priceData.series[i] - p0))
+        .lineTo(GRAPH_X_GRANULARITY_PX * (i + 1), SCREEN_HEIGHT * priceData.scale * (priceData.series[i + 1] - p0))
     line.visible = false
     lines.push(line)
     graph.addChild(line)
@@ -475,8 +473,8 @@ function createGraph() {
     let line = new PIXI.Graphics()
     line.position.set(0, 0)
     line.lineStyle(2, 0x666666)
-        .moveTo(GRAPH_X_GRANULARITY_PX * (i + 1 - past) , priceData.scale * (priceData.pastSeries[i] - p0))
-        .lineTo(GRAPH_X_GRANULARITY_PX * (i + 2 - past), priceData.scale * (priceData.pastSeries[i + 1] - p0))
+        .moveTo(GRAPH_X_GRANULARITY_PX * (i + 1 - past), SCREEN_HEIGHT * priceData.scale * (priceData.pastSeries[i] - p0))
+        .lineTo(GRAPH_X_GRANULARITY_PX * (i + 2 - past), SCREEN_HEIGHT * priceData.scale * (priceData.pastSeries[i + 1] - p0))
     graph.addChild(line)
   }
 
@@ -620,30 +618,30 @@ function createGrid() {
   let ppi = p0
   //for (i = 1; ppi < priceData.max; i++) {
   for (let i = 1; i <= bands; i++) {
-    let prevY = priceData.scale * (ppi - p0)
+    let prevY = SCREEN_HEIGHT * priceData.scale * (ppi - p0)
     ppi *= 1.1
-    let y = priceData.scale * (ppi - p0)
+    let y = SCREEN_HEIGHT * priceData.scale * (ppi - p0)
   
     var sprite = new PIXI.Sprite(grad)
     sprite.x = -margin
     sprite.y = prevY
     sprite.alpha = alpha - (i * alpha / bands)
-    sprite.scale.set(GAME_WIDTH + (2 * margin), (y - prevY) / gradHeight)
+    sprite.scale.set(GAME_LENGTH_TICKS * GRAPH_X_GRANULARITY_PX + (2 * margin), (y - prevY) / gradHeight)
     grid.addChild(sprite)
   }
 
   let pmi = p0
   //for (i = 1; pmi > priceData.min; i++) {
   for (let i = 1; i <= bands; i++) {
-    let prevY = priceData.scale * (pmi - p0)
+    let prevY = SCREEN_HEIGHT * priceData.scale * (pmi - p0)
     pmi *= 0.9
-    let y = priceData.scale * (pmi - p0)
+    let y = SCREEN_HEIGHT * priceData.scale * (pmi - p0)
 
     var sprite = new PIXI.Sprite(grad)
     sprite.x = -margin
     sprite.y = y
     sprite.alpha = alpha - (i * alpha / bands)
-    sprite.scale.set(GAME_WIDTH + (2 * margin), (prevY - y) / gradHeight)
+    sprite.scale.set(GAME_LENGTH_TICKS * GRAPH_X_GRANULARITY_PX + (2 * margin), (prevY - y) / gradHeight)
     grid.addChild(sprite)
   }
 
@@ -744,7 +742,7 @@ function updateTrade(i) {
   ASSETS.trade.line = new PIXI.Graphics()
   const a = ASSETS.trade.barOpen
   ASSETS.trade.line.lineStyle(5, color, 0.66)
-    .moveTo(a * GRAPH_X_GRANULARITY_PX, priceData.scale * (priceData.series[a] - priceData.series[0]))
+    .moveTo(a * GRAPH_X_GRANULARITY_PX, SCREEN_HEIGHT * priceData.scale * (priceData.series[a] - priceData.series[0]))
     .lineTo(x, y)
   ENTITIES.gamespace.addChild(ASSETS.trade.line)
 }
@@ -917,7 +915,7 @@ function parsePriceData(data, ticks) {
     max: Math.max(...series),
     runningMin: first,
     runningMax: first,
-    scale: SCREEN_HEIGHT / 2 / (first * 1.1 * 1.1 - first * 0.9 * 0.9),
+    scale: 1 / (2 * (first * 1.1 * 1.1 - first * 0.9 * 0.9)),
     startTick: fromIndex,
     stopTick: fromIndex + ticks,
   }
