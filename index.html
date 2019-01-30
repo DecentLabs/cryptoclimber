@@ -151,6 +151,7 @@ function defaultEntities() {
       iteration: null,
       funds: null,
       summary: null,
+      highscores: null,
       price: null,
       debug: null,
     },
@@ -180,11 +181,12 @@ function parsePriceData(data) {
 }
 
 function startGame() {
-  gameStarted = true
   ENTITIES.messages.summary.text = ''
-  showControls(true)
+  ENTITIES.messages.highscores.text = ''
   ENTITIES.logos.visible = false
   ENTITIES.smallLogo.visible = true
+  showControls(true)
+  gameStarted = true
 }
 
 
@@ -402,6 +404,11 @@ function createMessages() {
   ENTITIES.messages.summary.position.set(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + MARGIN)
   ENTITIES.messages.summary.anchor.set(0.5, 0.0)
   messagesContainer.addChild(ENTITIES.messages.summary)
+
+  ENTITIES.messages.highscores = new MultiStyleText('', TEXT_MULTI_STYLE)
+  ENTITIES.messages.highscores.position.set(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2)
+  ENTITIES.messages.highscores.anchor.set(0.5, 0.5)
+  messagesContainer.addChild(ENTITIES.messages.highscores)
 
   return messagesContainer
 }
@@ -782,7 +789,7 @@ function showScores() {
       )
   })
   text += '\n\nPress [SPACE] to restart'
-  ENTITIES.messages.summary.text = text
+  ENTITIES.messages.highscores.text = text
 }
 
 
