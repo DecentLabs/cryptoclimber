@@ -535,8 +535,8 @@ function createMessages(width, height, margin) {
   let messagesContainer = new PIXI.Container()
   let messages = {}
 
-  var x = MARGIN
-  var y = MARGIN
+  var x = margin
+  var y = margin
 
   const ROW_HEIGHT = 30
   messages.iteration = new PIXI.Text('', TEXT_STYLE)
@@ -564,12 +564,12 @@ function createMessages(width, height, margin) {
   }
 
   messages.summary = new MultiStyleText(INTRO, TEXT_MULTI_STYLE)
-  messages.summary.position.set(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + MARGIN)
+  messages.summary.position.set(width / 2, height / 2 + margin)
   messages.summary.anchor.set(0.5, 0.0)
   messagesContainer.addChild(messages.summary)
 
   messages.highscores = new MultiStyleText('', TEXT_MULTI_STYLE)
-  messages.highscores.position.set(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2)
+  messages.highscores.position.set(width / 2, height / 2)
   messages.highscores.anchor.set(0.5, 0.5)
   messagesContainer.addChild(messages.highscores)
 
@@ -580,17 +580,17 @@ function createLogos(width, height, margin) {
   let logoContainer = new PIXI.Container()
 
   let logo = new PIXI.Sprite.from('logo_vertical.png')
-  logo.position.set(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - MARGIN)
+  logo.position.set(width / 2, height / 2 - margin)
   logo.anchor.set(0.5, 1.0)
   logoContainer.addChild(logo)
 
   let createdBy = new PIXI.Sprite.from('created.png')
-  createdBy.position.set(MARGIN, SCREEN_HEIGHT - MARGIN)
+  createdBy.position.set(margin, height - margin)
   createdBy.anchor.set(0.0, 1.0)
   createdBy.scale.set(0.5)
   createdBy.interactive = true
   createdBy.buttonMode = true
-  createdBy.on('click', () => { window.location.href='https://decent.org/' })
+  createdBy.on('click', () => { window.location.href = 'https://decent.org/' })
   logoContainer.addChild(createdBy)
 
   return logoContainer
@@ -598,7 +598,7 @@ function createLogos(width, height, margin) {
 
 function createSmallLogo(width, height, margin) {
   let logo = new PIXI.Sprite.from('logo_small.png')
-  logo.position.set(SCREEN_WIDTH - MARGIN, MARGIN)
+  logo.position.set(width - margin, margin)
   logo.anchor.set(1.0, 0.0)
   logo.scale.set(0.5)
   logo.visible = false
