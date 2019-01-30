@@ -461,8 +461,10 @@ function createGraph() {
     let line = new PIXI.Graphics()
     line.position.set(0, 0)
     line.lineStyle(2, 0xffffff)
-        .moveTo(GRAPH_X_GRANULARITY_PX * i, SCREEN_HEIGHT * priceData.scale * (priceData.series[i] - p0))
-        .lineTo(GRAPH_X_GRANULARITY_PX * (i + 1), SCREEN_HEIGHT * priceData.scale * (priceData.series[i + 1] - p0))
+        .moveTo(GRAPH_X_GRANULARITY_PX * i,
+          SCREEN_HEIGHT * priceData.scale * (priceData.series[i] - p0))
+        .lineTo(GRAPH_X_GRANULARITY_PX * (i + 1),
+          SCREEN_HEIGHT * priceData.scale * (priceData.series[i + 1] - p0))
     line.visible = false
     lines.push(line)
     graph.addChild(line)
@@ -473,8 +475,10 @@ function createGraph() {
     let line = new PIXI.Graphics()
     line.position.set(0, 0)
     line.lineStyle(2, 0x666666)
-        .moveTo(GRAPH_X_GRANULARITY_PX * (i + 1 - past), SCREEN_HEIGHT * priceData.scale * (priceData.pastSeries[i] - p0))
-        .lineTo(GRAPH_X_GRANULARITY_PX * (i + 2 - past), SCREEN_HEIGHT * priceData.scale * (priceData.pastSeries[i + 1] - p0))
+        .moveTo(GRAPH_X_GRANULARITY_PX * (i + 1 - past),
+          SCREEN_HEIGHT * priceData.scale * (priceData.pastSeries[i] - p0))
+        .lineTo(GRAPH_X_GRANULARITY_PX * (i + 2 - past),
+          SCREEN_HEIGHT * priceData.scale * (priceData.pastSeries[i + 1] - p0))
     graph.addChild(line)
   }
 
@@ -647,8 +651,8 @@ function createGrid() {
 
   let days = new PIXI.Graphics()
   const mul = 24 * GRAPH_X_GRANULARITY_PX
-  for (let i = -priceData.pastSeries.length; i <= GAME_LENGTH_DAYS; i++) {
-    days.lineStyle(2, i < 0 ? 0x222222 : 0x333333)
+  for (let i = -GAME_LENGTH_DAYS; i <= GAME_LENGTH_DAYS; i++) {
+    days.lineStyle(2, i < 0 ? 0x222222 : (i == 0 ? 0x444444 : 0x333333))
         .moveTo(i * mul, -2 * SCREEN_HEIGHT)
         .lineTo(i * mul, 2 * SCREEN_HEIGHT)
   }
