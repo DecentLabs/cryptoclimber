@@ -80,6 +80,9 @@ const DEFAULT_TEXTS = Object.freeze({
   debug: '',
 })
 
+const COLOR_BUTTON_INACTIVE = 0xffffff
+const COLOR_BUTTON_ACTIVE = 0xff00ff
+const COLOR_BUTTON_WARP_ACTIVE = 0xffff00
 
 // ===== global variables =====
 
@@ -363,31 +366,31 @@ function startGame() {
 
 function onWarp(warpState) {
   INPUT.warp = warpState
-  ENTITIES.warpButton.tint = warpState ? 0xffff00 : 0xffffff
+  ENTITIES.warpButton.tint = warpState ? COLOR_BUTTON_WARP_ACTIVE : COLOR_BUTTON_INACTIVE
 }
 
 function onLong() {
   INPUT.short = false
   INPUT.long = true
-  ENTITIES.longButton.tint = 0xff00ff
-  ENTITIES.neutralButton.tint = 0xffffff
-  ENTITIES.shortButton.tint = 0xffffff
+  ENTITIES.longButton.tint = COLOR_BUTTON_ACTIVE
+  ENTITIES.neutralButton.tint = COLOR_BUTTON_INACTIVE
+  ENTITIES.shortButton.tint = COLOR_BUTTON_INACTIVE
 }
 
 function onShort() {
   INPUT.short = true
   INPUT.long = false
-  ENTITIES.longButton.tint = 0xffffff
-  ENTITIES.neutralButton.tint = 0xffffff
-  ENTITIES.shortButton.tint = 0xff00ff
+  ENTITIES.longButton.tint = COLOR_BUTTON_INACTIVE
+  ENTITIES.neutralButton.tint = COLOR_BUTTON_INACTIVE
+  ENTITIES.shortButton.tint = COLOR_BUTTON_ACTIVE
 }
 
 function onNeutral() {
   INPUT.long = false
   INPUT.short = false
-  ENTITIES.longButton.tint = 0xffffff
-  ENTITIES.neutralButton.tint = 0xff00ff
-  ENTITIES.shortButton.tint = 0xffffff
+  ENTITIES.longButton.tint = COLOR_BUTTON_INACTIVE
+  ENTITIES.neutralButton.tint = COLOR_BUTTON_ACTIVE
+  ENTITIES.shortButton.tint = COLOR_BUTTON_INACTIVE
 }
 
 function handleInput(i) {
@@ -516,11 +519,11 @@ function createButton(text, x, y, w, h, initialState, callback) {
   txt.y = (h - txt.height) / 2
   g.addChild(txt)
 
-  g.lineStyle(2, 0xffffff, 1);
-  g.beginFill(0xffffff, 0.25);
+  g.lineStyle(2, COLOR_BUTTON_INACTIVE, 1);
+  g.beginFill(COLOR_BUTTON_INACTIVE, 0.25);
   g.drawRoundedRect(0, 0, w, h, 15);
   g.endFill();
-  g.tint = initialState ? 0xff00ff : 0xffffff
+  g.tint = initialState ? COLOR_BUTTON_ACTIVE : COLOR_BUTTON_INACTIVE
 
   g.x = x
   g.y = y
