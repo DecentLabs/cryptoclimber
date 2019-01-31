@@ -71,6 +71,15 @@ const HODL_NAME = 'Buy and hold'
 
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbyDTk5pYHGjgHartXZZX876CZbKYa_kKljZDEOJ1dylwVSn1Mk/exec'
 
+const DEFAULT_TEXTS = Object.freeze({
+  summary: INTRO,
+  highscores: '',
+  iteration: '',
+  funds: '',
+  price: '',
+  debug: '',
+})
+
 
 // ===== global variables =====
 
@@ -80,14 +89,7 @@ let SCREEN_HEIGHT = window.innerHeight
 let SPEED = MIN_SPEED
 let ZOOM = MAX_ZOOM
 
-let TEXTS = {
-  summary: INTRO,
-  highscores: '',
-  iteration: '',
-  funds: '',
-  price: '',
-  debug: '',
-}
+let TEXTS = Object.assign({}, DEFAULT_TEXTS)
 
 let ENTITIES = {
   gamespace: null,
@@ -195,6 +197,7 @@ function setup() {
 
   app.stage.addChild(ENTITIES.gamespace)
 
+  TEXTS = Object.assign({}, DEFAULT_TEXTS)
   setupUI(SCREEN_WIDTH, SCREEN_HEIGHT);
 
   onNeutral()
@@ -222,7 +225,7 @@ function setupUI(width, height) {
 
   ENTITIES.longButton = createButton("\u25B3 Long ",
     width - BUTTON_WIDTH - MARGIN, height - 3 * BUTTON_HEIGHT - 5 * MARGIN,
-    BUTTON_WIDTH, BUTTON_HEIGHT,
+    BUTTON_WIDTH, BUTTON_HEIGHT, INPUT.long,
     (pressed) => {
       if (pressed) {
         onLong()
@@ -231,7 +234,7 @@ function setupUI(width, height) {
 
   ENTITIES.neutralButton = createButton("Neutral",
     width - BUTTON_WIDTH - MARGIN, height - 2 * BUTTON_HEIGHT - 3 * MARGIN,
-    BUTTON_WIDTH, BUTTON_HEIGHT,
+    BUTTON_WIDTH, BUTTON_HEIGHT, !INPUT.long && !INPUT.short,
     (pressed) => {
       if (pressed) {
         onNeutral()
@@ -240,7 +243,7 @@ function setupUI(width, height) {
 
   ENTITIES.shortButton = createButton("\u25BD Short",
     width - BUTTON_WIDTH - MARGIN, height - BUTTON_HEIGHT - MARGIN,
-    BUTTON_WIDTH, BUTTON_HEIGHT,
+    BUTTON_WIDTH, BUTTON_HEIGHT, INPUT.short,
     (pressed) => {
       if (pressed) {
         onShort()
@@ -249,7 +252,7 @@ function setupUI(width, height) {
 
   ENTITIES.warpButton = createButton("\u232A\u232AWarp",
     MARGIN, height - BUTTON_HEIGHT - MARGIN,
-    BUTTON_WIDTH, BUTTON_HEIGHT, onWarp)
+    BUTTON_WIDTH, BUTTON_HEIGHT, INPUT.warp, onWarp)
 
   uiContainer.addChild(ENTITIES.longButton)
   uiContainer.addChild(ENTITIES.neutralButton)
@@ -505,7 +508,7 @@ function createGraph() {
   return {graph, lines}
 }
 
-function createButton(text, x, y, w, h, callback) {
+function createButton(text, x, y, w, h, initialState, callback) {
   const g = new PIXI.Graphics()
 
   const txt = new PIXI.Text(text, TEXT_STYLE)
@@ -517,6 +520,7 @@ function createButton(text, x, y, w, h, callback) {
   g.beginFill(0xffffff, 0.25);
   g.drawRoundedRect(0, 0, w, h, 15);
   g.endFill();
+  g.tint = initialState ? 0xff00ff : 0xffffff
 
   g.x = x
   g.y = y
