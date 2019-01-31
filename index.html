@@ -86,17 +86,18 @@ const COLOR_BUTTON_INACTIVE = 0xffffff
 const COLOR_BUTTON_ACTIVE = 0xff00ff
 const COLOR_BUTTON_WARP_ACTIVE = 0xffff00
 
+
 // ===== global variables =====
 
-let SCREEN_WIDTH = window.innerWidth
-let SCREEN_HEIGHT = window.innerHeight
+let screenWidth = window.innerWidth
+let screenHeight = window.innerHeight
 
-let SPEED = MIN_SPEED
-let ZOOM = MAX_ZOOM
+let speed = MIN_SPEED
+let zoom = MAX_ZOOM
 
-let TEXTS = Object.assign({}, DEFAULT_TEXTS)
+let texts = Object.assign({}, DEFAULT_TEXTS)
 
-let ENTITIES = {
+let entities = {
   gamespace: null,
   ui: null,
   messages: {
@@ -112,7 +113,7 @@ let ENTITIES = {
   player: null,
 }
 
-let ASSETS = {
+let assets = {
   funds: INIT_FUNDS,
   trade: null,
   trades: [],
@@ -131,7 +132,7 @@ let tick = -1
 let gameOver = false
 let gameStarted = false
 
-let INPUT = {
+let input = {
   short: false,
   long: false,
   warp: false,
@@ -152,7 +153,7 @@ const app = new PIXI.Application({
 app.renderer.view.style.position = 'absolute';
 app.renderer.view.style.display = 'block';
 app.renderer.autoResize = true;
-app.renderer.resize(SCREEN_WIDTH, SCREEN_HEIGHT);
+app.renderer.resize(screenWidth, screenHeight);
 
 document.body.appendChild(app.view);
 
@@ -180,30 +181,30 @@ function setup() {
 
   time = 0
   tick = -1
-  SPEED = MIN_SPEED
-  ZOOM = MAX_ZOOM
+  speed = MIN_SPEED
+  zoom = MAX_ZOOM
 
-  ASSETS.funds = INIT_FUNDS
-  ASSETS.trades = []
-  ASSETS.scores = []
-  ASSETS.trade = null
+  assets.funds = INIT_FUNDS
+  assets.trades = []
+  assets.scores = []
+  assets.trade = null
 
   priceData = parsePriceData(PIXI.loader.resources.prices.data, GAME_LENGTH_TICKS)
 
-  ENTITIES.gamespace = new PIXI.Container()
-  ENTITIES.gamespace.addChild(createGrid())
+  entities.gamespace = new PIXI.Container()
+  entities.gamespace.addChild(createGrid())
 
   let {graph, lines} = createGraph()
-  ENTITIES.gamespace.addChild(graph)
-  ENTITIES.lines = lines
+  entities.gamespace.addChild(graph)
+  entities.lines = lines
 
-  ENTITIES.player = createPlayer()
-  ENTITIES.gamespace.addChild(ENTITIES.player)
+  entities.player = createPlayer()
+  entities.gamespace.addChild(entities.player)
 
-  app.stage.addChild(ENTITIES.gamespace)
+  app.stage.addChild(entities.gamespace)
 
-  TEXTS = Object.assign({}, DEFAULT_TEXTS)
-  setupUI(SCREEN_WIDTH, SCREEN_HEIGHT);
+  texts = Object.assign({}, DEFAULT_TEXTS)
+  setupUI(screenWidth, screenHeight);
 
   onNeutral()
   showControls(false)
@@ -214,79 +215,79 @@ function setup() {
 }
 
 function setupUI(width, height) {
-  app.stage.removeChild(ENTITIES.ui)
+  app.stage.removeChild(entities.ui)
 
   let uiContainer = new PIXI.Container()
 
   let {messagesContainer, messages} = createMessages(width, height, MARGIN)
   uiContainer.addChild(messagesContainer)
-  ENTITIES.messages = messages
+  entities.messages = messages
 
-  ENTITIES.logos = createLogos(width, height, MARGIN)
-  uiContainer.addChild(ENTITIES.logos)
+  entities.logos = createLogos(width, height, MARGIN)
+  uiContainer.addChild(entities.logos)
 
-  ENTITIES.smallLogo = createSmallLogo(width, height, MARGIN)
-  uiContainer.addChild(ENTITIES.smallLogo)
+  entities.smallLogo = createSmallLogo(width, height, MARGIN)
+  uiContainer.addChild(entities.smallLogo)
 
-  ENTITIES.longButton = createButton("\u25B3 Long ",
+  entities.longButton = createButton("\u25B3 Long ",
     width - BUTTON_WIDTH - MARGIN, height - 3 * BUTTON_HEIGHT - 5 * MARGIN,
-    BUTTON_WIDTH, BUTTON_HEIGHT, INPUT.long,
+    BUTTON_WIDTH, BUTTON_HEIGHT, input.long,
     (pressed) => {
       if (pressed) {
         onLong()
       }
     })
 
-  ENTITIES.neutralButton = createButton("Neutral",
+  entities.neutralButton = createButton("Neutral",
     width - BUTTON_WIDTH - MARGIN, height - 2 * BUTTON_HEIGHT - 3 * MARGIN,
-    BUTTON_WIDTH, BUTTON_HEIGHT, !INPUT.long && !INPUT.short,
+    BUTTON_WIDTH, BUTTON_HEIGHT, !input.long && !input.short,
     (pressed) => {
       if (pressed) {
         onNeutral()
       }
     })
 
-  ENTITIES.shortButton = createButton("\u25BD Short",
+  entities.shortButton = createButton("\u25BD Short",
     width - BUTTON_WIDTH - MARGIN, height - BUTTON_HEIGHT - MARGIN,
-    BUTTON_WIDTH, BUTTON_HEIGHT, INPUT.short,
+    BUTTON_WIDTH, BUTTON_HEIGHT, input.short,
     (pressed) => {
       if (pressed) {
         onShort()
       }
     })
 
-  ENTITIES.warpButton = createButton("\u232A\u232AWarp",
+  entities.warpButton = createButton("\u232A\u232AWarp",
     MARGIN, height - BUTTON_HEIGHT - MARGIN,
-    BUTTON_WIDTH, BUTTON_HEIGHT, INPUT.warp, onWarp)
+    BUTTON_WIDTH, BUTTON_HEIGHT, input.warp, onWarp)
 
-  uiContainer.addChild(ENTITIES.longButton)
-  uiContainer.addChild(ENTITIES.neutralButton)
-  uiContainer.addChild(ENTITIES.shortButton)
-  uiContainer.addChild(ENTITIES.warpButton)
+  uiContainer.addChild(entities.longButton)
+  uiContainer.addChild(entities.neutralButton)
+  uiContainer.addChild(entities.shortButton)
+  uiContainer.addChild(entities.warpButton)
 
-  ENTITIES.ui = uiContainer
+  entities.ui = uiContainer
   showControls(isGameRunning())
   app.stage.addChild(uiContainer)
 }
 
 function showControls(show) {
-  ENTITIES.longButton.visible =
-  ENTITIES.neutralButton.visible =
-  ENTITIES.shortButton.visible =
-  ENTITIES.warpButton.visible =
+  entities.longButton.visible =
+  entities.neutralButton.visible =
+  entities.shortButton.visible =
+  entities.warpButton.visible =
   show
 }
 
 function updateTexts() {
-  ENTITIES.messages.summary.text = TEXTS.summary
-  ENTITIES.messages.highscores.text = TEXTS.highscores
-  ENTITIES.messages.iteration.text = TEXTS.iteration
-  ENTITIES.messages.funds.text = TEXTS.funds
+  entities.messages.summary.text = texts.summary
+  entities.messages.highscores.text = texts.highscores
+  entities.messages.iteration.text = texts.iteration
+  entities.messages.funds.text = texts.funds
   if (SHOW_PRICE) {
-    ENTITIES.messages.price.text = TEXTS.price
+    entities.messages.price.text = texts.price
   }
   if (SHOW_DEBUG) {
-    ENTITIES.messages.debug.text = TEXTS.debug
+    entities.messages.debug.text = texts.debug
   }
 }
 
@@ -298,15 +299,15 @@ function update(dt) {
     return
   }
 
-  if (INPUT.warp) {
-    SPEED = Math.max(MAX_SPEED, SPEED - WARP_SPEED_DELTA)
-    ZOOM = Math.max(MIN_ZOOM, ZOOM - WARP_ZOOM_DELTA)
+  if (input.warp) {
+    speed = Math.max(MAX_SPEED, speed - WARP_SPEED_DELTA)
+    zoom = Math.max(MIN_ZOOM, zoom - WARP_ZOOM_DELTA)
   } else {
-    SPEED = Math.min(MIN_SPEED, SPEED + WARP_SPEED_DELTA)
-    ZOOM = Math.min(MAX_ZOOM, ZOOM + WARP_ZOOM_DELTA)
+    speed = Math.min(MIN_SPEED, speed + WARP_SPEED_DELTA)
+    zoom = Math.min(MAX_ZOOM, zoom + WARP_ZOOM_DELTA)
   }
 
-  time += dt / SPEED
+  time += dt / speed
   var i = Math.floor(time)
   if (i >= GAME_LENGTH_TICKS) {
     if (!gameOver) {
@@ -336,7 +337,7 @@ function update(dt) {
 
     handleInput(i)
 
-    ENTITIES.lines[i].visible = true
+    entities.lines[i].visible = true
 
     updatePlayer()
     updateMessages(i)
@@ -346,104 +347,104 @@ function update(dt) {
 function setViewPort(x, y, xOffset) {
   viewPortX = x
   viewPortY = y
-  ENTITIES.gamespace.scale.x = ZOOM
-  ENTITIES.gamespace.scale.y = -ZOOM
-  ENTITIES.gamespace.position.x = -(x * ZOOM - SCREEN_WIDTH / 2 - (SCREEN_WIDTH * xOffset))
-  ENTITIES.gamespace.position.y = -(-y * ZOOM - SCREEN_HEIGHT / 2)
+  entities.gamespace.scale.x = zoom
+  entities.gamespace.scale.y = -zoom
+  entities.gamespace.position.x = -(x * zoom - screenWidth / 2 - (screenWidth * xOffset))
+  entities.gamespace.position.y = -(-y * zoom - screenHeight / 2)
 }
 
 function movePlayer(x, y) {
-  ENTITIES.player.x = x
-  ENTITIES.player.y = y
+  entities.player.x = x
+  entities.player.y = y
 }
 
 function startGame() {
-  TEXTS.summary = ''
-  TEXTS.highscores = ''
+  texts.summary = ''
+  texts.highscores = ''
   updateTexts()
-  ENTITIES.logos.visible = false
-  ENTITIES.smallLogo.visible = true
+  entities.logos.visible = false
+  entities.smallLogo.visible = true
   showControls(true)
   gameStarted = true
 }
 
 function onWarp(warpState) {
-  INPUT.warp = warpState
-  ENTITIES.warpButton.tint = warpState ? COLOR_BUTTON_WARP_ACTIVE : COLOR_BUTTON_INACTIVE
+  input.warp = warpState
+  entities.warpButton.tint = warpState ? COLOR_BUTTON_WARP_ACTIVE : COLOR_BUTTON_INACTIVE
 }
 
 function onLong() {
-  INPUT.short = false
-  INPUT.long = true
-  ENTITIES.longButton.tint = COLOR_BUTTON_ACTIVE
-  ENTITIES.neutralButton.tint = COLOR_BUTTON_INACTIVE
-  ENTITIES.shortButton.tint = COLOR_BUTTON_INACTIVE
+  input.short = false
+  input.long = true
+  entities.longButton.tint = COLOR_BUTTON_ACTIVE
+  entities.neutralButton.tint = COLOR_BUTTON_INACTIVE
+  entities.shortButton.tint = COLOR_BUTTON_INACTIVE
 }
 
 function onShort() {
-  INPUT.short = true
-  INPUT.long = false
-  ENTITIES.longButton.tint = COLOR_BUTTON_INACTIVE
-  ENTITIES.neutralButton.tint = COLOR_BUTTON_INACTIVE
-  ENTITIES.shortButton.tint = COLOR_BUTTON_ACTIVE
+  input.short = true
+  input.long = false
+  entities.longButton.tint = COLOR_BUTTON_INACTIVE
+  entities.neutralButton.tint = COLOR_BUTTON_INACTIVE
+  entities.shortButton.tint = COLOR_BUTTON_ACTIVE
 }
 
 function onNeutral() {
-  INPUT.long = false
-  INPUT.short = false
-  ENTITIES.longButton.tint = COLOR_BUTTON_INACTIVE
-  ENTITIES.neutralButton.tint = COLOR_BUTTON_ACTIVE
-  ENTITIES.shortButton.tint = COLOR_BUTTON_INACTIVE
+  input.long = false
+  input.short = false
+  entities.longButton.tint = COLOR_BUTTON_INACTIVE
+  entities.neutralButton.tint = COLOR_BUTTON_ACTIVE
+  entities.shortButton.tint = COLOR_BUTTON_INACTIVE
 }
 
 function handleInput(i) {
-  if (INPUT.long && !INPUT.short) {
+  if (input.long && !input.short) {
     // LONG
-    if (ASSETS.trade) {
-      if (ASSETS.trade.isLong) {
+    if (assets.trade) {
+      if (assets.trade.isLong) {
         return
       } else {
         exitTrade()
       }
     }
-    enterTrade(true, i, ASSETS.funds)
-  } else if (!INPUT.long && INPUT.short) {
+    enterTrade(true, i, assets.funds)
+  } else if (!input.long && input.short) {
     // SHORT
-    if (ASSETS.trade) {
-      if (!ASSETS.trade.isLong) {
+    if (assets.trade) {
+      if (!assets.trade.isLong) {
         return
       } else {
         exitTrade()
       }
     }
-    enterTrade(false, i, ASSETS.funds)
+    enterTrade(false, i, assets.funds)
   } else {
     // NEUTRAL
-    if (ASSETS.trade) {
+    if (assets.trade) {
       exitTrade()
     }
   }
 }
 
 function updatePlayer() {
-  ENTITIES.player.alpha = ASSETS.trade ? 0.5 : 0.2
+  entities.player.alpha = assets.trade ? 0.5 : 0.2
 }
 
 function updateMessages(i) {
-  TEXTS.summary = ''
-  TEXTS.iteration = 'Day ' + (Math.floor(i / TICKS_PER_DAY) + 1) + ' of ' + GAME_LENGTH_DAYS
+  texts.summary = ''
+  texts.iteration = 'Day ' + (Math.floor(i / TICKS_PER_DAY) + 1) + ' of ' + GAME_LENGTH_DAYS
 
-  var equity = ASSETS.funds + (ASSETS.trade ? ASSETS.trade.current : 0)
-  TEXTS.funds = 'Equity $' + Math.round(equity)
+  var equity = assets.funds + (assets.trade ? assets.trade.current : 0)
+  texts.funds = 'Equity $' + Math.round(equity)
 
   if (SHOW_PRICE) {
-    TEXTS.price = 'price: $' + Math.round(priceData.series[i])
+    texts.price = 'price: $' + Math.round(priceData.series[i])
   }
   if (SHOW_DEBUG) {
-    TEXTS.debug =
-      'inputs:' + (INPUT.short?'S':' ') + (INPUT.long?'L':' ') + (INPUT.warp?'W':' ')
-      + ' trade:' + (ASSETS.trade ? (ASSETS.trade.isLong ? 'L' : 'S') : 'N')
-      + ' speed:' + (SPEED.toFixed(2)) + ' zoom:' + (ZOOM.toFixed(2))
+    texts.debug =
+      'inputs:' + (input.short?'S':' ') + (input.long?'L':' ') + (input.warp?'W':' ')
+      + ' trade:' + (assets.trade ? (assets.trade.isLong ? 'L' : 'S') : 'N')
+      + ' speed:' + (speed.toFixed(2)) + ' zoom:' + (zoom.toFixed(2))
       + ' x:' + viewPortX.toFixed(2) + ' y:' + viewPortY.toFixed(2)
       + ' tick:' + tick
   }
@@ -454,13 +455,13 @@ function showGameOver() {
   onNeutral()
   onWarp(false)
   showControls(false)
-  if (ASSETS.trade) {
+  if (assets.trade) {
     exitTrade()
   }
   updateMessages(GAME_LENGTH_TICKS - 1)
   zoomOutFull()
 
-  const profit = ASSETS.funds - INIT_FUNDS
+  const profit = assets.funds - INIT_FUNDS
   const returns = profit / INIT_FUNDS
   const hodlReturns = priceData.series[GAME_LENGTH_TICKS] / priceData.series[0] - 1
   const beatsHodl = returns > hodlReturns
@@ -469,15 +470,15 @@ function showGameOver() {
     if (!player) {
       player = window.prompt('Nick name?') || 'anonymous';
     }
-    addScore(true, player, returns, ASSETS.trades.length)
+    addScore(true, player, returns, assets.trades.length)
     addScore(false, HODL_NAME, hodlReturns, 1)
     showScores()
-    saveResult(returns, hodlReturns, ASSETS.trades.length)
+    saveResult(returns, hodlReturns, assets.trades.length)
   })
 }
 
 function zoomOutFull() {
-  ZOOM = SCREEN_WIDTH / (GAME_LENGTH_TICKS * GRAPH_X_GRANULARITY_PX)
+  zoom = screenWidth / (GAME_LENGTH_TICKS * GRAPH_X_GRANULARITY_PX)
   setViewPort(GAME_LENGTH_TICKS * GRAPH_X_GRANULARITY_PX / 2, 0, 0)
 }
 
@@ -573,36 +574,36 @@ function createMessages(width, height, margin) {
   let x = margin
   let y = margin
 
-  messages.iteration = new PIXI.Text(TEXTS.iteration, TEXT_STYLE)
+  messages.iteration = new PIXI.Text(texts.iteration, TEXT_STYLE)
   messages.iteration.position.set(x, y)
   messagesContainer.addChild(messages.iteration)
   y += ROW_HEIGHT
 
-  messages.funds = new PIXI.Text(TEXTS.funds, TEXT_STYLE)
+  messages.funds = new PIXI.Text(texts.funds, TEXT_STYLE)
   messages.funds.position.set(x, y)
   messagesContainer.addChild(messages.funds)
   y += ROW_HEIGHT
 
   if (SHOW_PRICE) {
-    messages.price = new PIXI.Text(TEXTS.price, TEXT_STYLE)
+    messages.price = new PIXI.Text(texts.price, TEXT_STYLE)
     messages.price.position.set(x, y)
     messagesContainer.addChild(messages.price)
     y += ROW_HEIGHT
   }
 
   if (SHOW_DEBUG) {
-    messages.debug = new PIXI.Text(TEXTS.debug, TEXT_STYLE)
+    messages.debug = new PIXI.Text(texts.debug, TEXT_STYLE)
     messages.debug.position.set(x, y)
     messagesContainer.addChild(messages.debug)
     y += ROW_HEIGHT
   }
 
-  messages.summary = new MultiStyleText(TEXTS.summary, TEXT_MULTI_STYLE)
+  messages.summary = new MultiStyleText(texts.summary, TEXT_MULTI_STYLE)
   messages.summary.position.set(width / 2, height / 2 + margin)
   messages.summary.anchor.set(0.5, 0.0)
   messagesContainer.addChild(messages.summary)
 
-  messages.highscores = new MultiStyleText(TEXTS.highscores, TEXT_MULTI_STYLE)
+  messages.highscores = new MultiStyleText(texts.highscores, TEXT_MULTI_STYLE)
   messages.highscores.position.set(width / 2, height / 2)
   messages.highscores.anchor.set(0.5, 0.5)
   messagesContainer.addChild(messages.highscores)
@@ -719,68 +720,68 @@ function createPlayer() {
 // ===== trades =====
 
 function enterTrade(isLong, i, margin) {
-  ASSETS.trade = {}
-  ASSETS.trade.barOpen = ASSETS.trade.barClose = i
-  ASSETS.trade.isLong = isLong
-  ASSETS.trade.strikePrice = priceData.series[i]
-  ASSETS.trade.margin = margin
-  ASSETS.trade.current = margin
-  ASSETS.funds = ASSETS.funds - margin
-  ASSETS.trades.push(ASSETS.trade)
+  assets.trade = {}
+  assets.trade.barOpen = assets.trade.barClose = i
+  assets.trade.isLong = isLong
+  assets.trade.strikePrice = priceData.series[i]
+  assets.trade.margin = margin
+  assets.trade.current = margin
+  assets.funds = assets.funds - margin
+  assets.trades.push(assets.trade)
 }
 
 function exitTrade() {
-  ASSETS.funds = ASSETS.funds + ASSETS.trade.current
-  ASSETS.trade = null
+  assets.funds = assets.funds + assets.trade.current
+  assets.trade = null
 }
 
 function updateTrade(i) {
-  if (!ASSETS.trade) {
+  if (!assets.trade) {
     return
   }
-  ASSETS.trade.barClose = i
+  assets.trade.barClose = i
 
   // TODO: interpolate estimated price between ticks
-  const longValue = ASSETS.trade.margin / ASSETS.trade.strikePrice * priceData.series[i]
-  if (ASSETS.trade.isLong) {
-    ASSETS.trade.current = longValue
+  const longValue = assets.trade.margin / assets.trade.strikePrice * priceData.series[i]
+  if (assets.trade.isLong) {
+    assets.trade.current = longValue
   } else {
-    // ASSETS.margin dolcsi ertekben kolcsonkertem bitcoint, es rogton eladtam
+    // assets.margin dolcsi ertekben kolcsonkertem bitcoint, es rogton eladtam
     // ennyi bitcoint adtam el eredetileg:
-    // ASSETS.margin / ASSETS.strikePrice
+    // assets.margin / assets.strikePrice
     // === ennyit kell visszaadjak ma
-    // nekem meg megvan az eredeti ASSETS.margin dolcsim
+    // nekem meg megvan az eredeti assets.margin dolcsim
     // abbol megveszem a bitcoint mai aron, es a kulonbozetet megnyertem!
     // bwahahaha
-    ASSETS.trade.current = 2 * ASSETS.trade.margin - longValue
+    assets.trade.current = 2 * assets.trade.margin - longValue
   }
 
-  const profit = Math.round(ASSETS.trade.current - ASSETS.trade.margin)
+  const profit = Math.round(assets.trade.current - assets.trade.margin)
 
   // update label
-  if (!ASSETS.trade.label) {
-    ASSETS.trade.label = new PIXI.Text('', TEXT_STYLE)
-    ASSETS.trade.label.scale.set(1 / ZOOM, -1 / ZOOM)
-    ASSETS.trade.label.zOrder = -ASSETS.trades.length
-    ENTITIES.gamespace.addChild(ASSETS.trade.label)
+  if (!assets.trade.label) {
+    assets.trade.label = new PIXI.Text('', TEXT_STYLE)
+    assets.trade.label.scale.set(1 / zoom, -1 / zoom)
+    assets.trade.label.zOrder = -assets.trades.length
+    entities.gamespace.addChild(assets.trade.label)
   }
-  ASSETS.trade.label.position.set(x - 15, y + (ASSETS.trade.isLong ? -10 : 20))
+  assets.trade.label.position.set(x - 15, y + (assets.trade.isLong ? -10 : 20))
 
-  ASSETS.trade.label.text = (profit < 0 ? ' -$' : ' +$') + Math.abs(profit)
-  ASSETS.trade.label.style = profit < 0 ? TEXT_LOSS_STYLE : TEXT_PROFIT_STYLE
+  assets.trade.label.text = (profit < 0 ? ' -$' : ' +$') + Math.abs(profit)
+  assets.trade.label.style = profit < 0 ? TEXT_LOSS_STYLE : TEXT_PROFIT_STYLE
 
   // update trade line
-  if (ASSETS.trade.line) {
-    ENTITIES.gamespace.removeChild(ASSETS.trade.line)
+  if (assets.trade.line) {
+    entities.gamespace.removeChild(assets.trade.line)
   }
 
   const color = profit < 0 ? 0xff0000 : 0x00ff00
-  ASSETS.trade.line = new PIXI.Graphics()
-  const a = ASSETS.trade.barOpen
-  ASSETS.trade.line.lineStyle(5, color, 0.66)
+  assets.trade.line = new PIXI.Graphics()
+  const a = assets.trade.barOpen
+  assets.trade.line.lineStyle(5, color, 0.66)
     .moveTo(a * GRAPH_X_GRANULARITY_PX, Y_SCALE_FACTOR * priceData.scale * (priceData.series[a] - priceData.series[0]))
     .lineTo(x, y)
-  ENTITIES.gamespace.addChild(ASSETS.trade.line)
+  entities.gamespace.addChild(assets.trade.line)
 }
 
 
@@ -809,7 +810,7 @@ function callback(p) {
 }
 
 function addScore(self, player, result, trades) {
-  ASSETS.scores.push({
+  assets.scores.push({
     self: self,
     player: player,
     result: Math.round(result * 1000) / 1000,
@@ -819,8 +820,8 @@ function addScore(self, player, result, trades) {
 
 function showScores() {
   let text = '<strong>RESULTS</strong>\nfor the same time period\n'
-  ASSETS.scores = uniqueSorted(ASSETS.scores, (a, b) => b.result - a.result || a.player.localeCompare(b.player))
-  ASSETS.scores.forEach(e => {
+  assets.scores = uniqueSorted(assets.scores, (a, b) => b.result - a.result || a.player.localeCompare(b.player))
+  assets.scores.forEach(e => {
     text += '\n'
       + tag(e.self ? 'self' : (e.player == HODL_NAME ? 'hodl' : 'b'),
         e.player.slice(0, 14).padEnd(14, ' ')
@@ -829,7 +830,7 @@ function showScores() {
       )
   })
   text += '\n\nPress [SPACE] to restart'
-  TEXTS.highscores = text
+  texts.highscores = text
   updateTexts()
 }
 
@@ -839,15 +840,15 @@ function showScores() {
 window.onresize = function (event) {
   clearTimeout(arguments.callee.timerId)
   arguments.callee.timerId = setTimeout(function() {
-    SCREEN_WIDTH = window.innerWidth
-    SCREEN_HEIGHT = window.innerHeight
-    setupUI(SCREEN_WIDTH, SCREEN_HEIGHT)
+    screenWidth = window.innerWidth
+    screenHeight = window.innerHeight
+    setupUI(screenWidth, screenHeight)
     if (isGameOverScreen()) {
       zoomOutFull()
     } else if (isMainScreen()) {
       setViewPort(0, 0, OFFSET_X)
     }
-    app.renderer.resize(SCREEN_WIDTH, SCREEN_HEIGHT)
+    app.renderer.resize(screenWidth, screenHeight)
   }, 500)
 }
 
@@ -874,7 +875,7 @@ const listenerKeyDown = event => {
     return
   }
   if (event.code === 'KeyS' || event.code === 'ArrowDown') {
-    if (INPUT.long) {
+    if (input.long) {
       onNeutral()
     } else {
       onShort()
@@ -883,7 +884,7 @@ const listenerKeyDown = event => {
       startGame()
     }
   } else if (event.code === 'KeyL' || event.code === 'ArrowUp') {
-    if (INPUT.short) {
+    if (input.short) {
       onNeutral()
     } else {
       onLong()
