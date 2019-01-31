@@ -80,8 +80,18 @@ let SCREEN_HEIGHT = window.innerHeight
 let SPEED = MIN_SPEED
 let ZOOM = MAX_ZOOM
 
+let TEXTS = {
+  summary: INTRO,
+  highscores: '',
+  iteration: '',
+  funds: '',
+  price: '',
+  debug: '',
+}
+
 let ENTITIES = {
   gamespace: null,
+  ui: null,
   messages: {
     iteration: null,
     funds: null,
@@ -185,18 +195,33 @@ function setup() {
 
   app.stage.addChild(ENTITIES.gamespace)
 
-  let {messagesContainer, messages} = createMessages(SCREEN_WIDTH, SCREEN_HEIGHT, MARGIN)
-  app.stage.addChild(messagesContainer)
+  setupUI(SCREEN_WIDTH, SCREEN_HEIGHT);
+
+  onNeutral()
+  showControls(false)
+  setViewPort(0, 0, OFFSET_X)
+
+  addInputListeners()
+  app.ticker.add(update)
+}
+
+function setupUI(width, height) {
+  app.stage.removeChild(ENTITIES.ui)
+
+  let uiContainer = new PIXI.Container()
+
+  let {messagesContainer, messages} = createMessages(width, height, MARGIN)
+  uiContainer.addChild(messagesContainer)
   ENTITIES.messages = messages
 
-  ENTITIES.logos = createLogos(SCREEN_WIDTH, SCREEN_HEIGHT, MARGIN)
-  app.stage.addChild(ENTITIES.logos)
+  ENTITIES.logos = createLogos(width, height, MARGIN)
+  uiContainer.addChild(ENTITIES.logos)
 
-  ENTITIES.smallLogo = createSmallLogo(SCREEN_WIDTH, SCREEN_HEIGHT, MARGIN)
-  app.stage.addChild(ENTITIES.smallLogo)
+  ENTITIES.smallLogo = createSmallLogo(width, height, MARGIN)
+  uiContainer.addChild(ENTITIES.smallLogo)
 
   ENTITIES.longButton = createButton("\u25B3 Long ",
-    SCREEN_WIDTH - BUTTON_WIDTH - MARGIN, SCREEN_HEIGHT - 3 * BUTTON_HEIGHT - 5 * MARGIN,
+    width - BUTTON_WIDTH - MARGIN, height - 3 * BUTTON_HEIGHT - 5 * MARGIN,
     BUTTON_WIDTH, BUTTON_HEIGHT,
     (pressed) => {
       if (pressed) {
@@ -205,7 +230,7 @@ function setup() {
     })
 
   ENTITIES.neutralButton = createButton("Neutral",
-    SCREEN_WIDTH - BUTTON_WIDTH - MARGIN, SCREEN_HEIGHT - 2 * BUTTON_HEIGHT - 3 * MARGIN,
+    width - BUTTON_WIDTH - MARGIN, height - 2 * BUTTON_HEIGHT - 3 * MARGIN,
     BUTTON_WIDTH, BUTTON_HEIGHT,
     (pressed) => {
       if (pressed) {
@@ -214,7 +239,7 @@ function setup() {
     })
 
   ENTITIES.shortButton = createButton("\u25BD Short",
-    SCREEN_WIDTH - BUTTON_WIDTH - MARGIN, SCREEN_HEIGHT - BUTTON_HEIGHT - MARGIN,
+    width - BUTTON_WIDTH - MARGIN, height - BUTTON_HEIGHT - MARGIN,
     BUTTON_WIDTH, BUTTON_HEIGHT,
     (pressed) => {
       if (pressed) {
@@ -223,20 +248,16 @@ function setup() {
     })
 
   ENTITIES.warpButton = createButton("\u232A\u232AWarp",
-    MARGIN, SCREEN_HEIGHT - BUTTON_HEIGHT - MARGIN,
+    MARGIN, height - BUTTON_HEIGHT - MARGIN,
     BUTTON_WIDTH, BUTTON_HEIGHT, onWarp)
 
-  onNeutral()
-  showControls(false)
+  uiContainer.addChild(ENTITIES.longButton)
+  uiContainer.addChild(ENTITIES.neutralButton)
+  uiContainer.addChild(ENTITIES.shortButton)
+  uiContainer.addChild(ENTITIES.warpButton)
 
-  app.stage.addChild(ENTITIES.longButton)
-  app.stage.addChild(ENTITIES.neutralButton)
-  app.stage.addChild(ENTITIES.shortButton)
-  app.stage.addChild(ENTITIES.warpButton)
-
-  setViewPort(0, 0, OFFSET_X)
-  addInputListeners()
-  app.ticker.add(update)
+  ENTITIES.ui = uiContainer
+  app.stage.addChild(uiContainer)
 }
 
 function showControls(show) {
@@ -245,6 +266,19 @@ function showControls(show) {
   ENTITIES.shortButton.visible =
   ENTITIES.warpButton.visible =
   show
+}
+
+function updateTexts() {
+  ENTITIES.messages.summary.text = TEXTS.summary
+  ENTITIES.messages.highscores.text = TEXTS.highscores
+  ENTITIES.messages.iteration.text = TEXTS.iteration
+  ENTITIES.messages.funds.text = TEXTS.funds
+  if (SHOW_PRICE) {
+    ENTITIES.messages.price.text = TEXTS.price
+  }
+  if (SHOW_DEBUG) {
+    ENTITIES.messages.debug.text = TEXTS.debug
+  }
 }
 
 
@@ -315,8 +349,9 @@ function movePlayer(x, y) {
 }
 
 function startGame() {
-  ENTITIES.messages.summary.text = ''
-  ENTITIES.messages.highscores.text = ''
+  TEXTS.summary = ''
+  TEXTS.highscores = ''
+  updateTexts()
   ENTITIES.logos.visible = false
   ENTITIES.smallLogo.visible = true
   showControls(true)
@@ -386,23 +421,24 @@ function updatePlayer() {
 }
 
 function updateMessages(i) {
-  ENTITIES.messages.summary.text = ''
+  TEXTS.summary = ''
+  TEXTS.iteration = 'Day ' + (Math.floor(i / TICKS_PER_DAY) + 1) + ' of ' + GAME_LENGTH_DAYS
 
-  ENTITIES.messages.iteration.text = 'Day ' + (Math.floor(i / TICKS_PER_DAY) + 1) + ' of ' + GAME_LENGTH_DAYS
   var equity = ASSETS.funds + (ASSETS.trade ? ASSETS.trade.current : 0)
+  TEXTS.funds = 'Equity $' + Math.round(equity)
 
-  ENTITIES.messages.funds.text = 'Equity $' + Math.round(equity)
   if (SHOW_PRICE) {
-    ENTITIES.messages.price.text = 'price: $' + Math.round(priceData.series[i])
+    TEXTS.price = 'price: $' + Math.round(priceData.series[i])
   }
   if (SHOW_DEBUG) {
-    ENTITIES.messages.debug.text =
+    TEXTS.debug =
       'inputs:' + (INPUT.short?'S':' ') + (INPUT.long?'L':' ') + (INPUT.warp?'W':' ')
       + ' trade:' + (ASSETS.trade ? (ASSETS.trade.isLong ? 'L' : 'S') : 'N')
       + ' speed:' + (SPEED.toFixed(2)) + ' zoom:' + (ZOOM.toFixed(2))
       + ' x:' + viewPortX.toFixed(2) + ' y:' + viewPortY.toFixed(2)
       + ' tick:' + tick
   }
+  updateTexts()
 }
 
 function showGameOver() {
@@ -522,39 +558,39 @@ function createMessages(width, height, margin) {
   let messages = {}
 
   const ROW_HEIGHT = 30
-  var x = margin
-  var y = margin
+  let x = margin
+  let y = margin
 
-  messages.iteration = new PIXI.Text('', TEXT_STYLE)
+  messages.iteration = new PIXI.Text(TEXTS.iteration, TEXT_STYLE)
   messages.iteration.position.set(x, y)
   messagesContainer.addChild(messages.iteration)
   y += ROW_HEIGHT
 
-  messages.funds = new PIXI.Text('', TEXT_STYLE)
+  messages.funds = new PIXI.Text(TEXTS.funds, TEXT_STYLE)
   messages.funds.position.set(x, y)
   messagesContainer.addChild(messages.funds)
   y += ROW_HEIGHT
 
   if (SHOW_PRICE) {
-    messages.price = new PIXI.Text('', TEXT_STYLE)
+    messages.price = new PIXI.Text(TEXTS.price, TEXT_STYLE)
     messages.price.position.set(x, y)
     messagesContainer.addChild(messages.price)
     y += ROW_HEIGHT
   }
 
   if (SHOW_DEBUG) {
-    messages.debug = new PIXI.Text('', TEXT_STYLE)
+    messages.debug = new PIXI.Text(TEXTS.debug, TEXT_STYLE)
     messages.debug.position.set(x, y)
     messagesContainer.addChild(messages.debug)
     y += ROW_HEIGHT
   }
 
-  messages.summary = new MultiStyleText(INTRO, TEXT_MULTI_STYLE)
+  messages.summary = new MultiStyleText(TEXTS.summary, TEXT_MULTI_STYLE)
   messages.summary.position.set(width / 2, height / 2 + margin)
   messages.summary.anchor.set(0.5, 0.0)
   messagesContainer.addChild(messages.summary)
 
-  messages.highscores = new MultiStyleText('', TEXT_MULTI_STYLE)
+  messages.highscores = new MultiStyleText(TEXTS.highscores, TEXT_MULTI_STYLE)
   messages.highscores.position.set(width / 2, height / 2)
   messages.highscores.anchor.set(0.5, 0.5)
   messagesContainer.addChild(messages.highscores)
@@ -579,6 +615,7 @@ function createLogos(width, height, margin) {
   createdBy.on('click', () => { window.location.href = 'https://decent.org/' })
   logoContainer.addChild(createdBy)
 
+  logoContainer.visible = isMainScreen()
   return logoContainer
 }
 
@@ -587,7 +624,7 @@ function createSmallLogo(width, height, margin) {
   logo.position.set(width - margin, margin)
   logo.anchor.set(1.0, 0.0)
   logo.scale.set(0.5)
-  logo.visible = false
+  logo.visible = !isMainScreen()
   return logo
 }
 
@@ -781,7 +818,8 @@ function showScores() {
       )
   })
   text += '\n\nPress [SPACE] to restart'
-  ENTITIES.messages.highscores.text = text
+  TEXTS.highscores = text
+  updateTexts()
 }
 
 
@@ -792,6 +830,7 @@ window.onresize = function (event) {
   arguments.callee.timerId = setTimeout(function() {
     SCREEN_WIDTH = window.innerWidth
     SCREEN_HEIGHT = window.innerHeight
+    setupUI(SCREEN_WIDTH, SCREEN_HEIGHT)
     app.renderer.resize(SCREEN_WIDTH, SCREEN_HEIGHT)
   }, 500)
 }
@@ -918,6 +957,17 @@ function parsePriceData(data, ticks) {
   }
 }
 
+function isMainScreen() {
+  return !gameStarted && !gameOver
+}
+
+function isRunning() {
+  return gameStarted && !gameOver
+}
+
+function isGameOverScreen() {
+  return !gameStarted && gameOver
+}
 
 // ===== text styles =====
 
