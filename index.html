@@ -263,6 +263,7 @@ function setupUI(width, height) {
   uiContainer.addChild(ENTITIES.warpButton)
 
   ENTITIES.ui = uiContainer
+  showControls(isGameRunning())
   app.stage.addChild(uiContainer)
 }
 
@@ -968,7 +969,7 @@ function isMainScreen() {
   return !gameStarted && !gameOver
 }
 
-function isRunning() {
+function isGameRunning() {
   return gameStarted && !gameOver
 }
 
