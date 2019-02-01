@@ -318,18 +318,6 @@ function update(dt) {
     return
   }
 
-  if (tick >= 0) {
-    var x = time * GRAPH_X_GRANULARITY_PX
-    var y = Y_SCALE_FACTOR * priceData.scale * ((priceData.series[tick] - priceData.series[0])
-      + (time - tick) * (priceData.series[tick + 1] - priceData.series[tick]))
-
-    setViewPort(x, (viewPortY + (y - viewPortY) / SMOOTH_FACTOR_Y), OFFSET_X)
-    movePlayer(x, y)
-    updateTrade(i, x, y)
-    updateMessages(i)
-    updatePlayer()
-  }
-
   if (i > tick) {
     tick = i
 
@@ -341,6 +329,16 @@ function update(dt) {
 
     handleInput(i)
   }
+
+  var x = time * GRAPH_X_GRANULARITY_PX
+  var y = Y_SCALE_FACTOR * priceData.scale * ((priceData.series[tick] - priceData.series[0])
+    + (time - tick) * (priceData.series[tick + 1] - priceData.series[tick]))
+
+  setViewPort(x, (viewPortY + (y - viewPortY) / SMOOTH_FACTOR_Y), OFFSET_X)
+  movePlayer(x, y)
+  updatePlayer()
+  updateTrade(tick, x, y)
+  updateMessages(tick)
 }
 
 function setViewPort(x, y, xOffset) {
