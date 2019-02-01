@@ -326,6 +326,8 @@ function update(dt) {
     setViewPort(x, (viewPortY + (y - viewPortY) / SMOOTH_FACTOR_Y), OFFSET_X)
     movePlayer(x, y)
     updateTrade(i, x, y)
+    updateMessages(i)
+    updatePlayer()
   }
 
   if (i > tick) {
@@ -335,12 +337,9 @@ function update(dt) {
     priceData.runningMin = Math.min(priceData.runningMin, currentPrice)
     priceData.runningMax = Math.max(priceData.runningMax, currentPrice)
 
-    handleInput(i)
-
     entities.lines[i].visible = true
 
-    updatePlayer()
-    updateMessages(i)
+    handleInput(i)
   }
 }
 
@@ -444,9 +443,11 @@ function updateMessages(i) {
     texts.debug =
       'inputs:' + (input.short?'S':' ') + (input.long?'L':' ') + (input.warp?'W':' ')
       + ' trade:' + (assets.trade ? (assets.trade.isLong ? 'L' : 'S') : 'N')
-      + ' speed:' + (speed.toFixed(2)) + ' zoom:' + (zoom.toFixed(2))
-      + ' x:' + viewPortX.toFixed(2) + ' y:' + viewPortY.toFixed(2)
+      + ' speed:' + (speed.toFixed(2))
+      + ' zoom:' + (zoom.toFixed(2))
       + ' tick:' + tick
+      + ' x:' + viewPortX.toFixed(2)
+      + ' y:' + viewPortY.toFixed(2)
   }
   updateTexts()
 }
@@ -481,6 +482,7 @@ function zoomOutFull() {
   zoom = screenWidth / (GAME_LENGTH_TICKS * GRAPH_X_GRANULARITY_PX)
   setViewPort(GAME_LENGTH_TICKS * GRAPH_X_GRANULARITY_PX / 2, 0, 0)
 }
+
 
 // ===== 'create' methods =====
 
@@ -766,12 +768,11 @@ function updateTrade(i, x, y) {
     entities.gamespace.addChild(assets.trade.label)
   }
   assets.trade.label.position.set(x + 10, y + 10)
-
+  assets.trade.label.style = profit < 0 ? TEXT_LOSS_STYLE : TEXT_PROFIT_STYLE
   assets.trade.label.text
     = (profit < 0 ? '-$' : '+$')
     + Math.abs(profit)
     + (assets.trade.isLong ? '\u25B3' : '\u25BD')
-  assets.trade.label.style = profit < 0 ? TEXT_LOSS_STYLE : TEXT_PROFIT_STYLE
 
   // update trade line
   if (assets.trade.line) {
