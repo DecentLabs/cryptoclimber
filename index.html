@@ -770,10 +770,10 @@ function updateTrade(i, x, y) {
   if (!assets.trade.label) {
     assets.trade.label = new PIXI.Text('', TEXT_STYLE)
     assets.trade.label.scale.set(1, -1)
-    assets.trade.label.anchor.set(0.0, 0.5)
+    assets.trade.label.anchor.set(0.25, 0.5)
     entities.tradelabels.addChild(assets.trade.label)
   }
-  assets.trade.label.position.set(x + 10, y + 10)
+  assets.trade.label.position.set(x, assets.trade.isLong ? y + 20 : y - 25)
   assets.trade.label.style = profit < 0 ? TEXT_LOSS_STYLE : TEXT_PROFIT_STYLE
   assets.trade.label.text
     = (profit < 0 ? '-$' : '+$')
