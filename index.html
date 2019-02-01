@@ -319,13 +319,13 @@ function update(dt) {
   }
 
   if (tick >= 0) {
-    x = time * GRAPH_X_GRANULARITY_PX
-    y = Y_SCALE_FACTOR * priceData.scale * ((priceData.series[tick] - priceData.series[0])
+    var x = time * GRAPH_X_GRANULARITY_PX
+    var y = Y_SCALE_FACTOR * priceData.scale * ((priceData.series[tick] - priceData.series[0])
       + (time - tick) * (priceData.series[tick + 1] - priceData.series[tick]))
 
     setViewPort(x, (viewPortY + (y - viewPortY) / SMOOTH_FACTOR_Y), OFFSET_X)
     movePlayer(x, y)
-    updateTrade(i)
+    updateTrade(i, x, y)
   }
 
   if (i > tick) {
@@ -735,7 +735,7 @@ function exitTrade() {
   assets.trade = null
 }
 
-function updateTrade(i) {
+function updateTrade(i, x, y) {
   if (!assets.trade) {
     return
   }
@@ -761,13 +761,16 @@ function updateTrade(i) {
   // update label
   if (!assets.trade.label) {
     assets.trade.label = new PIXI.Text('', TEXT_STYLE)
-    assets.trade.label.scale.set(1 / zoom, -1 / zoom)
-    assets.trade.label.zOrder = -assets.trades.length
+    assets.trade.label.scale.set(1, -1)
+    assets.trade.label.anchor.set(0.0, 0.5)
     entities.gamespace.addChild(assets.trade.label)
   }
-  assets.trade.label.position.set(x - 15, y + (assets.trade.isLong ? -10 : 20))
+  assets.trade.label.position.set(x + 10, y + 10)
 
-  assets.trade.label.text = (profit < 0 ? ' -$' : ' +$') + Math.abs(profit)
+  assets.trade.label.text
+    = (profit < 0 ? '-$' : '+$')
+    + Math.abs(profit)
+    + (assets.trade.isLong ? '\u25B3' : '\u25BD')
   assets.trade.label.style = profit < 0 ? TEXT_LOSS_STYLE : TEXT_PROFIT_STYLE
 
   // update trade line
