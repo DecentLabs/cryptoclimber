@@ -99,6 +99,8 @@ let texts = Object.assign({}, DEFAULT_TEXTS)
 
 let entities = {
   gamespace: null,
+  tradelines: null,
+  tradelabels: null,
   ui: null,
   messages: {
     iteration: null,
@@ -200,6 +202,12 @@ function setup() {
 
   entities.player = createPlayer()
   entities.gamespace.addChild(entities.player)
+
+  entities.tradelines = new PIXI.Container()
+  entities.gamespace.addChild(entities.tradelines)
+
+  entities.tradelabels = new PIXI.Container()
+  entities.gamespace.addChild(entities.tradelabels)
 
   app.stage.addChild(entities.gamespace)
 
@@ -763,7 +771,7 @@ function updateTrade(i, x, y) {
     assets.trade.label = new PIXI.Text('', TEXT_STYLE)
     assets.trade.label.scale.set(1, -1)
     assets.trade.label.anchor.set(0.0, 0.5)
-    entities.gamespace.addChild(assets.trade.label)
+    entities.tradelabels.addChild(assets.trade.label)
   }
   assets.trade.label.position.set(x + 10, y + 10)
   assets.trade.label.style = profit < 0 ? TEXT_LOSS_STYLE : TEXT_PROFIT_STYLE
@@ -774,7 +782,7 @@ function updateTrade(i, x, y) {
 
   // update trade line
   if (assets.trade.line) {
-    entities.gamespace.removeChild(assets.trade.line)
+    entities.tradelines.removeChild(assets.trade.line)
   }
 
   const color = profit < 0 ? 0xff0000 : 0x00ff00
@@ -783,7 +791,7 @@ function updateTrade(i, x, y) {
   assets.trade.line.lineStyle(5, color, 0.66)
     .moveTo(a * GRAPH_X_GRANULARITY_PX, Y_SCALE_FACTOR * priceData.scale * (priceData.series[a] - priceData.series[0]))
     .lineTo(x, y)
-  entities.gamespace.addChild(assets.trade.line)
+  entities.tradelines.addChild(assets.trade.line)
 }
 
 
