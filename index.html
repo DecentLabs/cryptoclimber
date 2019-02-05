@@ -12,7 +12,10 @@
     </script>
 
     <meta charset="utf-8">
-    <style>* {padding: 0; margin: 0}</style>
+    <meta name="viewport" content="minimal-ui, width=device-width, initial-scale=0.5, minimum-scale=0.5, maximum-scale=0.5, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <style>* {padding: 0; margin: 0; overflow: hidden;}</style>
 
     <title>Crypto Climber</title>
     <meta property="og:title" content="Crypto Climber" />
@@ -154,6 +157,7 @@ const app = new PIXI.Application({
 // Full screen
 app.renderer.view.style.position = 'absolute';
 app.renderer.view.style.display = 'block';
+app.renderer.view.style.overflow = 'hidden';
 app.renderer.autoResize = true;
 app.renderer.resize(screenWidth, screenHeight);
 
@@ -859,6 +863,7 @@ window.onresize = function (event) {
       setViewPort(0, 0, OFFSET_X)
     }
     app.renderer.resize(screenWidth, screenHeight)
+    window.scrollTo(0, 0)
   }, 250)
 }
 
