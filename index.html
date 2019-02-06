@@ -156,11 +156,10 @@ if (window.navigator.userAgent.includes('iPhone')) {
 const app = new PIXI.Application({
   width: window.innerWidth,
   height: window.innerHeight,
-  antialias: true,
+  antialias: false,
   transparent: false,
   resolution: window.devicePixelRatio,
-  // preserveDrawingBuffer: true,
-  // clearBeforeRender:false,
+  preserveDrawingBuffer: true,
 });
 
 // Full screen
