@@ -144,6 +144,7 @@ let input = {
   warp: false,
 }
 
+let fps = 60
 
 // ===== startup code =====
 
@@ -461,6 +462,7 @@ function updateMessages(i) {
     texts.price = 'price: $' + Math.round(priceData.series[i])
   }
   if (SHOW_DEBUG) {
+    fps = fps * 0.95 + app.ticker.FPS * 0.05
     texts.debug =
       'inputs:' + (input.short?'S':' ') + (input.long?'L':' ') + (input.warp?'W':' ')
       + ' trade:' + (assets.trade ? (assets.trade.isLong ? 'L' : 'S') : 'N')
@@ -469,7 +471,7 @@ function updateMessages(i) {
       + '\ntick:' + tick
       + ' x:' + viewPortX.toFixed(2)
       + ' y:' + viewPortY.toFixed(2)
-      + '\n' + app.ticker.FPS.toFixed(2) + ' FPS'
+      + '\nFPS:' + fps.toFixed(0) + ' (' + app.ticker.FPS.toFixed(2) + ')'
   }
   updateTexts()
 }
