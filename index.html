@@ -158,6 +158,8 @@ const app = new PIXI.Application({
   antialias: true,
   transparent: false,
   resolution: window.devicePixelRatio,
+  // preserveDrawingBuffer: true,
+  // clearBeforeRender:false,
 });
 
 // Full screen
@@ -462,11 +464,12 @@ function updateMessages(i) {
     texts.debug =
       'inputs:' + (input.short?'S':' ') + (input.long?'L':' ') + (input.warp?'W':' ')
       + ' trade:' + (assets.trade ? (assets.trade.isLong ? 'L' : 'S') : 'N')
-      + ' speed:' + (speed.toFixed(2))
-      + ' zoom:' + (zoom.toFixed(2))
-      + ' tick:' + tick
+      + '\nspeed:' + speed.toFixed(2)
+      + ' zoom:' + zoom.toFixed(2)
+      + '\ntick:' + tick
       + ' x:' + viewPortX.toFixed(2)
       + ' y:' + viewPortY.toFixed(2)
+      + '\n' + app.ticker.FPS.toFixed(2) + ' FPS'
   }
   updateTexts()
 }
@@ -613,10 +616,12 @@ function createMessages(width, height, margin) {
   }
 
   if (SHOW_DEBUG) {
-    messages.debug = new PIXI.Text(texts.debug, TEXT_STYLE)
-    messages.debug.position.set(x, y)
+    let style = TEXT_STYLE.clone()
+    style.align = 'left'
+    style.fontSize = 20
+    messages.debug = new PIXI.Text(texts.debug, style)
+    messages.debug.position.set(x, y + ROW_HEIGHT)
     messagesContainer.addChild(messages.debug)
-    y += ROW_HEIGHT
   }
 
   messages.summary = new MultiStyleText(texts.summary, TEXT_MULTI_STYLE)
