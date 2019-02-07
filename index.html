@@ -209,6 +209,8 @@ function setup() {
   priceData = parsePriceData(PIXI.loader.resources.prices.data, GAME_LENGTH_TICKS)
 
   entities.gamespace = new PIXI.Container()
+  entities.gamespace.interactive = false
+  entities.gamespace.interactiveChildren = false
   entities.gamespace.addChild(createGrid())
 
   let {graph, lines} = createGraph()
