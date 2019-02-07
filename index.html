@@ -348,24 +348,20 @@ function update(dt) {
 
   if (i > tick) {
     tick = i
-
-    const currentPrice = priceData.series[i]
-    priceData.runningMin = Math.min(priceData.runningMin, currentPrice)
-    priceData.runningMax = Math.max(priceData.runningMax, currentPrice)
-
-    entities.lines[i].visible = true
-
-    handleInput(i)
+    entities.lines[tick].visible = true
+    handleInput(tick)
   }
 
   var x = time * GRAPH_X_GRANULARITY_PX
   var y = Y_SCALE_FACTOR * priceData.scale * ((priceData.series[tick] - priceData.series[0])
     + (time - tick) * (priceData.series[tick + 1] - priceData.series[tick]))
 
+  if (assets.trade) {
+    recalculateTrade(assets.trade, tick)
+    updateTrade(assets.trade, x, y)
+  }
   setViewPort(x, (viewPortY + (y - viewPortY) / SMOOTH_FACTOR_Y), OFFSET_X)
-  movePlayer(x, y)
-  updatePlayer()
-  updateTrade(tick, x, y)
+  updatePlayer(x, y)
   updateMessages(tick)
 }
 
@@ -378,9 +374,10 @@ function setViewPort(x, y, xOffset) {
   entities.gamespace.position.y = -(-y * zoom - screenHeight / 2)
 }
 
-function movePlayer(x, y) {
+function updatePlayer(x, y) {
   entities.player.x = x
   entities.player.y = y
+  entities.player.alpha = assets.trade ? 0.5 : 0.2
 }
 
 function startGame() {
@@ -429,7 +426,7 @@ function handleInput(i) {
       if (assets.trade.isLong) {
         return
       } else {
-        exitTrade()
+        exitTrade(i)
       }
     }
     enterTrade(true, i, assets.funds)
@@ -439,20 +436,16 @@ function handleInput(i) {
       if (!assets.trade.isLong) {
         return
       } else {
-        exitTrade()
+        exitTrade(i)
       }
     }
     enterTrade(false, i, assets.funds)
   } else {
     // NEUTRAL
     if (assets.trade) {
-      exitTrade()
+      exitTrade(i)
     }
   }
-}
-
-function updatePlayer() {
-  entities.player.alpha = assets.trade ? 0.5 : 0.2
 }
 
 function updateMessages(i) {
@@ -501,7 +494,7 @@ function showGameOver() {
   onWarp(false)
   showControls(false)
   if (assets.trade) {
-    exitTrade()
+    exitTrade(GAME_LENGTH_TICKS)
   }
   updateMessages(GAME_LENGTH_TICKS - 1)
   zoomOutFull()
@@ -780,22 +773,30 @@ function enterTrade(isLong, i, margin) {
   assets.trades.push(assets.trade)
 }
 
-function exitTrade() {
+function exitTrade(i) {
+  if (!assets.trade) {
+    return
+  }
+
+  recalculateTrade(assets.trade, i)
+  updateTrade(assets.trade, GRAPH_X_GRANULARITY_PX * i,
+    Y_SCALE_FACTOR * priceData.scale * (priceData.series[i] - priceData.series[0]))
+
   assets.funds = assets.funds + assets.trade.current
   assets.trade = null
 }
 
-function updateTrade(i, x, y) {
-  if (!assets.trade) {
+function recalculateTrade(trade, i) {
+  if (!trade) {
     return
   }
-  assets.trade.barClose = i
-  assets.trade.priceClose = priceData.series[i]
+  trade.barClose = i
+  trade.priceClose = priceData.series[i]
 
   // TODO: interpolate estimated price between ticks
-  const longValue = assets.trade.margin / assets.trade.priceOpen * priceData.series[i]
-  if (assets.trade.isLong) {
-    assets.trade.current = longValue
+  const longValue = trade.margin * trade.priceClose / trade.priceOpen
+  if (trade.isLong) {
+    trade.current = longValue
   } else {
     // assets.margin dolcsi ertekben kolcsonkertem bitcoint, es rogton eladtam
     // ennyi bitcoint adtam el eredetileg:
@@ -804,37 +805,39 @@ function updateTrade(i, x, y) {
     // nekem meg megvan az eredeti assets.margin dolcsim
     // abbol megveszem a bitcoint mai aron, es a kulonbozetet megnyertem!
     // bwahahaha
-    assets.trade.current = 2 * assets.trade.margin - longValue
+    trade.current = 2 * trade.margin - longValue
   }
+}
 
-  const profit = Math.round(assets.trade.current - assets.trade.margin)
+function updateTrade(trade, x, y) {
+  const profit = Math.round(trade.current - trade.margin)
 
   // update label
-  if (!assets.trade.label) {
-    assets.trade.label = new PIXI.Text('', TEXT_STYLE)
-    assets.trade.label.scale.set(1, -1)
-    assets.trade.label.anchor.set(0.25, 0.5)
-    entities.tradelabels.addChild(assets.trade.label)
+  if (!trade.label) {
+    trade.label = new PIXI.Text('', TEXT_STYLE)
+    trade.label.scale.set(1, -1)
+    trade.label.anchor.set(0.25, 0.5)
+    entities.tradelabels.addChild(trade.label)
   }
-  assets.trade.label.position.set(x, assets.trade.isLong ? y + 20 : y - 25)
-  assets.trade.label.style = profit < 0 ? TEXT_LOSS_STYLE : TEXT_PROFIT_STYLE
-  assets.trade.label.text
+  trade.label.position.set(x, trade.isLong ? y + 20 : y - 25)
+  trade.label.style = profit < 0 ? TEXT_LOSS_STYLE : TEXT_PROFIT_STYLE
+  trade.label.text
     = (profit < 0 ? '-$' : '+$')
     + Math.abs(profit)
-    + (assets.trade.isLong ? '\u25B3' : '\u25BD')
+    + (trade.isLong ? '\u25B3' : '\u25BD')
 
   // update trade line
-  if (assets.trade.line) {
-    entities.tradelines.removeChild(assets.trade.line)
+  if (trade.line) {
+    entities.tradelines.removeChild(trade.line)
   }
 
   const color = profit < 0 ? 0xff0000 : 0x00ff00
-  assets.trade.line = new PIXI.Graphics()
-  const a = assets.trade.barOpen
-  assets.trade.line.lineStyle(5, color, 0.66)
-    .moveTo(a * GRAPH_X_GRANULARITY_PX, Y_SCALE_FACTOR * priceData.scale * (priceData.series[a] - priceData.series[0]))
+  trade.line = new PIXI.Graphics()
+  trade.line.lineStyle(5, color, 0.66)
+    .moveTo(trade.barOpen * GRAPH_X_GRANULARITY_PX,
+      Y_SCALE_FACTOR * priceData.scale * (trade.priceOpen - priceData.series[0]))
     .lineTo(x, y)
-  entities.tradelines.addChild(assets.trade.line)
+  entities.tradelines.addChild(trade.line)
 }
 
 
@@ -1017,8 +1020,6 @@ function parsePriceData(data, ticks) {
     pastSeries: pastSeries,
     min: Math.min(...series),
     max: Math.max(...series),
-    runningMin: first,
-    runningMax: first,
     scale: 1 / (2 * (first * 1.1 * 1.1 - first * 0.9 * 0.9)),
     startTick: fromIndex,
     stopTick: fromIndex + ticks,
