@@ -469,13 +469,29 @@ function updateMessages(i) {
     fps = fps * 0.95 + app.ticker.FPS * 0.05
     texts.debug =
       'inputs:' + (input.short?'S':' ') + (input.long?'L':' ') + (input.warp?'W':' ')
-      + ' trade:' + (assets.trade ? (assets.trade.isLong ? 'L' : 'S') : 'N')
       + '\nspeed:' + speed.toFixed(2)
       + ' zoom:' + zoom.toFixed(2)
       + '\ntick:' + tick
       + ' x:' + viewPortX.toFixed(2)
       + ' y:' + viewPortY.toFixed(2)
       + '\nFPS:' + fps.toFixed(0) + ' (' + app.ticker.FPS.toFixed(2) + ')'
+
+      if (assets.trades.length > (assets.trade ? 1 : 0)) {
+        let lastTrade = assets.trades[assets.trades.length - (assets.trade ? 2 : 1)]
+        texts.debug +=
+          '\n\nLast: ' + (lastTrade.isLong ? 'LONG' : 'SHORT')
+          + '\n bar:(' + lastTrade.barOpen + ' \u2192 ' + lastTrade.barClose + ')'
+          + '\n price:(' + lastTrade.priceOpen.toFixed(2) + ' \u2192 ' + lastTrade.priceClose.toFixed(2) + ')'
+          + '\n profit:' + (lastTrade.current - lastTrade.margin).toFixed(2)
+      }
+      if (assets.trade) {
+        let currentTrade = assets.trade
+        texts.debug +=
+          '\n\nCurrent: ' + (currentTrade.isLong ? 'LONG' : 'SHORT')
+          + '\n bar:(' + currentTrade.barOpen + ' \u2192 ' + currentTrade.barClose + ')'
+          + '\n price:(' + currentTrade.priceOpen.toFixed(2) + ' \u2192 ' + currentTrade.priceClose.toFixed(2) + ')'
+          + '\n profit:' + (currentTrade.current - currentTrade.margin).toFixed(2)
+      }
   }
   updateTexts()
 }
@@ -755,9 +771,9 @@ function createPlayer() {
 
 function enterTrade(isLong, i, margin) {
   assets.trade = {}
-  assets.trade.barOpen = assets.trade.barClose = i
   assets.trade.isLong = isLong
-  assets.trade.strikePrice = priceData.series[i]
+  assets.trade.barOpen = assets.trade.barClose = i
+  assets.trade.priceOpen = assets.trade.priceClose = priceData.series[i]
   assets.trade.margin = margin
   assets.trade.current = margin
   assets.funds = assets.funds - margin
@@ -774,9 +790,10 @@ function updateTrade(i, x, y) {
     return
   }
   assets.trade.barClose = i
+  assets.trade.priceClose = priceData.series[i]
 
   // TODO: interpolate estimated price between ticks
-  const longValue = assets.trade.margin / assets.trade.strikePrice * priceData.series[i]
+  const longValue = assets.trade.margin / assets.trade.priceOpen * priceData.series[i]
   if (assets.trade.isLong) {
     assets.trade.current = longValue
   } else {
