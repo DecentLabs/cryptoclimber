@@ -241,6 +241,7 @@ function setupUI(width, height) {
   app.stage.removeChild(entities.ui)
 
   let uiContainer = new PIXI.Container()
+  entities.ui = uiContainer
 
   let {messagesContainer, messages} = createMessages(width, height, MARGIN)
   uiContainer.addChild(messagesContainer)
@@ -260,6 +261,7 @@ function setupUI(width, height) {
         onLong()
       }
     })
+  uiContainer.addChild(entities.longButton)
 
   entities.neutralButton = createButton("Neutral",
     width - BUTTON_WIDTH - MARGIN, height - 2 * BUTTON_HEIGHT - 3 * MARGIN,
@@ -269,6 +271,7 @@ function setupUI(width, height) {
         onNeutral()
       }
     })
+  uiContainer.addChild(entities.neutralButton)
 
   entities.shortButton = createButton("\u25BD Short",
     width - BUTTON_WIDTH - MARGIN, height - BUTTON_HEIGHT - MARGIN,
@@ -278,18 +281,18 @@ function setupUI(width, height) {
         onShort()
       }
     })
+  uiContainer.addChild(entities.shortButton)
 
   entities.warpButton = createButton("\u232A\u232AWarp",
     MARGIN, height - BUTTON_HEIGHT - MARGIN,
     BUTTON_WIDTH, BUTTON_HEIGHT, input.warp, onWarp)
-
-  uiContainer.addChild(entities.longButton)
-  uiContainer.addChild(entities.neutralButton)
-  uiContainer.addChild(entities.shortButton)
   uiContainer.addChild(entities.warpButton)
 
-  entities.ui = uiContainer
   showControls(isGameRunning())
+  uiContainer.interactive = true
+  uiContainer.on('tap', listenerGlobalTap)
+  uiContainer.hitArea = new PIXI.Rectangle(0, 0, width, height)
+
   app.stage.addChild(uiContainer)
 }
 
@@ -561,6 +564,7 @@ function createButton(text, x, y, w, h, initialState, callback) {
 
   g.buttonMode = true
   g.interactive = true
+  g.interactiveChildren = false
   g.buttonStates = new Set()
   g.buttonLastState = false
 
@@ -581,12 +585,12 @@ function createButton(text, x, y, w, h, initialState, callback) {
       callback(state)
     } 
   }
-  app.stage.interactive = true
-  app.stage.on('pointermove', f)
-  app.stage.on('pointerdown', f)
-  app.stage.on('pointerup', f)
-  app.stage.on('pointerupoutside', f)
-  app.stage.on('pointercancel', f)
+
+  g.on('pointermove', f)
+  g.on('pointerdown', f)
+  g.on('pointerup', f)
+  g.on('pointerupoutside', f)
+  g.on('pointercancel', f)
 
   return g
 }
@@ -653,6 +657,7 @@ function createLogos(width, height, margin) {
   createdBy.interactive = true
   createdBy.buttonMode = true
   createdBy.on('click', () => { window.location.href = 'https://decent.org/' })
+  createdBy.on('tap', () => { window.location.href = 'https://decent.org/' })
   logoContainer.addChild(createdBy)
 
   logoContainer.visible = isMainScreen()
@@ -887,12 +892,10 @@ const listenerBlur = event => {
   onWarp(false)
 }
 
-const listenerTouchStart = event => {
+const listenerGlobalTap = event => {
   if (gameOver) {
     setup()
-    return
-  }
-  if (!gameStarted) {
+  } else if (!gameStarted) {
     startGame()
   }
 }
@@ -941,7 +944,6 @@ const listenerKeyUp = event => {
 
 function addInputListeners() {
   window.addEventListener('blur', listenerBlur, false)
-  window.addEventListener('touchstart', listenerTouchStart, false)
   window.addEventListener('keydown', listenerKeyDown, false)
   window.addEventListener('keyup', listenerKeyUp, false)
 }
