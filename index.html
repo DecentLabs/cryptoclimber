@@ -188,9 +188,9 @@ PIXI.loader
 
 window.onresize = listenerResize
 
-setTimeout(function() {
+window.onload = () => {
   listenerResize(null)
-}, 500)
+}
 
 
 // ===== setup and layout =====
