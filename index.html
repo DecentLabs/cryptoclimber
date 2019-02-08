@@ -186,6 +186,12 @@ PIXI.loader
     })
   });
 
+window.onresize = listenerResize
+
+setTimeout(function() {
+  listenerResize(null)
+}, 500)
+
 
 // ===== setup and layout =====
 
@@ -893,7 +899,7 @@ function showScores() {
 
 // ===== event listeners =====
 
-window.onresize = function (event) {
+function listenerResize(event) {
   clearTimeout(arguments.callee.timerId)
   arguments.callee.timerId = setTimeout(function() {
     screenWidth = window.innerWidth
