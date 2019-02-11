@@ -978,6 +978,8 @@ const listenerKeyDown = event => {
     if (!gameStarted) {
       startGame()
     }
+  } else if (event.code === 'KeyF') {
+    toggleFullScreen()
   }
   if (event.key === 'Shift') {
     onWarp(true)
