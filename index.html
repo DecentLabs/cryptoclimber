@@ -677,8 +677,29 @@ function createLogos(width, height, margin) {
   createdBy.on('tap', () => { window.location.href = 'https://decent.org/' })
   logoContainer.addChild(createdBy)
 
+  if (document.fullscreenEnabled && document.exitFullscreen && app.view.requestFullscreen) {
+    let fullscreen = new PIXI.Sprite.from(!document.fullscreenElement ?
+      'fullscreen_enter.png' : 'fullscreen_exit.png')
+    fullscreen.position.set(margin, margin)
+    fullscreen.anchor.set(0.0, 0.0)
+    fullscreen.scale.set(0.25)
+    fullscreen.interactive = true
+    fullscreen.buttonMode = true
+    fullscreen.on('click', toggleFullScreen)
+    fullscreen.on('tap', toggleFullScreen)
+    logoContainer.addChild(fullscreen)
+  }
+
   logoContainer.visible = isMainScreen()
   return logoContainer
+}
+
+function toggleFullScreen() {
+  if (!document.fullscreenElement && app.view.requestFullscreen) {
+    app.view.requestFullscreen()
+  } else if (document.exitFullscreen) {
+    document.exitFullscreen()
+  }
 }
 
 function createSmallLogo(width, height, margin) {
