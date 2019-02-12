@@ -40,6 +40,9 @@ const TICKS_PER_DAY = 24
 const GAME_LENGTH_DAYS = parseInt(getQueryParam('days'), 10) || 30
 const GAME_LENGTH_TICKS = GAME_LENGTH_DAYS * TICKS_PER_DAY
 
+const PAST_LENGTH_DAYS = Math.round(GAME_LENGTH_DAYS / 2)
+const PAST_LENGTH_TICKS = PAST_LENGTH_DAYS * TICKS_PER_DAY
+
 const GRAPH_X_GRANULARITY_PX = 5 // smaller is more dense
 const Y_SCALE_FACTOR = 1000
 
@@ -558,6 +561,7 @@ function createGraph() {
   for (let i = 0; i < past; i++) {
     let line = new PIXI.Graphics()
     line.position.set(0, 0)
+    line.alpha = i / past
     line.lineStyle(2, 0x666666)
         .moveTo(GRAPH_X_GRANULARITY_PX * (i + 1 - past),
           Y_SCALE_FACTOR * priceData.scale * (priceData.pastSeries[i] - p0))
@@ -745,11 +749,11 @@ function createGrid() {
     let y = Y_SCALE_FACTOR * priceData.scale * (ppi - p0)
   
     var sprite = new PIXI.Sprite(grad)
-    sprite.x = 0
+    sprite.x = -PAST_LENGTH_TICKS * GRAPH_X_GRANULARITY_PX
     sprite.y = prevY
-    sprite.anchor.set(0.5, 0.0)
+    sprite.anchor.set(0.0, 0.0)
     sprite.alpha = alpha - (i * alpha / bands)
-    sprite.scale.set(GAME_LENGTH_TICKS * GRAPH_X_GRANULARITY_PX * 2, (y - prevY) / gradHeight)
+    sprite.scale.set((PAST_LENGTH_TICKS + GAME_LENGTH_TICKS) * GRAPH_X_GRANULARITY_PX, (y - prevY) / gradHeight)
     grid.addChild(sprite)
   }
 
@@ -760,17 +764,17 @@ function createGrid() {
     let y = Y_SCALE_FACTOR * priceData.scale * (pmi - p0)
 
     var sprite = new PIXI.Sprite(grad)
-    sprite.x = 0
+    sprite.x = -PAST_LENGTH_TICKS * GRAPH_X_GRANULARITY_PX
     sprite.y = y
-    sprite.anchor.set(0.5, 0.0)
+    sprite.anchor.set(0.0, 0.0)
     sprite.alpha = alpha - (i * alpha / bands)
-    sprite.scale.set(GAME_LENGTH_TICKS * GRAPH_X_GRANULARITY_PX * 2, (prevY - y) / gradHeight)
+    sprite.scale.set((PAST_LENGTH_TICKS + GAME_LENGTH_TICKS) * GRAPH_X_GRANULARITY_PX, (prevY - y) / gradHeight)
     grid.addChild(sprite)
   }
 
   let days = new PIXI.Graphics()
-  const mul = 24 * GRAPH_X_GRANULARITY_PX
-  for (let i = -GAME_LENGTH_DAYS; i <= GAME_LENGTH_DAYS; i++) {
+  const mul = TICKS_PER_DAY * GRAPH_X_GRANULARITY_PX
+  for (let i = -PAST_LENGTH_DAYS; i <= GAME_LENGTH_DAYS; i++) {
     days.lineStyle(2, i < 0 ? 0x222222 : (i == 0 ? 0x444444 : 0x333333))
         .moveTo(i * mul, Y_SCALE_FACTOR * priceData.scale * (pmi - p0))
         .lineTo(i * mul, Y_SCALE_FACTOR * priceData.scale * (ppi - p0))
@@ -1057,7 +1061,7 @@ function parsePriceData(data, ticks) {
   const chunks = Math.floor(data.values.length / ticks)
   const fromIndex = ticks * (Math.floor(Math.random() * (chunks - 1)) + 1)
   const series = data.values.slice(fromIndex, fromIndex + ticks + 1)
-  const pastSeries = data.values.slice(fromIndex - ticks, fromIndex + 1)
+  const pastSeries = data.values.slice(fromIndex - PAST_LENGTH_TICKS, fromIndex + 1)
   const first = series[0]
   return {
     series: series,
