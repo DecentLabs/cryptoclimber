@@ -52,6 +52,7 @@ const BUTTON_HEIGHT = 80
 
 const SHOW_PRICE = false
 const SHOW_DEBUG = false
+const SHOW_FPS = false
 
 const MIN_SPEED = 12 // smaller is faster
 const MAX_SPEED = 4 // smaller is faster
@@ -323,6 +324,9 @@ function updateTexts() {
   if (SHOW_DEBUG) {
     entities.messages.debug.text = texts.debug
   }
+  if (SHOW_FPS) {
+    entities.messages.fps.text = texts.fps
+  }
 }
 
 
@@ -465,7 +469,6 @@ function updateMessages(i) {
     texts.price = 'price: $' + Math.round(priceData.series[i])
   }
   if (SHOW_DEBUG) {
-    fps = fps * 0.95 + app.ticker.FPS * 0.05
     texts.debug =
       'inputs:' + (input.short?'S':' ') + (input.long?'L':' ') + (input.warp?'W':' ')
       + '\nspeed:' + speed.toFixed(2)
@@ -473,7 +476,6 @@ function updateMessages(i) {
       + '\ntick:' + tick
       + ' x:' + viewPortX.toFixed(2)
       + ' y:' + viewPortY.toFixed(2)
-      + '\nFPS:' + fps.toFixed(0) + ' (' + app.ticker.FPS.toFixed(2) + ')'
 
       if (assets.trades.length > (assets.trade ? 1 : 0)) {
         let lastTrade = assets.trades[assets.trades.length - (assets.trade ? 2 : 1)]
@@ -492,6 +494,11 @@ function updateMessages(i) {
           + '\n profit:' + (currentTrade.current - currentTrade.margin).toFixed(2)
       }
   }
+  if (SHOW_FPS) {
+    fps = fps * 0.95 + app.ticker.FPS * 0.05
+    texts.fps = 'FPS:' + fps.toFixed(0) + ' (' + app.ticker.FPS.toFixed(2) + ')'
+  }
+
   updateTexts()
 }
 
@@ -644,6 +651,15 @@ function createMessages(width, height, margin) {
     messages.debug = new PIXI.Text(texts.debug, style)
     messages.debug.position.set(x, y + ROW_HEIGHT)
     messagesContainer.addChild(messages.debug)
+  }
+
+  if (SHOW_FPS) {
+    let style = TEXT_STYLE.clone()
+    style.fontSize = 16
+    messages.fps = new PIXI.Text(texts.fps, style)
+    messages.fps.anchor.set(0.5, 0.0)
+    messages.fps.position.set(width / 2, margin)
+    messagesContainer.addChild(messages.fps)
   }
 
   messages.summary = new MultiStyleText(texts.summary, TEXT_MULTI_STYLE)
