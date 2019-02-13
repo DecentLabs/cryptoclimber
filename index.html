@@ -46,6 +46,8 @@ const PAST_LENGTH_TICKS = PAST_LENGTH_DAYS * TICKS_PER_DAY
 const GRAPH_X_GRANULARITY_PX = 5 // smaller is more dense
 const Y_SCALE_FACTOR = 1000
 
+const BANDS = 20
+
 const OFFSET_X = 0.25
 const SMOOTH_FACTOR_Y = 50
 
@@ -119,7 +121,7 @@ let entities = {
     debug: null,
   },
   logos: null,
-  lines: [],
+  graph: null,
   player: null,
 }
 
@@ -223,9 +225,9 @@ function setup() {
   entities.gamespace.interactiveChildren = false
   entities.gamespace.addChild(createGrid())
 
-  let {graph, lines} = createGraph()
-  entities.gamespace.addChild(graph)
-  entities.lines = lines
+  entities.graph = createGraph()
+  entities.gamespace.addChild(entities.graph)
+  entities.gamespace.addChild(entities.graph.mask)
 
   entities.player = createPlayer()
   entities.gamespace.addChild(entities.player)
@@ -361,7 +363,6 @@ function update(dt) {
 
   if (i > tick) {
     tick = i
-    entities.lines[tick].visible = true
     handleInput(tick)
   }
 
@@ -373,6 +374,7 @@ function update(dt) {
     recalculateTrade(assets.trade, tick)
     updateTrade(assets.trade, x, y)
   }
+  entities.graph.mask.position.x = x
   setViewPort(x, (viewPortY + (y - viewPortY) / SMOOTH_FACTOR_Y), OFFSET_X)
   updatePlayer(x, y)
   updateMessages(tick)
@@ -541,36 +543,39 @@ function zoomOutFull() {
 
 function createGraph() {
   const p0 = priceData.series[0]
-  let graph = new PIXI.Container()
-  let lines = []
-
-  for (let i = 0; i < priceData.series.length - 1; i++) {
-    let line = new PIXI.Graphics()
-    line.position.set(0, 0)
-    line.lineStyle(2, 0xffffff)
-        .moveTo(GRAPH_X_GRANULARITY_PX * i,
-          Y_SCALE_FACTOR * priceData.scale * (priceData.series[i] - p0))
-        .lineTo(GRAPH_X_GRANULARITY_PX * (i + 1),
-          Y_SCALE_FACTOR * priceData.scale * (priceData.series[i + 1] - p0))
-    line.visible = false
-    lines.push(line)
-    graph.addChild(line)
-  }
-
   const past = priceData.pastSeries.length
-  for (let i = 0; i < past; i++) {
-    let line = new PIXI.Graphics()
-    line.position.set(0, 0)
-    line.alpha = i / past
-    line.lineStyle(2, 0x666666)
-        .moveTo(GRAPH_X_GRANULARITY_PX * (i + 1 - past),
-          Y_SCALE_FACTOR * priceData.scale * (priceData.pastSeries[i] - p0))
-        .lineTo(GRAPH_X_GRANULARITY_PX * (i + 2 - past),
-          Y_SCALE_FACTOR * priceData.scale * (priceData.pastSeries[i + 1] - p0))
-    graph.addChild(line)
+
+  let graph = new PIXI.Graphics()
+  graph.lineStyle(2, 0xffffff)
+  graph.position.set(0, 0)
+  for (let i = 0; i < priceData.series.length - 1; i++) {
+    graph
+      .moveTo(GRAPH_X_GRANULARITY_PX * i,
+        Y_SCALE_FACTOR * priceData.scale * (priceData.series[i] - p0))
+      .lineTo(GRAPH_X_GRANULARITY_PX * (i + 1),
+        Y_SCALE_FACTOR * priceData.scale * (priceData.series[i + 1] - p0))
   }
 
-  return {graph, lines}
+  graph.position.set(0, 0)
+  for (let i = 0; i < past; i++) {
+    graph.lineStyle(2, 0x666666, i / past)
+      .moveTo(GRAPH_X_GRANULARITY_PX * (i + 1 - past),
+        Y_SCALE_FACTOR * priceData.scale * (priceData.pastSeries[i] - p0))
+      .lineTo(GRAPH_X_GRANULARITY_PX * (i + 2 - past),
+        Y_SCALE_FACTOR * priceData.scale * (priceData.pastSeries[i + 1] - p0))
+    graph.addChild(graph)
+  }
+
+  // Note: you have to add both 'graph' and 'graph.mask' to the gamespace container
+  let width = (PAST_LENGTH_TICKS + GAME_LENGTH_TICKS) * GRAPH_X_GRANULARITY_PX
+  let yMin = Y_SCALE_FACTOR * priceData.scale * p0 * (Math.pow(0.9, BANDS) - 1)
+  let yMax = Y_SCALE_FACTOR * priceData.scale * p0 * (Math.pow(1.1, BANDS) - 1)
+
+  graph.mask = new PIXI.Graphics()
+  graph.mask.isMask = true
+  graph.mask.drawRect(-width, yMin, width, yMax - yMin)
+
+  return graph
 }
 
 function createButton(text, x, y, w, h, initialState, callback) {
@@ -739,11 +744,10 @@ function createGrid() {
   const gradHeight = 256
   const grad = gradientTexture(1, gradHeight)
 
-  const bands = 20
   const alpha = 0.12
 
   let ppi = p0
-  for (let i = 1; i <= bands; i++) {
+  for (let i = 1; i <= BANDS; i++) {
     let prevY = Y_SCALE_FACTOR * priceData.scale * (ppi - p0)
     ppi *= 1.1
     let y = Y_SCALE_FACTOR * priceData.scale * (ppi - p0)
@@ -752,13 +756,13 @@ function createGrid() {
     sprite.x = -PAST_LENGTH_TICKS * GRAPH_X_GRANULARITY_PX
     sprite.y = prevY
     sprite.anchor.set(0.0, 0.0)
-    sprite.alpha = alpha - (i * alpha / bands)
+    sprite.alpha = alpha - (i * alpha / BANDS)
     sprite.scale.set((PAST_LENGTH_TICKS + GAME_LENGTH_TICKS) * GRAPH_X_GRANULARITY_PX, (y - prevY) / gradHeight)
     grid.addChild(sprite)
   }
 
   let pmi = p0
-  for (let i = 1; i <= bands; i++) {
+  for (let i = 1; i <= BANDS; i++) {
     let prevY = Y_SCALE_FACTOR * priceData.scale * (pmi - p0)
     pmi *= 0.9
     let y = Y_SCALE_FACTOR * priceData.scale * (pmi - p0)
@@ -767,7 +771,7 @@ function createGrid() {
     sprite.x = -PAST_LENGTH_TICKS * GRAPH_X_GRANULARITY_PX
     sprite.y = y
     sprite.anchor.set(0.0, 0.0)
-    sprite.alpha = alpha - (i * alpha / bands)
+    sprite.alpha = alpha - (i * alpha / BANDS)
     sprite.scale.set((PAST_LENGTH_TICKS + GAME_LENGTH_TICKS) * GRAPH_X_GRANULARITY_PX, (prevY - y) / gradHeight)
     grid.addChild(sprite)
   }
