@@ -57,7 +57,7 @@ const BUTTON_HEIGHT = 80
 
 const SHOW_PRICE = false
 const SHOW_DEBUG = false
-const SHOW_FPS = false
+const SHOW_FPS = parseBoolean(getQueryParam('fps')) || false
 
 const MIN_SPEED = 12 // smaller is faster
 const MAX_SPEED = 4 // smaller is faster
@@ -1035,6 +1035,18 @@ function getQueryParam(param) {
       }
   }
   return null
+}
+
+function parseBoolean(b) {
+  if (typeof b === 'boolean') {
+    return b
+  } else if (typeof b === 'string') {
+    return b.toLowerCase() === 'true'
+  } else if (typeof b === 'number') {
+    return b !== 0 && !isNaN(b)
+  } else {
+    return false
+  }
 }
 
 function uniqueSorted(arr, cmp) {
