@@ -934,7 +934,7 @@ function callback(p) {
 function addScore(self, player, result, trades) {
   assets.scores.push({
     self: self,
-    player: player,
+    player: '' + player,
     result: Math.round(result * 1000) / 1000,
     trades: trades
   })
