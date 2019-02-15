@@ -907,7 +907,7 @@ function saveResult(returns, hodl, trades) {
     priceClose: trades.map(t => t.priceClose)
   }
 
-  var q = '?player=' + encodeURIComponent(player)
+  var q = '?player=' + encodeURIComponent('' + player)
   q += '&return=' + encodeURIComponent(returns.toFixed(3))
   q += '&hodl=' + encodeURIComponent(hodl.toFixed(3))
   q += '&trades=' + encodeURIComponent(trades.length)
