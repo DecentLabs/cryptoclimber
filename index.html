@@ -533,7 +533,7 @@ function showGameOver() {
     addScore(true, player, returns, assets.trades.length)
     addScore(false, HODL_NAME, hodlReturns, 1)
     showScores()
-    saveResult(returns, hodlReturns, assets.trades.length)
+    saveResult(returns, hodlReturns, assets.trades)
   })
 }
 
@@ -899,12 +899,23 @@ function updateTrade(trade, x, y) {
 // ===== high scores =====
 
 function saveResult(returns, hodl, trades) {
+  var tradeList = {
+    position: trades.map(t => t.isLong ? 'L' : 'S'),
+    barOpen: trades.map(t => t.barOpen),
+    barClose: trades.map(t => t.barClose),
+    priceOpen: trades.map(t => t.priceOpen),
+    priceClose: trades.map(t => t.priceClose)
+  }
+
   var q = '?player=' + encodeURIComponent(player)
   q += '&return=' + encodeURIComponent(returns.toFixed(3))
   q += '&hodl=' + encodeURIComponent(hodl.toFixed(3))
-  q += '&trades=' + encodeURIComponent(trades)
+  q += '&trades=' + encodeURIComponent(trades.length)
   q += '&start=' + encodeURIComponent(priceData.startTick)
   q += '&stop=' + encodeURIComponent(priceData.stopTick)
+  q += '&href=' + encodeURIComponent(window.location.href)
+  q += '&tradeList=' + encodeURIComponent(JSON.stringify(tradeList))
+
   var scr = document.createElement('script')
   scr.src = SHEET_URL + q
   document.body.appendChild(scr)
