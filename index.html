@@ -64,7 +64,7 @@ const SHOW_DEBUG = false
 const SHOW_FPS = parseBoolean(getQueryParam('fps')) || false
 
 const SPEED_LEVELS = [6.0, 4.8, 3.6, 2.4, 1.2]
-const ZOOM_LEVELS = [1.0, 0.9, 0.8, 0.7, 0.6]
+const ZOOM_LEVELS = [1.6, 1.4, 1.2, 1.0, 0.8]
 const DEFAULT_LEVEL = 2
 
 const DEFAULT_SPEED = SPEED_LEVELS[DEFAULT_LEVEL]
@@ -279,7 +279,7 @@ function setupUI(width, height) {
   entities.smallLogo = createSmallLogo(width, height, MARGIN)
   uiContainer.addChild(entities.smallLogo)
 
-  entities.longButton = createButton("\u25B3 Long ",
+  entities.longButton = createButton("\u25B3\u2009Long\u2009",
     width - BUTTON_WIDTH - MARGIN, height - 3 * BUTTON_HEIGHT - 5 * MARGIN,
     BUTTON_WIDTH, BUTTON_HEIGHT, input.long,
     (pressed) => {
@@ -299,7 +299,7 @@ function setupUI(width, height) {
     })
   uiContainer.addChild(entities.neutralButton)
 
-  entities.shortButton = createButton("\u25BD Short",
+  entities.shortButton = createButton("\u25BD\u2009Short",
     width - BUTTON_WIDTH - MARGIN, height - BUTTON_HEIGHT - MARGIN,
     BUTTON_WIDTH, BUTTON_HEIGHT, input.short,
     (pressed) => {
@@ -309,7 +309,7 @@ function setupUI(width, height) {
     })
   uiContainer.addChild(entities.shortButton)
 
-  entities.speedDown = createButton("---",
+  entities.speedDown = createButton("<\u2009Slow",
     MARGIN, height - BUTTON_HEIGHT - MARGIN,
     BUTTON_WIDTH, BUTTON_HEIGHT, false,
     (pressed) => {
@@ -320,7 +320,7 @@ function setupUI(width, height) {
     })
   uiContainer.addChild(entities.speedDown)
 
-  entities.speedUp = createButton("+++",
+  entities.speedUp = createButton("Fast\u2009>",
     3 * MARGIN + BUTTON_WIDTH, height - BUTTON_HEIGHT - MARGIN,
     BUTTON_WIDTH, BUTTON_HEIGHT, false,
     (pressed) => {
