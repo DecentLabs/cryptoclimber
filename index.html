@@ -63,13 +63,15 @@ const SHOW_PRICE = false
 const SHOW_DEBUG = false
 const SHOW_FPS = parseBoolean(getQueryParam('fps')) || false
 
-const MIN_SPEED = 12 // smaller is faster
-const MAX_SPEED = 4 // smaller is faster
-const WARP_SPEED_DELTA = (MIN_SPEED - MAX_SPEED) / 30
+const SPEED_LEVELS = [6.0, 4.8, 3.6, 2.4, 1.2]
+const ZOOM_LEVELS = [1.0, 0.9, 0.8, 0.7, 0.6]
+const DEFAULT_LEVEL = 2
 
-const MIN_ZOOM = 0.75
-const MAX_ZOOM = 1.25
-const WARP_ZOOM_DELTA = (MAX_ZOOM - MIN_ZOOM) / 30
+const DEFAULT_SPEED = SPEED_LEVELS[DEFAULT_LEVEL]
+const DEFAULT_ZOOM = ZOOM_LEVELS[DEFAULT_LEVEL]
+
+const WARP_SPEED_DELTA = (SPEED_LEVELS[0] - SPEED_LEVELS[1]) / 30
+const WARP_ZOOM_DELTA = (ZOOM_LEVELS[0] - ZOOM_LEVELS[1]) / 30
 
 const INTRO =
   'How good are you at trading' +
@@ -80,7 +82,7 @@ const INTRO =
   '\nPress [DOWN] to sell SHORT' +
   '\nPress [SPACE] to close position ' +
   '</strong>' +
-  '\n\nHold [SHIFT] for warp speed' +
+  '\n\nPress [LEFT] / [RIGHT] to change speed ' +
   '\n\n<strong>Press [SPACE] to start!</strong>'
 
 const HODL_NAME = 'Buy and hold'
@@ -106,8 +108,8 @@ const COLOR_BUTTON_WARP_ACTIVE = 0xffff00
 let screenWidth = window.innerWidth
 let screenHeight = window.innerHeight
 
-let speed = MIN_SPEED
-let zoom = MAX_ZOOM
+let speed = DEFAULT_SPEED
+let zoom = DEFAULT_ZOOM
 
 let texts = Object.assign({}, DEFAULT_TEXTS)
 
@@ -151,7 +153,7 @@ let gameStarted = false
 let input = {
   short: false,
   long: false,
-  warp: false,
+  speedLevel: DEFAULT_LEVEL,
 }
 
 let fps = 60
@@ -214,8 +216,14 @@ function setup() {
 
   time = 0
   tick = -1
-  speed = MIN_SPEED
-  zoom = MAX_ZOOM
+  speed = DEFAULT_SPEED
+  zoom = DEFAULT_ZOOM
+
+  input = {
+    short: false,
+    long: false,
+    speedLevel: DEFAULT_LEVEL,
+  }
 
   assets.funds = INIT_FUNDS
   assets.trades = []
@@ -301,10 +309,27 @@ function setupUI(width, height) {
     })
   uiContainer.addChild(entities.shortButton)
 
-  entities.warpButton = createButton("\u232A\u232AWarp",
+  entities.speedDown = createButton("---",
     MARGIN, height - BUTTON_HEIGHT - MARGIN,
-    BUTTON_WIDTH, BUTTON_HEIGHT, input.warp, onWarp)
-  uiContainer.addChild(entities.warpButton)
+    BUTTON_WIDTH, BUTTON_HEIGHT, false,
+    (pressed) => {
+      entities.speedDown.tint = pressed ? COLOR_BUTTON_WARP_ACTIVE : COLOR_BUTTON_INACTIVE
+      if (pressed) {
+        onSpeedDown()
+      }
+    })
+  uiContainer.addChild(entities.speedDown)
+
+  entities.speedUp = createButton("+++",
+    3 * MARGIN + BUTTON_WIDTH, height - BUTTON_HEIGHT - MARGIN,
+    BUTTON_WIDTH, BUTTON_HEIGHT, false,
+    (pressed) => {
+      entities.speedUp.tint = pressed ? COLOR_BUTTON_WARP_ACTIVE : COLOR_BUTTON_INACTIVE
+      if (pressed) {
+        onSpeedUp()
+      }
+    })
+  uiContainer.addChild(entities.speedUp)
 
   showControls(isGameRunning())
   uiContainer.interactive = true
@@ -318,7 +343,8 @@ function showControls(show) {
   entities.longButton.visible =
   entities.neutralButton.visible =
   entities.shortButton.visible =
-  entities.warpButton.visible =
+  entities.speedUp.visible =
+  entities.speedDown.visible =
   show
 }
 
@@ -338,7 +364,6 @@ function updateTexts() {
   }
 }
 
-
 // ===== update loop =====
 
 function update(dt) {
@@ -346,15 +371,19 @@ function update(dt) {
     return
   }
 
-  if (input.warp) {
-    speed = Math.max(MAX_SPEED, speed - WARP_SPEED_DELTA)
-    zoom = Math.max(MIN_ZOOM, zoom - WARP_ZOOM_DELTA)
-  } else {
-    speed = Math.min(MIN_SPEED, speed + WARP_SPEED_DELTA)
-    zoom = Math.min(MAX_ZOOM, zoom + WARP_ZOOM_DELTA)
+  targetSpeed = SPEED_LEVELS[input.speedLevel]
+  targetzoom = ZOOM_LEVELS[input.speedLevel]
+
+  if (speed < targetSpeed) {
+    speed = Math.min(targetSpeed, speed + WARP_SPEED_DELTA)
+    zoom = Math.min(targetzoom, zoom + WARP_ZOOM_DELTA)
+  } else if (speed > targetSpeed) {
+    speed = Math.max(targetSpeed, speed - WARP_SPEED_DELTA)
+    zoom = Math.max(targetzoom, zoom - WARP_ZOOM_DELTA)
   }
 
-  time += dt / speed
+  // 60 is the target fps
+  time += dt / (speed * 60 / TICKS_PER_DAY)
   var i = Math.floor(time)
   if (i >= GAME_LENGTH_TICKS) {
     if (!gameOver) {
@@ -409,9 +438,12 @@ function startGame() {
   gameStarted = true
 }
 
-function onWarp(warpState) {
-  input.warp = warpState
-  entities.warpButton.tint = warpState ? COLOR_BUTTON_WARP_ACTIVE : COLOR_BUTTON_INACTIVE
+function onSpeedUp() {
+  input.speedLevel = Math.min(input.speedLevel + 1, SPEED_LEVELS.length - 1)
+}
+
+function onSpeedDown() {
+  input.speedLevel = Math.max(input.speedLevel - 1, 0)
 }
 
 function onLong() {
@@ -479,9 +511,9 @@ function updateMessages(i) {
   }
   if (SHOW_DEBUG) {
     texts.debug =
-      'inputs:' + (input.short?'S':' ') + (input.long?'L':' ') + (input.warp?'W':' ')
-      + '\nspeed:' + speed.toFixed(2)
-      + ' zoom:' + zoom.toFixed(2)
+      'inputs:' + (input.short?'S':' ') + (input.long?'L':' ') + (input.warp?'W':' ') + ' S' + (input.speedLevel+1)
+      + '\nspeed:' + speed.toFixed(2) + ' (sec/day @ 60fps)'
+      + '\nzoom:' + zoom.toFixed(2)
       + '\ntick:' + tick
       + ' x:' + viewPortX.toFixed(2)
       + ' y:' + viewPortY.toFixed(2)
@@ -513,7 +545,6 @@ function updateMessages(i) {
 
 function showGameOver() {
   onNeutral()
-  onWarp(false)
   showControls(false)
   if (assets.trade) {
     exitTrade(GAME_LENGTH_TICKS)
@@ -976,7 +1007,6 @@ function listenerResize(event) {
 }
 
 const listenerBlur = event => {
-  onWarp(false)
 }
 
 const listenerGlobalTap = event => {
@@ -1012,6 +1042,10 @@ const listenerKeyDown = event => {
     if (!gameStarted) {
       startGame()
     }
+  } else if (event.code === 'ArrowLeft') {
+    onSpeedDown()
+  } else if (event.code === 'ArrowRight') {
+    onSpeedUp()
   } else if (event.code === 'Space') {
     onNeutral()
     if (!gameStarted) {
@@ -1020,15 +1054,9 @@ const listenerKeyDown = event => {
   } else if (event.code === 'KeyF') {
     toggleFullScreen()
   }
-  if (event.key === 'Shift') {
-    onWarp(true)
-  }
 }
 
 const listenerKeyUp = event => {
-  if (event.key === 'Shift') {
-    onWarp(false)
-  }
 }
 
 function addInputListeners() {
