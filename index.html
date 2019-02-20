@@ -100,8 +100,8 @@ const DEFAULT_TEXTS = Object.freeze({
 
 const COLOR_BUTTON_INACTIVE = 0xffffff
 const COLOR_BUTTON_ACTIVE = 0xff00ff
-const COLOR_BUTTON_WARP_ACTIVE = 0xffff00
-
+const COLOR_BUTTON_PRESSED = 0xffff00
+const COLOR_BUTTON_DISABLED = 0x444444
 
 // ===== global variables =====
 
@@ -313,21 +313,21 @@ function setupUI(width, height) {
     MARGIN, height - BUTTON_HEIGHT - MARGIN,
     BUTTON_WIDTH, BUTTON_HEIGHT, false,
     (pressed) => {
-      entities.speedDown.tint = pressed ? COLOR_BUTTON_WARP_ACTIVE : COLOR_BUTTON_INACTIVE
       if (pressed) {
         onSpeedDown()
       }
-    })
+      updateSpeedButtons(pressed, false)
+   })
   uiContainer.addChild(entities.speedDown)
 
   entities.speedUp = createButton("Fast\u2009>",
     3 * MARGIN + BUTTON_WIDTH, height - BUTTON_HEIGHT - MARGIN,
     BUTTON_WIDTH, BUTTON_HEIGHT, false,
     (pressed) => {
-      entities.speedUp.tint = pressed ? COLOR_BUTTON_WARP_ACTIVE : COLOR_BUTTON_INACTIVE
       if (pressed) {
         onSpeedUp()
       }
+      updateSpeedButtons(false, pressed)
     })
   uiContainer.addChild(entities.speedUp)
 
@@ -346,6 +346,13 @@ function showControls(show) {
   entities.speedUp.visible =
   entities.speedDown.visible =
   show
+}
+
+function updateSpeedButtons(downPressed = false, upPressed = false) {
+  entities.speedDown.tint = input.speedLevel > 0 ?
+    (downPressed ? COLOR_BUTTON_PRESSED : COLOR_BUTTON_INACTIVE) : COLOR_BUTTON_DISABLED
+  entities.speedUp.tint = input.speedLevel < SPEED_LEVELS.length - 1 ?
+    (upPressed ? COLOR_BUTTON_PRESSED : COLOR_BUTTON_INACTIVE) : COLOR_BUTTON_DISABLED
 }
 
 function updateTexts() {
@@ -1044,8 +1051,10 @@ const listenerKeyDown = event => {
     }
   } else if (event.code === 'ArrowLeft') {
     onSpeedDown()
+    updateSpeedButtons(true, false)
   } else if (event.code === 'ArrowRight') {
     onSpeedUp()
+    updateSpeedButtons(false, true)
   } else if (event.code === 'Space') {
     onNeutral()
     if (!gameStarted) {
@@ -1057,6 +1066,9 @@ const listenerKeyDown = event => {
 }
 
 const listenerKeyUp = event => {
+  if (event.code === 'ArrowLeft' || event.code === 'ArrowRight') {
+    updateSpeedButtons()
+  }
 }
 
 function addInputListeners() {
