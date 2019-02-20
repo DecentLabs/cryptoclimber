@@ -349,9 +349,9 @@ function showControls(show) {
 }
 
 function updateSpeedButtons(downPressed = false, upPressed = false) {
-  entities.speedDown.tint = input.speedLevel > 0 ?
+  entities.speedDown.tint = entities.speedDown.label.style.fill = input.speedLevel > 0 ?
     (downPressed ? COLOR_BUTTON_PRESSED : COLOR_BUTTON_INACTIVE) : COLOR_BUTTON_DISABLED
-  entities.speedUp.tint = input.speedLevel < SPEED_LEVELS.length - 1 ?
+  entities.speedUp.tint = entities.speedUp.label.style.fill = input.speedLevel < SPEED_LEVELS.length - 1 ?
     (upPressed ? COLOR_BUTTON_PRESSED : COLOR_BUTTON_INACTIVE) : COLOR_BUTTON_DISABLED
 }
 
@@ -623,10 +623,11 @@ function createGraph() {
 function createButton(text, x, y, w, h, initialState, callback) {
   const g = new PIXI.Graphics()
 
-  const txt = new PIXI.Text(text, TEXT_STYLE)
+  const txt = new PIXI.Text(text, TEXT_STYLE.clone())
   txt.x = (w - txt.width) / 2
   txt.y = (h - txt.height) / 2
   g.addChild(txt)
+  g.label = txt
 
   g.lineStyle(2, COLOR_BUTTON_INACTIVE, 1);
   g.beginFill(COLOR_BUTTON_INACTIVE, 0.25);
