@@ -83,6 +83,7 @@ const INTRO =
   '\nPress [SPACE] to close position ' +
   '</strong>' +
   '\n\nPress [LEFT] / [RIGHT] to change speed ' +
+  '\nPress [P] to pause game ' +
   '\n\n<strong>Press [SPACE] to start!</strong>'
 
 const HODL_NAME = 'Buy and hold'
@@ -125,6 +126,7 @@ let entities = {
     highscores: null,
     price: null,
     debug: null,
+    pause: null,
   },
   logos: null,
   graph: null,
@@ -149,6 +151,7 @@ let tick = -1
 
 let gameOver = false
 let gameStarted = false
+let paused = false
 
 let input = {
   short: false,
@@ -374,7 +377,7 @@ function updateTexts() {
 // ===== update loop =====
 
 function update(dt) {
-  if (!gameStarted) {
+  if (!gameStarted || paused) {
     return
   }
 
@@ -443,6 +446,11 @@ function startGame() {
   entities.smallLogo.visible = true
   showControls(true)
   gameStarted = true
+  pauseGame(false)
+}
+
+function pauseGame(p) {
+  paused = entities.messages.pause.visible = p && isGameRunning()
 }
 
 function onSpeedUp() {
@@ -723,6 +731,14 @@ function createMessages(width, height, margin) {
   messages.highscores.position.set(width / 2, height / 2)
   messages.highscores.anchor.set(0.5, 0.5)
   messagesContainer.addChild(messages.highscores)
+
+  let style = TEXT_STYLE.clone()
+  style.fontSize = 48
+  messages.pause = new PIXI.Text('PAUSED', style)
+  messages.pause.anchor.set(0.5, 0.5)
+  messages.pause.position.set(width / 2, height / 2)
+  messages.pause.visible = false
+  messagesContainer.addChild(messages.pause)
 
   return {messagesContainer, messages}
 }
@@ -1014,7 +1030,12 @@ function listenerResize(event) {
   }, 250)
 }
 
+const listenerFocus = event => {
+  pauseGame(false)
+}
+
 const listenerBlur = event => {
+  pauseGame(true)
 }
 
 const listenerGlobalTap = event => {
@@ -1063,6 +1084,8 @@ const listenerKeyDown = event => {
     }
   } else if (event.code === 'KeyF') {
     toggleFullScreen()
+  } else if (event.code ==='KeyP') {
+    pauseGame(!paused)
   }
 }
 
@@ -1074,6 +1097,7 @@ const listenerKeyUp = event => {
 
 function addInputListeners() {
   window.addEventListener('blur', listenerBlur, false)
+  window.addEventListener('focus', listenerFocus, false)
   window.addEventListener('keydown', listenerKeyDown, false)
   window.addEventListener('keyup', listenerKeyUp, false)
 }
