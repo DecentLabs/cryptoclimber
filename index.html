@@ -1031,7 +1031,6 @@ function listenerResize(event) {
 }
 
 const listenerFocus = event => {
-  pauseGame(false)
 }
 
 const listenerBlur = event => {
@@ -1047,6 +1046,11 @@ const listenerGlobalTap = event => {
 }
 
 const listenerKeyDown = event => {
+  if (paused) {
+    pauseGame(false)
+  } else if (event.code ==='KeyP') {
+    pauseGame(true)
+  }
   if (gameOver) {
     if (event.code === 'Space') {
       setup()
@@ -1084,8 +1088,6 @@ const listenerKeyDown = event => {
     }
   } else if (event.code === 'KeyF') {
     toggleFullScreen()
-  } else if (event.code ==='KeyP') {
-    pauseGame(!paused)
   }
 }
 
