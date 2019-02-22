@@ -737,7 +737,7 @@ function createMessages(width, height, margin) {
   messages.pause = new PIXI.Text('PAUSED', style)
   messages.pause.anchor.set(0.5, 0.5)
   messages.pause.position.set(width / 2, height / 2)
-  messages.pause.visible = false
+  messages.pause.visible = paused
   messagesContainer.addChild(messages.pause)
 
   return {messagesContainer, messages}
