@@ -32,6 +32,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/4.8.5/pixi.min.js"></script>
     <script src="pixi-multistyle-text/0.6.0/pixi-multistyle-text.umd.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/webfont/1.6.26/webfont.js"></script>
+    <script src="file-saver/2.0.1/FileSaver.min.js"></script>
   </head>
   <body>
     <script>
@@ -281,6 +282,11 @@ function setupUI(width, height) {
 
   entities.smallLogo = createSmallLogo(width, height, MARGIN)
   uiContainer.addChild(entities.smallLogo)
+
+  entities.screenshot = createScreenShotButton(width, height, MARGIN)
+  if (entities.screenshot) {
+    uiContainer.addChild(entities.screenshot)
+  }
 
   entities.longButton = createButton("\u25B3\u2009Long\u2009",
     width - BUTTON_WIDTH - MARGIN, height - 3 * BUTTON_HEIGHT - 5 * MARGIN,
@@ -561,6 +567,7 @@ function updateMessages(i) {
 function showGameOver() {
   onNeutral()
   showControls(false)
+
   if (assets.trade) {
     exitTrade(GAME_LENGTH_TICKS)
   }
@@ -795,6 +802,23 @@ function createSmallLogo(width, height, margin) {
   return logo
 }
 
+function createScreenShotButton(width, height, margin) {
+  if (HTMLCanvasElement && HTMLCanvasElement.prototype && HTMLCanvasElement.prototype.toBlob) {
+    let screenshot = new PIXI.Sprite.from('screenshot.png')
+    screenshot.position.set(margin, height - margin)
+    screenshot.anchor.set(0.0, 1.0)
+    screenshot.scale.set(0.25)
+    screenshot.interactive = true
+    screenshot.buttonMode = true
+    screenshot.on('click', () => { screenShot(app.view, entities.messages.highscores, 5 * MARGIN) })
+    screenshot.on('tap', () => { screenShot(app.view, entities.messages.highscores, 5 * MARGIN) })
+    screenshot.visible = isGameOverScreen()
+    return screenshot
+  } else {
+    return null
+  }
+}
+
 function createGrid() {
   let grid = new PIXI.Container()
 
@@ -1009,6 +1033,9 @@ function showScores() {
   text += '\n\nPress [SPACE] to restart'
   texts.highscores = text
   updateTexts()
+  if (entities.screenshot) {
+    entities.screenshot.visible = true
+  }
 }
 
 
@@ -1088,6 +1115,24 @@ const listenerKeyDown = event => {
     }
   } else if (event.code === 'KeyF') {
     toggleFullScreen()
+  }
+}
+
+function screenShot(canvas, element, margin) {
+  if (HTMLCanvasElement && HTMLCanvasElement.prototype && HTMLCanvasElement.prototype.toBlob) {
+    let x = window.devicePixelRatio * element.x
+    let y = window.devicePixelRatio * element.y
+    let w = window.devicePixelRatio * element.width + margin
+    let h = window.devicePixelRatio * element.height + margin
+
+    let tempCanvas = document.createElement('canvas')
+    tempCanvas.width = w
+    tempCanvas.height = h
+    tempCanvas.getContext("2d").drawImage(canvas, x - w / 2, y - h / 2, w, h, 0, 0, w, h)
+
+    tempCanvas.toBlob(function(blob) {
+      saveAs(blob, 'cryptoclimber-highscore-' + new Date().toISOString() + '.png')
+    }, 'image/png')
   }
 }
 
