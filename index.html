@@ -1069,13 +1069,12 @@ function dateRangeString(epoch, startTick, stopTick) {
   const stopYear = stopTickDate.getFullYear().toString()
   const stopMonth = stopTickDate.toLocaleString('en-us', { month: 'long' })
 
-  let str = startMonth + ' ' + startYear
+  let str = startMonth
+  if (startYear !== stopYear || startMonth === stopMonth) {
+    str += ' ' + startYear
+  }
   if (startMonth !== stopMonth) {
-    str += ' - '
-    str += stopMonth
-    if (startYear !== stopYear) {
-      str += ' ' + stopYear
-    }
+    str += ' - ' + stopMonth + ' ' + stopYear
   }
   return str
 }
