@@ -1036,7 +1036,10 @@ function addScore(self, player, result, trades) {
 }
 
 function showScores() {
-  let text = '<strong>RESULTS</strong>\nfor the same time period\n'
+  const rangeString = dateRangeString(priceData.epoch, priceData.startTick, priceData.stopTick)
+
+  let text = '<strong>RESULTS</strong>\n'
+  text += '' + rangeString + '\n'
   assets.scores = uniqueSorted(assets.scores, (a, b) => b.result - a.result || a.player.localeCompare(b.player))
   assets.scores.forEach(e => {
     text += '\n'
@@ -1046,6 +1049,7 @@ function showScores() {
         + tag('tr', (' (' + toTrades(e.trades) + ')').padEnd(14, ' '))
       )
   })
+  text += '\n\ncryptoclimber.decent.org'
   texts.highscores = text
   texts.restart = 'Press [SPACE] to restart'
   updateTexts()
@@ -1054,6 +1058,27 @@ function showScores() {
   }
 }
 
+function dateRangeString(epoch, startTick, stopTick) {
+  const HOUR_IN_MS = 60 * 60 * 1000
+
+  const startTickDate = new Date(epoch + startTick * HOUR_IN_MS)
+  const startYear = startTickDate.getFullYear().toString()
+  const startMonth = startTickDate.toLocaleString('en-us', { month: 'long' })
+
+  const stopTickDate = new Date(epoch + stopTick * HOUR_IN_MS)
+  const stopYear = stopTickDate.getFullYear().toString()
+  const stopMonth = stopTickDate.toLocaleString('en-us', { month: 'long' })
+
+  let str = startMonth + ' ' + startYear
+  if (startMonth !== stopMonth) {
+    str += ' - '
+    str += stopMonth
+    if (startYear !== stopYear) {
+      str += ' ' + stopYear
+    }
+  }
+  return str
+}
 
 // ===== event listeners =====
 
@@ -1230,6 +1255,7 @@ function parsePriceData(data, ticks) {
     scale: 1 / (2 * (first * 1.1 * 1.1 - first * 0.9 * 0.9)),
     startTick: fromIndex,
     stopTick: fromIndex + ticks,
+    epoch: Date.parse(data.startDate)
   }
 }
 
