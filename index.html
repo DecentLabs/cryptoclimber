@@ -1073,7 +1073,7 @@ function dateRangeString(epoch, startTick, stopTick) {
   if (startYear !== stopYear || startMonth === stopMonth) {
     str += ' ' + startYear
   }
-  if (startMonth !== stopMonth) {
+  if (startMonth !== stopMonth || startYear !== stopYear) {
     str += ' - ' + stopMonth + ' ' + stopYear
   }
   return str
