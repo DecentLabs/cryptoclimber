@@ -94,6 +94,7 @@ const SHEET_URL = 'https://script.google.com/macros/s/AKfycbyDTk5pYHGjgHartXZZX8
 const DEFAULT_TEXTS = Object.freeze({
   summary: INTRO,
   highscores: '',
+  restart: '',
   iteration: '',
   funds: '',
   price: '',
@@ -125,6 +126,7 @@ let entities = {
     funds: null,
     summary: null,
     highscores: null,
+    restart: null,
     price: null,
     debug: null,
     pause: null,
@@ -367,6 +369,7 @@ function updateSpeedButtons(downPressed = false, upPressed = false) {
 function updateTexts() {
   entities.messages.summary.text = texts.summary
   entities.messages.highscores.text = texts.highscores
+  entities.messages.restart.text = texts.restart
   entities.messages.iteration.text = texts.iteration
   entities.messages.funds.text = texts.funds
   if (SHOW_PRICE) {
@@ -447,6 +450,7 @@ function updatePlayer(x, y) {
 function startGame() {
   texts.summary = ''
   texts.highscores = ''
+  texts.restart = ''
   updateTexts()
   entities.logos.visible = false
   entities.smallLogo.visible = true
@@ -739,13 +743,25 @@ function createMessages(width, height, margin) {
   messages.highscores.anchor.set(0.5, 0.5)
   messagesContainer.addChild(messages.highscores)
 
-  let style = TEXT_STYLE.clone()
-  style.fontSize = 48
-  messages.pause = new PIXI.Text('PAUSED', style)
-  messages.pause.anchor.set(0.5, 0.5)
-  messages.pause.position.set(width / 2, height / 2)
-  messages.pause.visible = paused
-  messagesContainer.addChild(messages.pause)
+  {
+    let style = TEXT_STYLE.clone()
+    style.fontSize = 20
+    style.fill = 0xcccccc
+    messages.restart = new PIXI.Text(texts.restart, style)
+    messages.restart.position.set(width / 2, height - margin)
+    messages.restart.anchor.set(0.5, 1.0)
+    messagesContainer.addChild(messages.restart)
+  }
+
+  {
+    let style = TEXT_STYLE.clone()
+    style.fontSize = 48
+    messages.pause = new PIXI.Text('PAUSED', style)
+    messages.pause.anchor.set(0.5, 0.5)
+    messages.pause.position.set(width / 2, height / 2)
+    messages.pause.visible = paused
+    messagesContainer.addChild(messages.pause)
+  }
 
   return {messagesContainer, messages}
 }
@@ -1030,8 +1046,8 @@ function showScores() {
         + tag('tr', (' (' + toTrades(e.trades) + ')').padEnd(14, ' '))
       )
   })
-  text += '\n\nPress [SPACE] to restart'
   texts.highscores = text
+  texts.restart = 'Press [SPACE] to restart'
   updateTexts()
   if (entities.screenshot) {
     entities.screenshot.visible = true
