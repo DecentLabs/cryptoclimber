@@ -1036,7 +1036,7 @@ function addScore(self, player, result, trades) {
 }
 
 function showScores() {
-  const rangeString = dateRangeString(priceData.epoch, priceData.startTick, priceData.stopTick)
+  const rangeString = dateRangeString(priceData.epoch, priceData.startTick, priceData.stopTick, priceData.candleLength)
 
   let text = '<strong>RESULTS</strong>\n'
   text += '' + rangeString + '\n'
@@ -1058,14 +1058,14 @@ function showScores() {
   }
 }
 
-function dateRangeString(epoch, startTick, stopTick) {
+function dateRangeString(epoch, startTick, stopTick, candleLength) {
   const HOUR_IN_MS = 60 * 60 * 1000
 
-  const startTickDate = new Date(epoch + startTick * HOUR_IN_MS)
+  const startTickDate = new Date(epoch + startTick * HOUR_IN_MS * candleLength)
   const startYear = startTickDate.getFullYear().toString()
   const startMonth = startTickDate.toLocaleString('en-us', { month: 'long' })
 
-  const stopTickDate = new Date(epoch + stopTick * HOUR_IN_MS)
+  const stopTickDate = new Date(epoch + stopTick * HOUR_IN_MS * candleLength)
   const stopYear = stopTickDate.getFullYear().toString()
   const stopMonth = stopTickDate.toLocaleString('en-us', { month: 'long' })
 
@@ -1246,6 +1246,8 @@ function parsePriceData(data, ticks) {
   const series = data.values.slice(fromIndex, fromIndex + ticks + 1)
   const pastSeries = data.values.slice(fromIndex - PAST_LENGTH_TICKS, fromIndex + 1)
   const first = series[0]
+  const candleLength = (Date.parse(data.endDate) - Date.parse(data.startDate)) / (data.values.length * 60 * 60 * 1000)
+
   return {
     series: series,
     pastSeries: pastSeries,
@@ -1254,7 +1256,8 @@ function parsePriceData(data, ticks) {
     scale: 1 / (2 * (first * 1.1 * 1.1 - first * 0.9 * 0.9)),
     startTick: fromIndex,
     stopTick: fromIndex + ticks,
-    epoch: Date.parse(data.startDate)
+    epoch: Date.parse(data.startDate),
+    candleLength: candleLength
   }
 }
 
