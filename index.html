@@ -91,6 +91,9 @@ const HODL_NAME = 'Buy and hold'
 
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbyDTk5pYHGjgHartXZZX876CZbKYa_kKljZDEOJ1dylwVSn1Mk/exec'
 
+// test sheet
+// const TEST_SHEET_URL = 'https://script.google.com/macros/s/AKfycbwISEh8gGr-8QXD_76yIn8AsxDhUI3XS8ACE0Q2E4uWnTYbdfY/exec'
+
 const DEFAULT_TEXTS = Object.freeze({
   summary: INTRO,
   highscores: '',
@@ -578,20 +581,27 @@ function showGameOver() {
   updateMessages(GAME_LENGTH_TICKS - 1)
   zoomOutFull()
 
-  const profit = assets.funds - INIT_FUNDS
-  const returns = profit / INIT_FUNDS
-  const hodlReturns = priceData.series[GAME_LENGTH_TICKS] / priceData.series[0] - 1
-  const beatsHodl = returns > hodlReturns
+  const returns = playerReturns()
+  const hodl = hodlReturns()
 
   setTimeout(() => {
     if (!player) {
       player = window.prompt('Nick name?') || 'anonymous';
     }
     addScore(true, player, returns, assets.trades.length)
-    addScore(false, HODL_NAME, hodlReturns, 1)
+    addScore(false, HODL_NAME, hodl, 1)
     showScores()
-    saveResult(returns, hodlReturns, assets.trades)
+    saveResult(returns, hodl, assets.trades)
   })
+}
+
+function playerReturns() {
+  const profit = assets.funds - INIT_FUNDS
+  return profit / INIT_FUNDS
+}
+
+function hodlReturns() {
+  return priceData.series[GAME_LENGTH_TICKS] / priceData.series[0] - 1
 }
 
 function zoomOutFull() {
@@ -1019,19 +1029,33 @@ function saveResult(returns, hodl, trades) {
 function callback(p) {
   var data = JSON.parse(p)
   if (gameOver && data.result == 'success') {
+    // console.log(data)
+    clearScores()
+    addScore(false, HODL_NAME, hodlReturns(), 1)
     data.top.forEach(entry => {
-      addScore(false, entry[0], entry[1], entry[3])
+      addScore(entry[4], entry[0], entry[1], entry[3], entry[5], entry[2])
     })
+    if (!assets.scores.some(e => e.self)) {
+      addScore(true, player, playerReturns(), assets.trades.length)
+    }
     showScores()
   }
 }
 
-function addScore(self, player, result, trades) {
+function clearScores() {
+  while (assets.scores.length) {
+    assets.scores.pop()
+  }
+}
+
+function addScore(self, player, result, trades, tradeList, date) {
   assets.scores.push({
     self: self,
     player: '' + player,
     result: Math.round(result * 1000) / 1000,
-    trades: trades
+    trades: trades,
+    tradeList: tradeList,
+    date: date
   })
 }
 
@@ -1040,7 +1064,8 @@ function showScores() {
 
   let text = '<strong>RESULTS</strong>\n'
   text += '' + rangeString + '\n'
-  assets.scores = uniqueSorted(assets.scores, (a, b) => b.result - a.result || a.player.localeCompare(b.player))
+  const cmp = (a, b) => b.result - a.result || a.player.localeCompare(b.player)
+  assets.scores = uniqueSorted(assets.scores, cmp)
   assets.scores.forEach(e => {
     text += '\n'
       + tag(e.self ? 'self' : (e.player == HODL_NAME ? 'hodl' : 'b'),
@@ -1048,6 +1073,7 @@ function showScores() {
         + tag(e.result >= 0 ? 'profit' : 'loss', toPercent(e.result).padStart(8, ' '))
         + tag('tr', (' (' + toTrades(e.trades) + ')').padEnd(14, ' '))
       )
+      // console.log(e.tradeList)
   })
   text += '\n\ncryptoclimber.decent.org'
   texts.highscores = text
@@ -1216,8 +1242,16 @@ function parseBoolean(b) {
   }
 }
 
+function deepEqual(x, y) {
+  const ok = Object.keys, tx = typeof x, ty = typeof y
+  return x && y && tx === 'object' && tx === ty ? (
+    ok(x).length === ok(y).length &&
+    ok(x).every(key => deepEqual(x[key], y[key]))
+  ) : (x === y)
+}
+
 function uniqueSorted(arr, cmp) {
-  return arr.sort(cmp).filter((e, i, arr) => !i || cmp.apply(null, [e, arr[i - 1]]) != 0)
+  return arr.sort(cmp).filter((e, i, arr) => i == 0 || !deepEqual(e, arr[i - 1]))
 }
 
 function tag(tag, string) {
