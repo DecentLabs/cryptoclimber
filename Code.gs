@@ -32,7 +32,7 @@ function doGet(e) {
     result['top'] = topRank(sheet, cols, e.parameter['start'], e.parameter['stop'], nextRow - 1);
 
     return ContentService
-      .createTextOutput("callback('" + JSON.stringify(result) + "');")
+      .createTextOutput("callback(" + JSON.stringify(result) + ");")
       .setMimeType(ContentService.MimeType.JAVASCRIPT);
   } catch(e) {
     // if error return this
