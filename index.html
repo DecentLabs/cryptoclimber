@@ -1027,7 +1027,7 @@ function saveResult(returns, hodl, trades) {
 }
 
 function callback(p) {
-  var data = JSON.parse(p)
+  var data = typeof p === 'string' ? JSON.parse(p) : p
   if (gameOver && data.result == 'success') {
     // console.log(data)
     clearScores()
