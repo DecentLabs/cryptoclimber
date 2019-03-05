@@ -91,9 +91,7 @@ const INTRO =
 const HODL_NAME = 'Buy and hold'
 
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbyDTk5pYHGjgHartXZZX876CZbKYa_kKljZDEOJ1dylwVSn1Mk/exec'
-
-// test sheet
-// const TEST_SHEET_URL = 'https://script.google.com/macros/s/AKfycbwISEh8gGr-8QXD_76yIn8AsxDhUI3XS8ACE0Q2E4uWnTYbdfY/exec'
+const TEST_SHEET_URL = 'https://script.google.com/macros/s/AKfycbwISEh8gGr-8QXD_76yIn8AsxDhUI3XS8ACE0Q2E4uWnTYbdfY/exec'
 
 const DEFAULT_TEXTS = Object.freeze({
   summary: INTRO,
@@ -1023,7 +1021,7 @@ function saveResult(returns, hodl, trades) {
   q += '&tradeList=' + encodeURIComponent(JSON.stringify(tradeList))
 
   var scr = document.createElement('script')
-  scr.src = SHEET_URL + q
+  scr.src = (window.location.hostname !== 'localhost' ? SHEET_URL : TEST_SHEET_URL) + q
   document.body.appendChild(scr)
 }
 
