@@ -1,0 +1,1737 @@
+<!doctype html>
+<html prefix="og: http://ogp.me/ns#">
+  <head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-130030503-3"></script>
+    <script>
+      if (window.location.hostname !== 'localhost') {
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'UA-130030503-3');
+      }
+    </script>
+
+    <meta charset="utf-8">
+    <meta id="viewport" name="viewport" content="">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <style>* {padding: 0; margin: 0; overflow: hidden;}</style>
+
+    <title>Crypto Climber</title>
+    <meta property="og:title" content="Crypto Climber" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://cryptoclimber.decent.org/" />
+    <meta property="og:image" content="https://cryptoclimber.decent.org/og.png" />
+    <meta property="og:description" content="Fun little game about bitcoin trading" />
+
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96x96.png">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/4.8.5/pixi.min.js"></script>
+    <script src="pixi-multistyle-text/0.6.0/pixi-multistyle-text.umd.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/webfont/1.6.26/webfont.js"></script>
+    <script src="file-saver/2.0.1/FileSaver.min.js"></script>
+  </head>
+  <body>
+    <script>
+
+
+// ===== constants =====
+
+const INIT_FUNDS = 10000
+const TICKS_PER_DAY = 24
+const GAME_LENGTH_DAYS = parseInt(getQueryParam('days'), 10) || 30
+const GAME_LENGTH_TICKS = GAME_LENGTH_DAYS * TICKS_PER_DAY
+
+const PAST_LENGTH_DAYS = Math.round(GAME_LENGTH_DAYS / 2)
+const PAST_LENGTH_TICKS = PAST_LENGTH_DAYS * TICKS_PER_DAY
+
+const GRAPH_X_GRANULARITY_PX = 5 // smaller is more dense
+const Y_SCALE_FACTOR = 1000
+
+const BANDS = 20
+
+const OFFSET_X = 0.25
+const SMOOTH_FACTOR_Y = 50
+
+const MARGIN = 15
+const BUTTON_WIDTH = 160
+const BUTTON_HEIGHT = 80
+
+const SHOW_PRICE = false
+const SHOW_DEBUG = false
+const SHOW_FPS = parseBoolean(getQueryParam('fps')) || false
+
+const SPEED_LEVELS = [6.0, 4.8, 3.6, 2.4, 1.2]
+const ZOOM_LEVELS = [1.6, 1.4, 1.2, 1.0, 0.8]
+const DEFAULT_LEVEL = 2
+
+const DEFAULT_SPEED = SPEED_LEVELS[DEFAULT_LEVEL]
+const DEFAULT_ZOOM = ZOOM_LEVELS[DEFAULT_LEVEL]
+
+const WARP_SPEED_DELTA = (SPEED_LEVELS[0] - SPEED_LEVELS[1]) / 30
+const WARP_ZOOM_DELTA = (ZOOM_LEVELS[0] - ZOOM_LEVELS[1]) / 30
+
+const INTRO =
+  'How good are you at trading' +
+  '\na ' + GAME_LENGTH_DAYS + ' day sample of' +
+  '\nhistorical Bitcoin prices?' +
+  '<strong>' +
+  '\n\nPress [UP] to go LONG' +
+  '\nPress [DOWN] to sell SHORT' +
+  '\nPress [SPACE] to close position ' +
+  '</strong>' +
+  '\n\nPress [LEFT] / [RIGHT] to change speed ' +
+  '\nPress [P] to pause game ' +
+  '\n\n<strong>Press [SPACE] to start!</strong>'
+
+const HODL_NAME = 'Buy and hold'
+
+const SHEET_URL = 'https://script.google.com/macros/s/AKfycbyDTk5pYHGjgHartXZZX876CZbKYa_kKljZDEOJ1dylwVSn1Mk/exec'
+const TEST_SHEET_URL = 'https://script.google.com/macros/s/AKfycbwISEh8gGr-8QXD_76yIn8AsxDhUI3XS8ACE0Q2E4uWnTYbdfY/exec'
+
+const DEFAULT_TEXTS = Object.freeze({
+  summary: INTRO,
+  highscores: '',
+  restart: '',
+  iteration: '',
+  funds: '',
+  price: '',
+  debug: '',
+})
+
+const COLOR_BUTTON_INACTIVE = 0xffffff
+const COLOR_BUTTON_ACTIVE = 0xffee44
+const COLOR_BUTTON_PRESSED = 0xffee44
+const COLOR_BUTTON_DISABLED = 0x444444
+
+const COLOR_RED = 0xff0000
+const COLOR_GREEN = 0x00ff00
+
+const COLOR_BLACK = 0x000000
+const COLOR_GREY_DARK_2 = 0x222222
+const COLOR_GREY_DARK_4 = 0x444444
+const COLOR_GREY_DARK_6 = 0x666666
+const COLOR_GREY_MEDIUM = 0x888888
+const COLOR_GREY_LIGHT = 0xcccccc
+const COLOR_WHITE = 0xffffff
+
+const COLOR_SELF = 0xffff00 // yellow
+const COLOR_HODL = 0x00aaff // light blue
+
+const COLOR_NICE_BLUE = 0x1a73e8
+
+const EPSILON = 0.1
+
+// ===== global variables =====
+
+let screenWidth = window.innerWidth
+let screenHeight = window.innerHeight
+
+let speed = DEFAULT_SPEED
+let zoom = DEFAULT_ZOOM
+
+let texts = Object.assign({}, DEFAULT_TEXTS)
+
+let entities = {
+  gamespace: null,
+  tradelines: null,
+  tradelabels: null,
+  ui: null,
+  messages: {
+    iteration: null,
+    funds: null,
+    summary: null,
+    highscores: null,
+    restart: null,
+    price: null,
+    debug: null,
+    pause: null,
+  },
+  logos: null,
+  graph: null,
+  player: null,
+  equityGraph: null,
+  tradeGraph: null,
+}
+
+let assets = {
+  funds: INIT_FUNDS,
+  trade: null,
+  trades: [],
+  scores: [],
+}
+
+let priceData = {}
+let player = getQueryParam('player')
+
+let viewPortX = 0
+let viewPortY = 0
+
+let time = 0
+let tick = -1
+
+let gameOver = false
+let gameStarted = false
+let paused = false
+
+let input = {
+  short: false,
+  long: false,
+  speedLevel: DEFAULT_LEVEL,
+}
+
+let fps = 60
+
+// ===== startup code =====
+
+if (window.navigator.userAgent.includes('iPhone') || window.navigator.userAgent.includes('Android')) {
+  document.getElementById("viewport").setAttribute("content",
+      "minimal-ui, width=device-width, initial-scale=0.5, minimum-scale=0.5, maximum-scale=0.5, user-scalable=no")
+}
+
+const app = new PIXI.Application({
+  width: window.innerWidth,
+  height: window.innerHeight,
+  antialias: false,
+  transparent: false,
+  resolution: window.devicePixelRatio,
+  preserveDrawingBuffer: true,
+});
+
+// Full screen
+app.renderer.view.style.position = 'absolute';
+app.renderer.view.style.display = 'block';
+app.renderer.view.style.overflow = 'hidden';
+app.renderer.autoResize = true;
+
+screenWidth = window.innerWidth
+screenHeight = window.innerHeight
+app.renderer.resize(screenWidth, screenHeight);
+
+document.body.appendChild(app.view);
+
+PIXI.loader
+  .add('prices', 'btc1h.json')
+  .load(() => {
+    // TODO: load font concurrently with resources
+    WebFont.load({
+      google: {
+        families: ['B612 Mono']
+      },
+      active: setup
+    })
+  });
+
+window.onresize = listenerResize
+
+window.onload = () => {
+  listenerResize(null)
+}
+
+
+// ===== setup and layout =====
+
+function setup() {
+  app.ticker.remove(update)
+  app.stage.removeChildren()
+
+  gameOver = false
+  gameStarted = false
+
+  time = 0
+  tick = -1
+  speed = DEFAULT_SPEED
+  zoom = DEFAULT_ZOOM
+
+  input = {
+    short: false,
+    long: false,
+    speedLevel: DEFAULT_LEVEL,
+  }
+
+  assets.funds = INIT_FUNDS
+  assets.trades = []
+  assets.scores = []
+  assets.trade = null
+
+  priceData = parsePriceData(PIXI.loader.resources.prices.data, GAME_LENGTH_TICKS)
+
+  entities.gamespace = new PIXI.Container()
+  entities.gamespace.interactive = false
+  entities.gamespace.interactiveChildren = false
+  entities.gamespace.addChild(createGrid())
+
+  entities.graph = createGraph()
+  entities.gamespace.addChild(entities.graph)
+  entities.gamespace.addChild(entities.graph.mask)
+
+  entities.player = createPlayer()
+  entities.gamespace.addChild(entities.player)
+
+  entities.tradelines = new PIXI.Container()
+  entities.gamespace.addChild(entities.tradelines)
+
+  entities.tradelabels = new PIXI.Container()
+  entities.gamespace.addChild(entities.tradelabels)
+
+  app.stage.addChild(entities.gamespace)
+
+  texts = Object.assign({}, DEFAULT_TEXTS)
+  setupUI(screenWidth, screenHeight);
+
+  onNeutral()
+  showControls(false)
+  setViewPort(0, 0, OFFSET_X)
+
+  addInputListeners()
+  app.ticker.add(update)
+}
+
+function setupUI(width, height) {
+  app.stage.removeChild(entities.ui)
+
+  let uiContainer = new PIXI.Container()
+  entities.ui = uiContainer
+
+  let {messagesContainer, messages} = createMessages(width, height, MARGIN)
+  uiContainer.addChild(messagesContainer)
+  entities.messages = messages
+
+  entities.logos = createLogos(width, height, MARGIN)
+  uiContainer.addChild(entities.logos)
+
+  entities.smallLogo = createSmallLogo(width, height, MARGIN)
+  uiContainer.addChild(entities.smallLogo)
+
+  entities.screenshot = createScreenShotButton(width, height, MARGIN)
+  if (entities.screenshot) {
+    uiContainer.addChild(entities.screenshot)
+  }
+
+  entities.longButton = createButton("\u25B3\u2009Long\u2009",
+    width - BUTTON_WIDTH - MARGIN, height - 3 * BUTTON_HEIGHT - 5 * MARGIN,
+    BUTTON_WIDTH, BUTTON_HEIGHT, input.long,
+    (pressed) => {
+      if (pressed) {
+        onLong()
+      }
+    })
+  uiContainer.addChild(entities.longButton)
+
+  entities.neutralButton = createButton("Neutral",
+    width - BUTTON_WIDTH - MARGIN, height - 2 * BUTTON_HEIGHT - 3 * MARGIN,
+    BUTTON_WIDTH, BUTTON_HEIGHT, !input.long && !input.short,
+    (pressed) => {
+      if (pressed) {
+        onNeutral()
+      }
+    })
+  uiContainer.addChild(entities.neutralButton)
+
+  entities.shortButton = createButton("\u25BD\u2009Short",
+    width - BUTTON_WIDTH - MARGIN, height - BUTTON_HEIGHT - MARGIN,
+    BUTTON_WIDTH, BUTTON_HEIGHT, input.short,
+    (pressed) => {
+      if (pressed) {
+        onShort()
+      }
+    })
+  uiContainer.addChild(entities.shortButton)
+
+  entities.speedDown = createButton("<\u2009Slow",
+    MARGIN, height - BUTTON_HEIGHT - MARGIN,
+    BUTTON_WIDTH, BUTTON_HEIGHT, false,
+    (pressed) => {
+      if (pressed) {
+        onSpeedDown()
+      }
+      updateSpeedButtons(pressed, false)
+    })
+  uiContainer.addChild(entities.speedDown)
+
+  entities.speedUp = createButton("Fast\u2009>",
+    3 * MARGIN + BUTTON_WIDTH, height - BUTTON_HEIGHT - MARGIN,
+    BUTTON_WIDTH, BUTTON_HEIGHT, false,
+    (pressed) => {
+      if (pressed) {
+        onSpeedUp()
+      }
+      updateSpeedButtons(false, pressed)
+    })
+  uiContainer.addChild(entities.speedUp)
+
+  showControls(isGameRunning())
+  uiContainer.interactive = true
+  uiContainer.on('tap', listenerGlobalTap)
+  uiContainer.hitArea = new PIXI.Rectangle(0, 0, width, height)
+
+  app.stage.addChild(uiContainer)
+}
+
+function showControls(show) {
+  entities.longButton.visible =
+  entities.neutralButton.visible =
+  entities.shortButton.visible =
+  entities.speedUp.visible =
+  entities.speedDown.visible =
+  show
+}
+
+function updateSpeedButtons(downPressed = false, upPressed = false) {
+  entities.speedDown.tint = entities.speedDown.label.style.fill = input.speedLevel > 0 ?
+    (downPressed ? COLOR_BUTTON_PRESSED : COLOR_BUTTON_INACTIVE) : COLOR_BUTTON_DISABLED
+  entities.speedUp.tint = entities.speedUp.label.style.fill = input.speedLevel < SPEED_LEVELS.length - 1 ?
+    (upPressed ? COLOR_BUTTON_PRESSED : COLOR_BUTTON_INACTIVE) : COLOR_BUTTON_DISABLED
+}
+
+function updateTexts() {
+  entities.messages.summary.text = texts.summary
+  entities.messages.highscores.text = texts.highscores
+  entities.messages.restart.text = texts.restart
+  entities.messages.iteration.text = texts.iteration
+  entities.messages.funds.text = texts.funds
+  if (SHOW_PRICE) {
+    entities.messages.price.text = texts.price
+  }
+  if (SHOW_DEBUG) {
+    entities.messages.debug.text = texts.debug
+  }
+  if (SHOW_FPS) {
+    entities.messages.fps.text = texts.fps
+  }
+}
+
+// ===== update loop =====
+
+function update(dt) {
+  if (!gameStarted || paused) {
+    return
+  }
+
+  targetSpeed = SPEED_LEVELS[input.speedLevel]
+  targetzoom = ZOOM_LEVELS[input.speedLevel]
+
+  if (speed < targetSpeed) {
+    speed = Math.min(targetSpeed, speed + WARP_SPEED_DELTA)
+    zoom = Math.min(targetzoom, zoom + WARP_ZOOM_DELTA)
+  } else if (speed > targetSpeed) {
+    speed = Math.max(targetSpeed, speed - WARP_SPEED_DELTA)
+    zoom = Math.max(targetzoom, zoom - WARP_ZOOM_DELTA)
+  }
+
+  // 60 is the target fps
+  time += dt / (speed * 60 / TICKS_PER_DAY)
+  var i = Math.floor(time)
+  if (i >= GAME_LENGTH_TICKS) {
+    if (!gameOver) {
+      gameOver = true
+      gameStarted = false
+      onGameOver()
+    }
+    return
+  }
+
+  if (i > tick) {
+    tick = i
+    handleInput(tick)
+  }
+
+  var x = time * GRAPH_X_GRANULARITY_PX
+  var y = Y_SCALE_FACTOR * priceData.scale * ((priceData.series[tick] - priceData.series[0])
+    + (time - tick) * (priceData.series[tick + 1] - priceData.series[tick]))
+
+  if (assets.trade) {
+    recalculateTrade(assets.trade, tick)
+    updateTrade(assets.trade, x, y)
+  }
+  entities.graph.mask.position.x = x
+  setViewPort(x, (viewPortY + (y - viewPortY) / SMOOTH_FACTOR_Y), OFFSET_X)
+  updatePlayer(x, y)
+  updateMessages(tick)
+}
+
+function setViewPort(x, y, xOffset) {
+  viewPortX = x
+  viewPortY = y
+  entities.gamespace.scale.x = zoom
+  entities.gamespace.scale.y = -zoom
+  entities.gamespace.position.x = -(x * zoom - screenWidth / 2 - (screenWidth * xOffset))
+  entities.gamespace.position.y = -(-y * zoom - screenHeight / 2)
+}
+
+function updatePlayer(x, y) {
+  entities.player.x = x
+  entities.player.y = y
+  entities.player.alpha = assets.trade ? 0.5 : 0.2
+}
+
+function startGame() {
+  texts.summary = ''
+  texts.highscores = ''
+  texts.restart = ''
+  updateTexts()
+  entities.logos.visible = false
+  entities.smallLogo.visible = true
+  showControls(true)
+  gameStarted = true
+  pauseGame(false)
+}
+
+function pauseGame(p) {
+  paused = entities.messages.pause.visible = p && isGameRunning()
+}
+
+function onSpeedUp() {
+  input.speedLevel = Math.min(input.speedLevel + 1, SPEED_LEVELS.length - 1)
+}
+
+function onSpeedDown() {
+  input.speedLevel = Math.max(input.speedLevel - 1, 0)
+}
+
+function onLong() {
+  input.short = false
+  input.long = true
+  entities.longButton.tint = COLOR_BUTTON_ACTIVE
+  entities.neutralButton.tint = COLOR_BUTTON_INACTIVE
+  entities.shortButton.tint = COLOR_BUTTON_INACTIVE
+}
+
+function onShort() {
+  input.short = true
+  input.long = false
+  entities.longButton.tint = COLOR_BUTTON_INACTIVE
+  entities.neutralButton.tint = COLOR_BUTTON_INACTIVE
+  entities.shortButton.tint = COLOR_BUTTON_ACTIVE
+}
+
+function onNeutral() {
+  input.long = false
+  input.short = false
+  entities.longButton.tint = COLOR_BUTTON_INACTIVE
+  entities.neutralButton.tint = COLOR_BUTTON_ACTIVE
+  entities.shortButton.tint = COLOR_BUTTON_INACTIVE
+}
+
+function handleInput(i) {
+  if (input.long && !input.short) {
+    // LONG
+    if (assets.trade) {
+      if (assets.trade.isLong) {
+        return
+      } else {
+        exitTrade(i)
+      }
+    }
+    enterTrade(true, i, assets.funds)
+  } else if (!input.long && input.short) {
+    // SHORT
+    if (assets.trade) {
+      if (!assets.trade.isLong) {
+        return
+      } else {
+        exitTrade(i)
+      }
+    }
+    enterTrade(false, i, assets.funds)
+  } else {
+    // NEUTRAL
+    if (assets.trade) {
+      exitTrade(i)
+    }
+  }
+}
+
+function updateMessages(i) {
+  texts.summary = ''
+  texts.iteration = 'Day ' + (Math.floor(i / TICKS_PER_DAY) + 1) + ' of ' + GAME_LENGTH_DAYS
+
+  var equity = assets.funds + (assets.trade ? assets.trade.current : 0)
+  texts.funds = 'Equity $' + Math.round(equity)
+
+  if (SHOW_PRICE) {
+    texts.price = 'price: $' + Math.round(priceData.series[i])
+  }
+  if (SHOW_DEBUG) {
+    texts.debug =
+      'inputs:' + (input.short?'S':' ') + (input.long?'L':' ') + (input.warp?'W':' ') + ' S' + (input.speedLevel+1)
+      + '\nspeed:' + speed.toFixed(2) + ' (sec/day @ 60fps)'
+      + '\nzoom:' + zoom.toFixed(2)
+      + '\ntick:' + tick
+      + ' x:' + viewPortX.toFixed(2)
+      + ' y:' + viewPortY.toFixed(2)
+
+      if (assets.trades.length > (assets.trade ? 1 : 0)) {
+        let lastTrade = assets.trades[assets.trades.length - (assets.trade ? 2 : 1)]
+        texts.debug +=
+          '\n\nLast: ' + (lastTrade.isLong ? 'LONG' : 'SHORT')
+          + '\n bar:(' + lastTrade.barOpen + ' \u2192 ' + lastTrade.barClose + ')'
+          + '\n price:(' + lastTrade.priceOpen.toFixed(2) + ' \u2192 ' + lastTrade.priceClose.toFixed(2) + ')'
+          + '\n profit:' + (lastTrade.current - lastTrade.margin).toFixed(2)
+      }
+      if (assets.trade) {
+        let currentTrade = assets.trade
+        texts.debug +=
+          '\n\nCurrent: ' + (currentTrade.isLong ? 'LONG' : 'SHORT')
+          + '\n bar:(' + currentTrade.barOpen + ' \u2192 ' + currentTrade.barClose + ')'
+          + '\n price:(' + currentTrade.priceOpen.toFixed(2) + ' \u2192 ' + currentTrade.priceClose.toFixed(2) + ')'
+          + '\n profit:' + (currentTrade.current - currentTrade.margin).toFixed(2)
+      }
+  }
+  if (SHOW_FPS) {
+    fps = fps * 0.95 + app.ticker.FPS * 0.05
+    texts.fps = 'FPS:' + fps.toFixed(0) + ' (' + app.ticker.FPS.toFixed(2) + ')'
+  }
+
+  updateTexts()
+}
+
+function onGameOver() {
+  onNeutral()
+  showControls(false)
+
+  if (assets.trade) {
+    exitTrade(GAME_LENGTH_TICKS)
+  }
+  updateMessages(GAME_LENGTH_TICKS - 1)
+  zoomOutFull()
+  gameOverLayout()
+
+  const returns = playerReturns()
+  const hodl = hodlReturns()
+
+  setTimeout(() => {
+    if (!player) {
+      player = window.prompt('Nick name?') || 'anonymous';
+    }
+    let tradeList = selfTrades(assets.trades)
+    addScore(true, player, returns, assets.trades.length, tradeList)
+    addScore(false, HODL_NAME, hodl, 1, hodlTrades())
+    showScores()
+    saveResult(returns, hodl, tradeList)
+  })
+}
+
+function playerReturns() {
+  const profit = assets.funds - INIT_FUNDS
+  return profit / INIT_FUNDS
+}
+
+function hodlReturns() {
+  return priceData.series[GAME_LENGTH_TICKS] / priceData.series[0] - 1
+}
+
+function hodlTrades() {
+  return {
+    position: ["L"],
+    barOpen: [0],
+    barClose: [GAME_LENGTH_TICKS],
+    priceOpen: [priceData.series[0]],
+    priceClose: [priceData.series[GAME_LENGTH_TICKS]]
+  }
+}
+
+function selfTrades(trades) {
+  return {
+    position: trades.map(t => t.isLong ? 'L' : 'S'),
+    barOpen: trades.map(t => t.barOpen),
+    barClose: trades.map(t => t.barClose),
+    priceOpen: trades.map(t => t.priceOpen),
+    priceClose: trades.map(t => t.priceClose)
+  }
+}
+
+function zoomOutFull() {
+  zoom = screenWidth / (GAME_LENGTH_TICKS * GRAPH_X_GRANULARITY_PX)
+  setViewPort(GAME_LENGTH_TICKS * GRAPH_X_GRANULARITY_PX / 2, 0, 0)
+}
+
+
+// ===== 'create' methods =====
+
+function createGraph() {
+  const p0 = priceData.series[0]
+  const past = priceData.pastSeries.length
+
+  let graph = new PIXI.Graphics()
+  graph.lineStyle(2, COLOR_WHITE)
+  graph.position.set(0, 0)
+  for (let i = 0; i < priceData.series.length - 1; i++) {
+    graph
+      .moveTo(GRAPH_X_GRANULARITY_PX * i,
+        Y_SCALE_FACTOR * priceData.scale * (priceData.series[i] - p0))
+      .lineTo(GRAPH_X_GRANULARITY_PX * (i + 1),
+        Y_SCALE_FACTOR * priceData.scale * (priceData.series[i + 1] - p0))
+  }
+
+  graph.position.set(0, 0)
+  for (let i = 0; i < past; i++) {
+    graph.lineStyle(2, 0x666666, i / past)
+      .moveTo(GRAPH_X_GRANULARITY_PX * (i + 1 - past),
+        Y_SCALE_FACTOR * priceData.scale * (priceData.pastSeries[i] - p0))
+      .lineTo(GRAPH_X_GRANULARITY_PX * (i + 2 - past),
+        Y_SCALE_FACTOR * priceData.scale * (priceData.pastSeries[i + 1] - p0))
+    graph.addChild(graph)
+  }
+
+  // Note: you have to add both 'graph' and 'graph.mask' to the gamespace container
+  let width = (PAST_LENGTH_TICKS + GAME_LENGTH_TICKS) * GRAPH_X_GRANULARITY_PX
+  let yMin = Y_SCALE_FACTOR * priceData.scale * p0 * (Math.pow(0.9, BANDS) - 1)
+  let yMax = Y_SCALE_FACTOR * priceData.scale * p0 * (Math.pow(1.1, BANDS) - 1)
+
+  graph.mask = new PIXI.Graphics()
+  graph.mask.isMask = true
+  graph.mask.drawRect(-width, yMin, width, yMax - yMin)
+
+  return graph
+}
+
+function createButton(text, x, y, w, h, initialState, callback) {
+  const g = new PIXI.Graphics()
+
+  const txt = new PIXI.Text(text, TEXT_STYLE.clone())
+  txt.x = (w - txt.width) / 2
+  txt.y = (h - txt.height) / 2
+  g.addChild(txt)
+  g.label = txt
+
+  g.lineStyle(2, COLOR_BUTTON_INACTIVE, 1);
+  g.beginFill(COLOR_BUTTON_INACTIVE, 0.25);
+  g.drawRoundedRect(0, 0, w, h, 15);
+  g.endFill();
+  g.tint = initialState ? COLOR_BUTTON_ACTIVE : COLOR_BUTTON_INACTIVE
+
+  g.x = x
+  g.y = y
+
+  g.buttonMode = true
+  g.interactive = true
+  g.interactiveChildren = false
+  g.buttonStates = new Set()
+  g.buttonLastState = false
+
+  // hacks to ensure reasonable multitouch behavior
+  const f = e => {
+    const release = e.type == 'pointerup' || e.type == 'pointerupoutside' || e.type =='pointercancel'
+    const pressing = !release && app.renderer.plugins.interaction.hitTest(e.data.global, g) && e.data.buttons == 1
+    const id = e.data.pointerId
+    if (pressing) {
+      g.buttonStates.add(id)
+    } else {
+      g.buttonStates.delete(id)
+    }
+    // console.log(text, pressing, g.buttonStates, e.type, id)
+    const state = g.buttonStates.size != 0
+    if (g.buttonLastState != state) {
+      g.buttonLastState = state
+      callback(state)
+    } 
+  }
+
+  g.on('pointermove', f)
+  g.on('pointerdown', f)
+  g.on('pointerup', f)
+  g.on('pointerupoutside', f)
+  g.on('pointercancel', f)
+
+  return g
+}
+
+function createMessages(width, height, margin) {
+  let messagesContainer = new PIXI.Container()
+  let messages = {}
+
+  const ROW_HEIGHT = 30
+  let x = margin
+  let y = margin
+
+  messages.iteration = new PIXI.Text(texts.iteration, TEXT_STYLE)
+  messages.iteration.position.set(x, y)
+  messagesContainer.addChild(messages.iteration)
+  y += ROW_HEIGHT
+
+  messages.funds = new PIXI.Text(texts.funds, TEXT_STYLE)
+  messages.funds.position.set(x, y)
+  messagesContainer.addChild(messages.funds)
+  y += ROW_HEIGHT
+
+  if (SHOW_PRICE) {
+    messages.price = new PIXI.Text(texts.price, TEXT_STYLE)
+    messages.price.position.set(x, y)
+    messagesContainer.addChild(messages.price)
+    y += ROW_HEIGHT
+  }
+
+  if (SHOW_DEBUG) {
+    let style = TEXT_STYLE.clone()
+    style.align = 'left'
+    style.fontSize = 20
+    messages.debug = new PIXI.Text(texts.debug, style)
+    messages.debug.position.set(x, y + ROW_HEIGHT)
+    messagesContainer.addChild(messages.debug)
+  }
+
+  if (SHOW_FPS) {
+    let style = TEXT_STYLE.clone()
+    style.fontSize = 16
+    messages.fps = new PIXI.Text(texts.fps, style)
+    messages.fps.anchor.set(0.5, 0.0)
+    messages.fps.position.set(width / 2, margin)
+    messagesContainer.addChild(messages.fps)
+  }
+
+  messages.summary = new MultiStyleText(texts.summary, TEXT_MULTI_STYLE)
+  messages.summary.position.set(width / 2, height / 2 + margin)
+  messages.summary.anchor.set(0.5, 0.0)
+  messagesContainer.addChild(messages.summary)
+
+  messages.highscores = new MultiStyleText(texts.highscores, TEXT_MULTI_STYLE)
+  messages.highscores.position.set(width / 2, height / 2)
+  messages.highscores.anchor.set(0.5, 0.5)
+  messagesContainer.addChild(messages.highscores)
+
+  {
+    let style = TEXT_STYLE.clone()
+    style.fontSize = 20
+    style.fill = COLOR_GREY_LIGHT
+    messages.restart = new PIXI.Text(texts.restart, style)
+    messages.restart.position.set(width / 2, height - margin)
+    messages.restart.anchor.set(0.5, 1.0)
+    messagesContainer.addChild(messages.restart)
+  }
+
+  {
+    let style = TEXT_STYLE.clone()
+    style.fontSize = 48
+    messages.pause = new PIXI.Text('PAUSED', style)
+    messages.pause.anchor.set(0.5, 0.5)
+    messages.pause.position.set(width / 2, height / 2)
+    messages.pause.visible = paused
+    messagesContainer.addChild(messages.pause)
+  }
+
+  return {messagesContainer, messages}
+}
+
+function createLogos(width, height, margin) {
+  let logoContainer = new PIXI.Container()
+
+  let logo = new PIXI.Sprite.from('logo_vertical.png')
+  logo.position.set(width / 2, height / 2 - margin)
+  logo.anchor.set(0.5, 1.0)
+  logoContainer.addChild(logo)
+
+  let createdBy = new PIXI.Sprite.from('created.png')
+  createdBy.position.set(margin, height - margin)
+  createdBy.anchor.set(0.0, 1.0)
+  createdBy.scale.set(0.5)
+  createdBy.interactive = true
+  createdBy.buttonMode = true
+  createdBy.on('click', () => { window.location.href = 'https://decent.org/' })
+  createdBy.on('tap', () => { window.location.href = 'https://decent.org/' })
+  logoContainer.addChild(createdBy)
+
+  if (document.fullscreenEnabled && document.exitFullscreen && app.view.requestFullscreen) {
+    let fullscreen = new PIXI.Sprite.from(!document.fullscreenElement ?
+      'fullscreen_enter.png' : 'fullscreen_exit.png')
+    fullscreen.position.set(margin, margin)
+    fullscreen.anchor.set(0.0, 0.0)
+    fullscreen.scale.set(0.25)
+    fullscreen.interactive = true
+    fullscreen.buttonMode = true
+    fullscreen.on('click', toggleFullScreen)
+    fullscreen.on('tap', toggleFullScreen)
+    logoContainer.addChild(fullscreen)
+  }
+
+  logoContainer.visible = isMainScreen()
+  return logoContainer
+}
+
+function toggleFullScreen() {
+  if (!document.fullscreenElement && app.view.requestFullscreen) {
+    app.view.requestFullscreen()
+  } else if (document.exitFullscreen) {
+    document.exitFullscreen()
+  }
+}
+
+function createSmallLogo(width, height, margin) {
+  let logo = new PIXI.Sprite.from('logo.png')
+  logo.position.set(width - margin, margin)
+  logo.anchor.set(1.0, 0.0)
+  logo.scale.set(0.5)
+  logo.visible = !isMainScreen()
+  return logo
+}
+
+function createScreenShotButton(width, height, margin) {
+  if (HTMLCanvasElement && HTMLCanvasElement.prototype && HTMLCanvasElement.prototype.toBlob) {
+    let screenshot = new PIXI.Sprite.from('screenshot.png')
+    screenshot.position.set(margin, height - margin)
+    screenshot.anchor.set(0.0, 1.0)
+    screenshot.scale.set(0.25)
+    screenshot.interactive = true
+    screenshot.buttonMode = true
+    screenshot.on('click', () => { screenShot(app.view, entities.messages.highscores, 5 * MARGIN) })
+    screenshot.on('tap', () => { screenShot(app.view, entities.messages.highscores, 5 * MARGIN) })
+    screenshot.visible = isGameOverScreen()
+    return screenshot
+  } else {
+    return null
+  }
+}
+
+function createGrid() {
+  let grid = new PIXI.Container()
+
+  const p0 = priceData.series[0]
+
+  const gradHeight = 256
+  const grad = gradientTexture(1, gradHeight)
+
+  const alpha = 0.12
+
+  let ppi = p0
+  for (let i = 1; i <= BANDS; i++) {
+    let prevY = Y_SCALE_FACTOR * priceData.scale * (ppi - p0)
+    ppi *= 1.1
+    let y = Y_SCALE_FACTOR * priceData.scale * (ppi - p0)
+  
+    var sprite = new PIXI.Sprite(grad)
+    sprite.x = -PAST_LENGTH_TICKS * GRAPH_X_GRANULARITY_PX
+    sprite.y = prevY
+    sprite.anchor.set(0.0, 0.0)
+    sprite.alpha = alpha - (i * alpha / BANDS)
+    sprite.scale.set((PAST_LENGTH_TICKS + GAME_LENGTH_TICKS) * GRAPH_X_GRANULARITY_PX, (y - prevY) / gradHeight)
+    grid.addChild(sprite)
+  }
+
+  let pmi = p0
+  for (let i = 1; i <= BANDS; i++) {
+    let prevY = Y_SCALE_FACTOR * priceData.scale * (pmi - p0)
+    pmi *= 0.9
+    let y = Y_SCALE_FACTOR * priceData.scale * (pmi - p0)
+
+    var sprite = new PIXI.Sprite(grad)
+    sprite.x = -PAST_LENGTH_TICKS * GRAPH_X_GRANULARITY_PX
+    sprite.y = y
+    sprite.anchor.set(0.0, 0.0)
+    sprite.alpha = alpha - (i * alpha / BANDS)
+    sprite.scale.set((PAST_LENGTH_TICKS + GAME_LENGTH_TICKS) * GRAPH_X_GRANULARITY_PX, (prevY - y) / gradHeight)
+    grid.addChild(sprite)
+  }
+
+  let days = new PIXI.Graphics()
+  const mul = TICKS_PER_DAY * GRAPH_X_GRANULARITY_PX
+  for (let i = -PAST_LENGTH_DAYS; i <= GAME_LENGTH_DAYS; i++) {
+    days.lineStyle(2, i < 0 ? COLOR_GREY_DARK_2 : (i == 0 ? COLOR_GREY_DARK_4 : 0x333333))
+        .moveTo(i * mul, Y_SCALE_FACTOR * priceData.scale * (pmi - p0))
+        .lineTo(i * mul, Y_SCALE_FACTOR * priceData.scale * (ppi - p0))
+  }
+  grid.addChild(days)
+
+  return grid
+}
+
+function gradientTexture(w, h) {
+  var canvas = document.createElement('canvas')
+  canvas.width = w
+  canvas.height = h
+  var ctx = canvas.getContext('2d')
+  var gradient = ctx.createLinearGradient(0, 0, 0, h)
+  gradient.addColorStop(0, '#000000')
+  gradient.addColorStop(1, '#ffffff')
+  ctx.fillStyle = gradient
+  ctx.fillRect(0, 0, w, h)
+  return PIXI.Texture.fromCanvas(canvas)
+}
+
+function createPlayer() {
+  let player = new PIXI.Graphics()
+  player.alpha = 0.2
+  player.lineStyle(4, COLOR_WHITE)
+  player.drawCircle(0, 0, 8)
+  player.endFill()
+  return player
+}
+
+
+// ===== trades =====
+
+function enterTrade(isLong, i, margin) {
+  assets.trade = {}
+  assets.trade.isLong = isLong
+  assets.trade.barOpen = assets.trade.barClose = i
+  assets.trade.priceOpen = assets.trade.priceClose = priceData.series[i]
+  assets.trade.margin = margin
+  assets.trade.current = margin
+  assets.funds = assets.funds - margin
+  assets.trades.push(assets.trade)
+}
+
+function exitTrade(i) {
+  if (!assets.trade) {
+    return
+  }
+
+  recalculateTrade(assets.trade, i)
+  updateTrade(assets.trade, GRAPH_X_GRANULARITY_PX * i,
+    Y_SCALE_FACTOR * priceData.scale * (priceData.series[i] - priceData.series[0]))
+
+  assets.funds = assets.funds + assets.trade.current
+  assets.trade = null
+}
+
+function recalculateTrade(trade, i) {
+  if (!trade) {
+    return
+  }
+  trade.barClose = i
+  trade.priceClose = priceData.series[i]
+
+  // TODO: interpolate estimated price between ticks
+  const longValue = trade.margin * trade.priceClose / trade.priceOpen
+  if (trade.isLong) {
+    trade.current = longValue
+  } else {
+    // assets.margin dolcsi ertekben kolcsonkertem bitcoint, es rogton eladtam
+    // ennyi bitcoint adtam el eredetileg:
+    // assets.margin / assets.strikePrice
+    // === ennyit kell visszaadjak ma
+    // nekem meg megvan az eredeti assets.margin dolcsim
+    // abbol megveszem a bitcoint mai aron, es a kulonbozetet megnyertem!
+    // bwahahaha
+    trade.current = 2 * trade.margin - longValue
+  }
+}
+
+function updateTrade(trade, x, y) {
+  const profit = Math.round(trade.current - trade.margin)
+
+  // update label
+  if (!trade.label) {
+    trade.label = new PIXI.Text('', TEXT_STYLE)
+    trade.label.scale.set(1, -1)
+    trade.label.anchor.set(0.25, 0.5)
+    entities.tradelabels.addChild(trade.label)
+  }
+  trade.label.position.set(x, trade.isLong ? y + 20 : y - 25)
+  trade.label.style = profit < 0 ? TEXT_LOSS_STYLE : TEXT_PROFIT_STYLE
+  trade.label.text
+    = (profit < 0 ? '-$' : '+$')
+    + Math.abs(profit)
+    + (trade.isLong ? '\u25B3' : '\u25BD')
+
+  // update trade line
+  if (trade.line) {
+    entities.tradelines.removeChild(trade.line)
+  }
+
+  const color = profit < 0 ? COLOR_RED : COLOR_GREEN
+  trade.line = new PIXI.Graphics()
+  trade.line.lineStyle(5, color, 0.66)
+    .moveTo(trade.barOpen * GRAPH_X_GRANULARITY_PX,
+      Y_SCALE_FACTOR * priceData.scale * (trade.priceOpen - priceData.series[0]))
+    .lineTo(x, y)
+  entities.tradelines.addChild(trade.line)
+}
+
+
+// ===== gameover graphs =====
+
+function createEquityGrid(xScale, yScale) {
+  let container = new PIXI.Container()
+  container.scale.set(1, -1)
+
+  let grid = new PIXI.Graphics()
+  for (let i = -1; i <= 1; i += 0.1) {
+    grid.lineStyle(1, Math.abs(i) < 0.01 ? COLOR_GREY_DARK_6 : COLOR_GREY_DARK_2)
+    grid.moveTo(0, yScale * i).lineTo(xScale * GAME_LENGTH_TICKS, yScale * i)
+
+    let label = new PIXI.Text('$' + ((i + 1) * INIT_FUNDS).toFixed(), TEXT_TINY_STYLE)
+    label.anchor.set(1.0, 1.0)
+    label.scale.set(1, -1)
+    label.position.set(xScale * GAME_LENGTH_TICKS, yScale * i)
+    container.addChild(label)
+  }
+  for (let i = 0; i <= GAME_LENGTH_DAYS; i++) {
+    grid.moveTo(xScale * TICKS_PER_DAY * i, -yScale).lineTo(xScale * TICKS_PER_DAY * i, yScale)
+  }
+  container.addChild(grid)
+  return container
+}
+
+function createEquityGraph(equityCurve, xScale, yScale, name, isSelf, isHod) {
+  let graph = new PIXI.Graphics()
+  graph.lineStyle(isSelf ? 2 : 1, isSelf ? COLOR_SELF : (isHod ? COLOR_HODL : COLOR_GREY_MEDIUM), 0.66)
+  graph.scale.set(1, -1)
+  for (let i = 0; i < equityCurve.length - 1; i++) {
+    graph
+      .moveTo(xScale * i, yScale * equityCurve[i])
+      .lineTo(xScale * (i + 1), yScale * equityCurve[i + 1])
+  }
+  return graph
+}
+
+function createTradeGrid(xScale, yScale) {
+  let container = new PIXI.Container()
+  container.scale.set(1, -1)
+
+  let grid = new PIXI.Graphics()
+  let step = (priceData.max - priceData.min) / 10
+  grid.lineStyle(1, COLOR_GREY_DARK_2)
+  for (let i = priceData.min; i <= priceData.max; i += step) {
+    let y = yScale * (i - priceData.min) / (priceData.max - priceData.min)
+    grid.moveTo(0, y).lineTo(xScale * GAME_LENGTH_TICKS, y)
+
+    let label = new PIXI.Text('$' + i.toFixed(), TEXT_TINY_STYLE)
+    label.anchor.set(1.0, 1.0)
+    label.scale.set(1, -1)
+    label.position.set(xScale * GAME_LENGTH_TICKS, y)
+    container.addChild(label)
+  }
+  for (let i = 0; i <= GAME_LENGTH_DAYS; i++) {
+    grid.moveTo(xScale * TICKS_PER_DAY * i, -yScale).lineTo(xScale * TICKS_PER_DAY * i, yScale)
+  }
+  container.addChild(grid)
+  return container
+}
+
+function createTradeGraph(tradeList, xScale, yScale) {
+  let yFun = y => yScale * (y - priceData.min) / (priceData.max - priceData.min)
+  let graph = new PIXI.Graphics()
+  graph.lineStyle(1, COLOR_GREY_MEDIUM)
+  graph.scale.set(1, -1)
+  for (let i = 0; i < priceData.series.length; i++) {
+    graph
+      .moveTo(xScale * i, yFun(priceData.series[i]))
+      .lineTo(xScale * (i + 1), yFun(priceData.series[i + 1]))
+  }
+
+  for (let i = 0; i < tradeList.position.length; i++) {
+    const position = tradeList.position[i]
+    const barOpen = tradeList.barOpen[i]
+    const barClose = tradeList.barClose[i]
+    const priceOpen = priceData.series[barOpen]
+    const priceClose = priceData.series[barClose]
+    const profitable = position === 'L' && priceOpen <= priceClose || position === 'S' && priceOpen >= priceClose
+
+    // assert price is right
+    if (Math.abs(priceOpen - tradeList.priceOpen[i]) > EPSILON) {
+      console.log('Open price mismatch: ' + priceOpen + ' vs ' + tradeList.priceOpen[i])
+    }
+    // assert price is right
+    if (Math.abs(priceClose - tradeList.priceClose[i]) > EPSILON) {
+      console.log('Close price mismatch: ' + priceClose + ' vs ' + tradeList.priceClose[i])
+    }
+
+    graph.lineStyle(2, profitable ? COLOR_GREEN : COLOR_RED, 0.66)
+      .moveTo(xScale * barOpen, yFun(priceOpen))
+      .lineTo(xScale * barClose, yFun(priceClose))
+  }
+  return graph
+}
+
+function drawGameOverGraphs(scores) {
+  // equity graph
+  scores.forEach(e => {
+    if (e.tradeList) {
+      // console.log('Equity curve, ' + e.tradeList.position.length + ' trades, ' + e.player + (e.self ? ' (self)' : '') + ((e.player == HODL_NAME) ? ' (hod)' : ''))
+      e.equityCurve = calculateEquityCurve(e.tradeList)
+    }
+  })
+
+  let min = max = 0
+  scores.forEach(e => {
+    if (e.equityCurve) {
+      e.equityCurve.forEach(x => {
+        min = Math.min(min, x)
+        max = Math.max(max, x)
+      })
+    }
+  })
+
+  const xScale = entities.equityGraph.targetWidth / GAME_LENGTH_TICKS
+  const yScale = entities.equityGraph.targetHeight / 2 / (Math.max(Math.abs(min), Math.abs(max)) || 1)
+
+  entities.equityGraph.removeChildren()
+  entities.equityGraph.addChild(createEquityGrid(xScale, yScale))
+  scores.forEach(e => {
+    if (e.equityCurve) {
+      entities.equityGraph.addChild(createEquityGraph(e.equityCurve, xScale, yScale, e.player, e.self, (e.player == HODL_NAME)))
+    }
+  })
+
+  // trade graph
+  entities.tradeGraph.removeChildren()
+  entities.tradeGraph.addChild(createTradeGrid(xScale, entities.equityGraph.targetHeight))
+  scores.forEach(e => {
+    if (e.self && e.tradeList) {
+      entities.tradeGraph.addChild(createTradeGraph(e.tradeList, xScale, entities.equityGraph.targetHeight))
+    }
+  })
+}
+
+function gameOverLayout() {
+  let width = screenWidth
+  let height = screenHeight
+  let margin = MARGIN
+
+  let gameOver = new PIXI.Container()
+
+  let bg = new PIXI.Graphics()
+  bg.fillColor = COLOR_BLACK
+  bg.drawRect(0, 0, width, height)
+
+  let header = new PIXI.Container()
+  let iw = (width - 2 * margin) / 6
+
+  let menu1 = new PIXI.Text('highscore list', TEXT_STYLE.clone())
+  menu1.interactive = true
+  menu1.buttonMode = true
+  menu1.position.set(margin + 1 * iw, margin)
+  menu1.anchor.set(0.5, 0.0)
+
+  let menu2 = new PIXI.Text('equity graph', TEXT_STYLE.clone())
+  menu2.interactive = true
+  menu2.buttonMode = true
+  menu2.position.set(margin + 3 * iw, margin)
+  menu2.anchor.set(0.5, 0.0)
+
+  let menu3 = new PIXI.Text('your trades', TEXT_STYLE.clone())
+  menu3.interactive = true
+  menu3.buttonMode = true
+  menu3.position.set(margin + 5 * iw, margin)
+  menu3.anchor.set(0.5, 0.0)
+
+  header.addChild(menu1)
+  header.addChild(menu2)
+  header.addChild(menu3)
+
+  let sy = 3 * margin + header.height
+  entities.messages.highscores.position.set(width / 2, sy)
+  entities.messages.highscores.anchor.set(0.5, 0.0)
+  entities.messages.highscores.visible = false
+
+  entities.equityGraph = new PIXI.Container()
+  entities.equityGraph.targetWidth = width - 2 * margin
+  entities.equityGraph.targetHeight = height - sy - margin
+  entities.equityGraph.position.set(margin, sy + entities.equityGraph.targetHeight / 2)
+  entities.equityGraph.visible = false
+  entities.equityGraph.mask = new PIXI.Graphics()
+  entities.equityGraph.mask.isMask = true
+  entities.equityGraph.mask.drawRect(margin, sy, entities.equityGraph.targetWidth, entities.equityGraph.targetHeight)
+
+  entities.tradeGraph = new PIXI.Container()
+  entities.tradeGraph.targetWidth = width - 2 * margin
+  entities.tradeGraph.targetHeight = height - sy - margin
+  entities.tradeGraph.position.set(margin, sy + entities.tradeGraph.targetHeight)
+  entities.tradeGraph.visible = false
+  entities.tradeGraph.mask = new PIXI.Graphics()
+  entities.tradeGraph.mask.isMask = true
+  entities.tradeGraph.mask.drawRect(margin, sy, entities.tradeGraph.targetWidth, entities.tradeGraph.targetHeight)
+
+  const content = [entities.messages.highscores, entities.equityGraph, entities.tradeGraph]
+  const menu = [menu1, menu2, menu3]
+  gameOverLayout.showContent = (index) => {
+    index = Math.max(0, index)
+    index = Math.min(menu.length - 1, index)
+    gameOverLayout.activeTab = index
+    for (let i = 0; i < content.length; i++) {
+      content[i].visible = i === index
+      menu[i].tint = i === index ? COLOR_BUTTON_ACTIVE : COLOR_BUTTON_INACTIVE
+    }
+  }
+  menu1.on('click', () => gameOverLayout.showContent(0))
+  menu2.on('click', () => gameOverLayout.showContent(1))
+  menu3.on('click', () => gameOverLayout.showContent(2))
+  menu1.on('tap', () => gameOverLayout.showContent(0))
+  menu2.on('tap', () => gameOverLayout.showContent(1))
+  menu3.on('tap', () => gameOverLayout.showContent(2))
+
+  let lines = new PIXI.Graphics()
+    .lineStyle(1, COLOR_WHITE)
+    .moveTo(margin, 2 * margin + header.height)
+    .lineTo(width - margin, 2 * margin + header.height)
+
+  for (let i = 0; i <= menu.length; i++) {
+    let x = margin + i * (width - 2 * margin) / menu.length
+    lines.moveTo(x, 0).lineTo(x, 2 * margin + header.height)
+  }
+
+  if (typeof gameOverLayout.activeTab === 'undefined') {
+    gameOverLayout.activeTab = 0
+  }
+  gameOverLayout.showContent(gameOverLayout.activeTab)
+
+  gameOver.addChild(bg)
+  gameOver.addChild(lines)
+  gameOver.addChild(header)
+  gameOver.addChild(entities.messages.highscores)
+  gameOver.addChild(entities.equityGraph)
+  gameOver.addChild(entities.equityGraph.mask)
+  gameOver.addChild(entities.tradeGraph)
+  gameOver.addChild(entities.tradeGraph.mask)
+
+  app.stage.addChild(gameOver)
+}
+
+function calculateEquityCurve(tradeList) {
+  const numTrades = tradeList.position.length
+  let equityCurve = new Array(GAME_LENGTH_TICKS + 1)
+
+  let tradeCursor = 0
+  let inLong = false
+  let inShort = false
+  let money = 1.0 // pure value
+  let asset = 0.0 // # of assets, multiply with actual price for the value
+  let loan = 0.0  // # of assets, multiply with actual price for the value, always positive, represents absolute amount of loan
+
+  for (let tick = 0; tick <= GAME_LENGTH_TICKS; tick++) {
+    let price = priceData.series[tick]
+
+    if ((inLong || inShort) && tradeCursor < numTrades && tradeList.barClose[tradeCursor] === tick) {
+      // assert price is right
+      if (Math.abs(price - tradeList.priceClose[tradeCursor]) > EPSILON) {
+        console.log('Close price mismatch: ' + price + ' vs ' + tradeList.priceClose[tradeCursor])
+      }
+
+      // close position
+      money = money + asset * price - loan * price
+      asset = 0.0
+      loan = 0.0
+      inLong = inShort = false
+      tradeCursor++
+    }
+
+    if (tradeCursor < numTrades && tradeList.barOpen[tradeCursor] === tick) {
+      // assert price is right
+      if (Math.abs(price - tradeList.priceOpen[tradeCursor]) > EPSILON) {
+        console.log('Open price mismatch: ' + price + ' vs ' + tradeList.priceOpen[tradeCursor])
+      }
+
+      // enter position
+      if (tradeList.position[tradeCursor] === 'L') {
+        // enter long
+        asset = money / price
+        money = 0.0
+        loan = 0.0
+        inLong = true
+      } else {
+        // enter short
+        loan = money / price
+        money = 2 * money
+        asset = 0.0
+        inShort = true
+      }
+    }
+
+    equityCurve[tick] = money + asset * price - loan * price - 1
+
+    // console.log('@' + tick + ': ' + equityCurve[tick])
+    // console.log('' + money + ' + ' + (asset * price) + ' - ' + (loan * price))
+  }
+
+  return equityCurve
+}
+
+
+// ===== high scores =====
+
+function saveResult(returns, hodl, tradeList) {
+  var q = '?player=' + encodeURIComponent('' + player)
+  q += '&return=' + encodeURIComponent(returns.toFixed(3))
+  q += '&hodl=' + encodeURIComponent(hodl.toFixed(3))
+  q += '&trades=' + encodeURIComponent(tradeList.position.length)
+  q += '&start=' + encodeURIComponent(priceData.startTick)
+  q += '&stop=' + encodeURIComponent(priceData.stopTick)
+  q += '&href=' + encodeURIComponent(window.location.href)
+  q += '&tradeList=' + encodeURIComponent(JSON.stringify(tradeList))
+
+  var scr = document.createElement('script')
+  scr.src = (window.location.hostname !== 'localhost' ? SHEET_URL : TEST_SHEET_URL) + q
+  document.body.appendChild(scr)
+}
+
+function callback(p) {
+  var data = typeof p === 'string' ? JSON.parse(p) : p
+  if (gameOver && data.result == 'success') {
+    // console.log(data)
+    clearScores()
+    addScore(false, HODL_NAME, hodlReturns(), 1, hodlTrades())
+    data.top.forEach(entry => {
+      addScore(entry[4], entry[0], entry[1], entry[3], entry[5], entry[2])
+    })
+    if (!assets.scores.some(e => e.self)) {
+      addScore(true, player, playerReturns(), assets.trades.length, selfTrades(assets.trades))
+    }
+    showScores()
+  }
+}
+
+function clearScores() {
+  while (assets.scores.length) {
+    assets.scores.pop()
+  }
+}
+
+function addScore(self, player, result, trades, tradeList, date) {
+  assets.scores.push({
+    self: self,
+    player: '' + player,
+    result: Math.round(result * 1000) / 1000,
+    trades: trades,
+    tradeList: tradeList,
+    date: date
+  })
+}
+
+function showScores() {
+  const rangeString = dateRangeString(priceData.epoch, priceData.startTick, priceData.stopTick, priceData.candleLength)
+
+  let text = '<strong>RESULTS</strong>\n'
+  text += '' + rangeString + '\n'
+  const cmp = (a, b) => b.result - a.result || a.player.localeCompare(b.player)
+  assets.scores = uniqueSorted(assets.scores, cmp)
+
+  assets.scores.forEach(e => {
+    text += '\n'
+      + tag(e.self ? 'self' : (e.player == HODL_NAME ? 'hodl' : 'b'),
+        e.player.slice(0, 14).padEnd(14, ' ')
+        + tag(e.result >= 0 ? 'profit' : 'loss', toPercent(e.result).padStart(8, ' '))
+        + tag('tr', (' (' + toTrades(e.trades) + ')').padEnd(14, ' '))
+      )
+  })
+  text += '\n\ncryptoclimber.decent.org'
+  texts.highscores = text
+  texts.restart = 'Press [SPACE] to restart'
+  if (entities.screenshot) {
+    entities.screenshot.visible = true
+  }
+  drawGameOverGraphs(assets.scores)
+  updateTexts()
+}
+
+function dateRangeString(epoch, startTick, stopTick, candleLength) {
+  const HOUR_IN_MS = 60 * 60 * 1000
+
+  const startTickDate = new Date(epoch + startTick * HOUR_IN_MS * candleLength)
+  const startYear = startTickDate.getFullYear().toString()
+  const startMonth = startTickDate.toLocaleString('en-us', { month: 'long' })
+
+  const stopTickDate = new Date(epoch + stopTick * HOUR_IN_MS * candleLength)
+  const stopYear = stopTickDate.getFullYear().toString()
+  const stopMonth = stopTickDate.toLocaleString('en-us', { month: 'long' })
+
+  let str = startMonth
+  if (startYear !== stopYear || startMonth === stopMonth) {
+    str += ' ' + startYear
+  }
+  if (startMonth !== stopMonth || startYear !== stopYear) {
+    str += ' - ' + stopMonth + ' ' + stopYear
+  }
+  return str
+}
+
+// ===== event listeners =====
+
+function listenerResize(event) {
+  clearTimeout(arguments.callee.timerId)
+  arguments.callee.timerId = setTimeout(function() {
+    screenWidth = window.innerWidth
+    screenHeight = window.innerHeight
+    setupUI(screenWidth, screenHeight)
+    if (isGameOverScreen()) {
+      zoomOutFull()
+      gameOverLayout()
+      drawGameOverGraphs(assets.scores)
+    } else if (isMainScreen()) {
+      setViewPort(0, 0, OFFSET_X)
+    }
+    app.renderer.resize(screenWidth, screenHeight)
+    window.scrollTo(0, 0)
+  }, 250)
+}
+
+const listenerFocus = event => {
+}
+
+const listenerBlur = event => {
+  pauseGame(true)
+}
+
+const listenerGlobalTap = event => {
+  if (gameOver) {
+    setup()
+  } else if (!gameStarted) {
+    startGame()
+  }
+}
+
+const listenerKeyDown = event => {
+  if (paused) {
+    pauseGame(false)
+  } else if (event.code ==='KeyP') {
+    pauseGame(true)
+  }
+  if (gameOver) {
+    if (event.code === 'Space') {
+      setup()
+    } else if (event.code === 'ArrowLeft') {
+      gameOverLayout.showContent(gameOverLayout.activeTab - 1)
+    } else if (event.code === 'ArrowRight') {
+      gameOverLayout.showContent(gameOverLayout.activeTab + 1)
+    }    
+    return
+  }
+  if (event.code === 'KeyS' || event.code === 'ArrowDown') {
+    if (input.long) {
+      onNeutral()
+    } else {
+      onShort()
+    }
+    if (!gameStarted) {
+      startGame()
+    }
+  } else if (event.code === 'KeyL' || event.code === 'ArrowUp') {
+    if (input.short) {
+      onNeutral()
+    } else {
+      onLong()
+    }
+    if (!gameStarted) {
+      startGame()
+    }
+  } else if (event.code === 'ArrowLeft') {
+    onSpeedDown()
+    updateSpeedButtons(true, false)
+  } else if (event.code === 'ArrowRight') {
+    onSpeedUp()
+    updateSpeedButtons(false, true)
+  } else if (event.code === 'Space') {
+    onNeutral()
+    if (!gameStarted) {
+      startGame()
+    }
+  } else if (event.code === 'KeyF') {
+    toggleFullScreen()
+  }
+}
+
+function screenShot(canvas, element, margin) {
+  if (HTMLCanvasElement && HTMLCanvasElement.prototype && HTMLCanvasElement.prototype.toBlob) {
+    let x = window.devicePixelRatio * element.x
+    let y = window.devicePixelRatio * element.y
+    let w = window.devicePixelRatio * element.width + margin
+    let h = window.devicePixelRatio * element.height + margin
+
+    let tempCanvas = document.createElement('canvas')
+    tempCanvas.width = w
+    tempCanvas.height = h
+    tempCanvas.getContext("2d").drawImage(canvas, x - w / 2, y - h / 2, w, h, 0, 0, w, h)
+
+    tempCanvas.toBlob(function(blob) {
+      saveAs(blob, 'cryptoclimber-highscore-' + new Date().toISOString() + '.png')
+    }, 'image/png')
+  }
+}
+
+const listenerKeyUp = event => {
+  if (event.code === 'ArrowLeft' || event.code === 'ArrowRight') {
+    updateSpeedButtons()
+  }
+}
+
+function addInputListeners() {
+  window.addEventListener('blur', listenerBlur, false)
+  window.addEventListener('focus', listenerFocus, false)
+  window.addEventListener('keydown', listenerKeyDown, false)
+  window.addEventListener('keyup', listenerKeyUp, false)
+}
+
+
+// ===== utilities (stateless, pure functions) =====
+
+function getQueryParam(param) {
+  var query = window.location.search.substring(1)
+  var vars = query.split('&')
+  for (var i = 0; i < vars.length; i++) {
+      var pair = vars[i].split('=')
+      if (decodeURIComponent(pair[0]) == param) {
+          return decodeURIComponent(pair[1])
+      }
+  }
+  return null
+}
+
+function parseBoolean(b) {
+  if (typeof b === 'boolean') {
+    return b
+  } else if (typeof b === 'string') {
+    return b.toLowerCase() === 'true'
+  } else if (typeof b === 'number') {
+    return b !== 0 && !isNaN(b)
+  } else {
+    return false
+  }
+}
+
+function deepEqual(x, y) {
+  const ok = Object.keys, tx = typeof x, ty = typeof y
+  return x && y && tx === 'object' && tx === ty ? (
+    ok(x).length === ok(y).length &&
+    ok(x).every(key => deepEqual(x[key], y[key]))
+  ) : (x === y)
+}
+
+function uniqueSorted(arr, cmp) {
+  return arr.sort(cmp).filter((e, i, arr) => i == 0 || !deepEqual(e, arr[i - 1]))
+}
+
+function tag(tag, string) {
+  return (tag ? '<' + tag + '>' : '')
+    + string
+    + (tag ? '</' + tag + '>' : '')
+}
+
+function toPercent(num) {
+  return (num * 100).toFixed(1) + '%'
+}
+
+function toAbsPercent(num) {
+  return toPercent(Math.abs(num))
+}
+
+function toTrades(num) {
+  return num === 0 ? 'no trades' :
+    num === 1 ? '1 trade' :
+    num + ' trades'
+}
+
+function parsePriceData(data, ticks) {
+  const chunks = Math.floor(data.values.length / ticks)
+  const fromIndex = ticks * (Math.floor(Math.random() * (chunks - 1)) + 1)
+  const series = data.values.slice(fromIndex, fromIndex + ticks + 1)
+  const pastSeries = data.values.slice(fromIndex - PAST_LENGTH_TICKS, fromIndex + 1)
+  const first = series[0]
+  const candleLength = (Date.parse(data.endDate) - Date.parse(data.startDate)) / (data.values.length * 60 * 60 * 1000)
+
+  return {
+    series: series,
+    pastSeries: pastSeries,
+    min: Math.min(...series),
+    max: Math.max(...series),
+    scale: 1 / (2 * (first * 1.1 * 1.1 - first * 0.9 * 0.9)),
+    startTick: fromIndex,
+    stopTick: fromIndex + ticks,
+    epoch: Date.parse(data.startDate),
+    candleLength: candleLength
+  }
+}
+
+function isMainScreen() {
+  return !gameStarted && !gameOver
+}
+
+function isGameRunning() {
+  return gameStarted && !gameOver
+}
+
+function isGameOverScreen() {
+  return !gameStarted && gameOver
+}
+
+// ===== text styles =====
+
+const TEXT_STYLE = new PIXI.TextStyle({
+  fontFamily: '"B612 Mono", monospace',
+  fontSize: 28,
+  fill: COLOR_WHITE,
+  align: 'center',
+  dropShadow: true,
+  dropShadowAlpha: 0.6,
+  dropShadowBlur: 10,
+  dropShadowDistance: 3,
+});
+
+const TEXT_MULTI_STYLE = {
+  'default': {
+    fontFamily: '"B612 Mono", monospace',
+    fontSize: 20,
+    fill: COLOR_GREY_LIGHT,
+    align: 'center',
+    dropShadow: true,
+    dropShadowAlpha: 0.6,
+    dropShadowBlur: 10,
+    dropShadowDistance: 3,
+  },
+  'b': {
+    fontWeight: 'bold',
+  },
+  'strong': {
+    fontWeight: 'bold',
+    fill: COLOR_WHITE,
+  },
+  'title': {
+    fontSize: 28,
+    fontWeight: 'bold',
+    fill: 0xffff00,
+  },
+  'self': {
+    fontWeight: 'bold',
+    fill: COLOR_SELF,
+  },
+  'hodl': {
+    fontWeight: 'bold',
+    fill: COLOR_HODL,
+  },
+  'profit': {
+    fontWeight: 'bold',
+    fill: COLOR_GREEN,
+  },
+  'loss': {
+    fontWeight: 'bold',
+    fill: COLOR_RED,
+  },
+  'tr': {
+    fill: 0x666666,
+  },
+};
+
+const TEXT_PROFIT_STYLE = new PIXI.TextStyle({
+  fontFamily: '"B612 Mono", monospace',
+  fontSize: 20,
+  fontWeight: 'bold',
+  fill: COLOR_GREEN,
+  dropShadow: true,
+  dropShadowAlpha: 0.6,
+  dropShadowBlur: 10,
+  dropShadowDistance: 3,
+});
+
+const TEXT_LOSS_STYLE = new PIXI.TextStyle({
+  fontFamily: '"B612 Mono", monospace',
+  fontSize: 20,
+  fontWeight: 'bold',
+  fill: COLOR_RED,
+  dropShadow: true,
+  dropShadowAlpha: 0.6,
+  dropShadowBlur: 10,
+  dropShadowDistance: 3,
+});
+
+const TEXT_TINY_STYLE = new PIXI.TextStyle({
+  fontFamily: '"B612 Mono", monospace',
+  fontSize: 12,
+  fill: COLOR_GREY_MEDIUM,
+  align: 'right',
+});
+
+    </script>
+  </body>
+</html>
