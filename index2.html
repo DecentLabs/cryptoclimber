@@ -1046,7 +1046,6 @@ function updateTrade(trade, x, y) {
 
 function createEquityGrid(xScale, yScale) {
   let container = new PIXI.Container()
-  container.scale.set(1, -1)
 
   let grid = new PIXI.Graphics()
   for (let i = -1; i <= 1; i += 0.1) {
@@ -1066,21 +1065,29 @@ function createEquityGrid(xScale, yScale) {
   return container
 }
 
-function createEquityGraph(equityCurve, xScale, yScale, name, isSelf, isHod) {
-  let graph = new PIXI.Graphics()
-  graph.lineStyle(isSelf ? 2 : 1, isSelf ? COLOR_SELF : (isHod ? COLOR_HODL : COLOR_GREY_MEDIUM), 0.66)
-  graph.scale.set(1, -1)
+function createEquityGraph(scoreObject, xScale, yScale, name, isSelf, isHod) {
+  let equityCurve = scoreObject.equityCurve
+  let normal = new PIXI.Graphics()
+  let selected = new PIXI.Graphics()
+
+  let color = isSelf ? COLOR_SELF : (isHod ? COLOR_HODL : COLOR_GREY_LIGHT)
+  normal.lineStyle(1, color, 0.66)
+  selected.lineStyle(2, color)
   for (let i = 0; i < equityCurve.length - 1; i++) {
-    graph
+    normal
+      .moveTo(xScale * i, yScale * equityCurve[i])
+      .lineTo(xScale * (i + 1), yScale * equityCurve[i + 1])
+    selected
       .moveTo(xScale * i, yScale * equityCurve[i])
       .lineTo(xScale * (i + 1), yScale * equityCurve[i + 1])
   }
-  return graph
+  normal.visible = true
+  selected.visible = false
+  return {normal, selected}
 }
 
 function createTradeGrid(xScale, yScale) {
   let container = new PIXI.Container()
-  container.scale.set(1, -1)
 
   let grid = new PIXI.Graphics()
   let step = (priceData.max - priceData.min) / 10
@@ -1106,7 +1113,6 @@ function createTradeGraph(tradeList, xScale, yScale) {
   let yFun = y => yScale * (y - priceData.min) / (priceData.max - priceData.min)
   let graph = new PIXI.Graphics()
   graph.lineStyle(1, COLOR_GREY_MEDIUM)
-  graph.scale.set(1, -1)
   for (let i = 0; i < priceData.series.length; i++) {
     graph
       .moveTo(xScale * i, yFun(priceData.series[i]))
@@ -1141,38 +1147,89 @@ function drawGameOverGraphs(scores) {
   // equity graph
   scores.forEach(e => {
     if (e.tradeList) {
-      // console.log('Equity curve, ' + e.tradeList.position.length + ' trades, ' + e.player + (e.self ? ' (self)' : '') + ((e.player == HODL_NAME) ? ' (hod)' : ''))
       e.equityCurve = calculateEquityCurve(e.tradeList)
     }
   })
+  let curves = scores.filter(e => e.equityCurve)
 
   let min = max = 0
-  scores.forEach(e => {
-    if (e.equityCurve) {
-      e.equityCurve.forEach(x => {
-        min = Math.min(min, x)
-        max = Math.max(max, x)
-      })
-    }
+  curves.forEach(e => {
+    e.equityCurve.forEach(x => {
+      min = Math.min(min, x)
+      max = Math.max(max, x)
+    })
   })
 
-  const xScale = entities.equityGraph.targetWidth / GAME_LENGTH_TICKS
-  const yScale = entities.equityGraph.targetHeight / 2 / (Math.max(Math.abs(min), Math.abs(max)) || 1)
+  const xScaleFactor = GAME_LENGTH_TICKS
+  const yScaleFactor = 2 * (Math.max(Math.abs(min), Math.abs(max)) || 1)
+  const xScale = entities.equityGraph.targetWidth / xScaleFactor
+  const yScale = entities.equityGraph.targetHeight / yScaleFactor
 
   entities.equityGraph.removeChildren()
   entities.equityGraph.addChild(createEquityGrid(xScale, yScale))
-  scores.forEach(e => {
-    if (e.equityCurve) {
-      entities.equityGraph.addChild(createEquityGraph(e.equityCurve, xScale, yScale, e.player, e.self, (e.player == HODL_NAME)))
-    }
+  let equityGraphs = new Array(curves.length)
+  let equitySelectedGraphs = new Array(curves.length)
+  curves.forEach((e, i) => {
+    let {normal, selected} = createEquityGraph(e, xScale, yScale, e.player, e.self, (e.player == HODL_NAME))
+    equityGraphs[i] = normal
+    equitySelectedGraphs[i] = selected
   })
+  equityGraphs.forEach(g => entities.equityGraph.addChild(g))
+  equitySelectedGraphs.forEach(g => entities.equityGraph.addChild(g))
+
+
+  let name = new PIXI.Text('', TEXT_SMALL_STYLE)
+  name.scale.set(1, -1)
+  name.anchor.set(0.5, 0.5)
+  name.position.set(0, 0)
+  entities.equityGraph.addChild(name)
+
+  entities.equityGraph.interactive = true
+  entities.equityGraph.cursor = 'crosshair'
+  entities.equityGraph.hitArea = new PIXI.Rectangle(0, -entities.equityGraph.targetHeight / 2, entities.equityGraph.targetWidth, entities.equityGraph.targetHeight)
+
+  entities.equityGraph.on('mousemove', (e) => {
+    const localPos = e.data.getLocalPosition(entities.equityGraph)
+    const x = localPos.x / xScale
+    const y = localPos.y / yScale
+
+    let selected = null
+    let bestDist = null
+    curves.forEach((e, i) => {
+      const a = e.equityCurve[Math.floor(x)]
+      const b = e.equityCurve[Math.ceil(x)]
+      const c = x % 1
+      const d = a + c * (b - a)
+      const dist = Math.abs(d - y) * yScale
+      if (dist < 25 && (bestDist === null || dist < bestDist)) {
+        bestDist = dist
+        selected = i
+      }
+    })
+
+    name.text = ''
+    name.position.set(x * xScale, y * yScale)
+    name.anchor.set(x / xScaleFactor, 0.5 - y / yScaleFactor)
+
+    curves.forEach((e, i) => {
+      if (selected === i) {
+        name.text = e.player
+        equityGraphs[i].visible = false
+        equitySelectedGraphs[i].visible = true
+      } else {
+        equityGraphs[i].visible = true
+        equitySelectedGraphs[i].visible = false
+      }
+    })
+  })
+
 
   // trade graph
   entities.tradeGraph.removeChildren()
-  entities.tradeGraph.addChild(createTradeGrid(xScale, entities.equityGraph.targetHeight))
+  entities.tradeGraph.addChild(createTradeGrid(xScale, entities.tradeGraph.targetHeight))
   scores.forEach(e => {
     if (e.self && e.tradeList) {
-      entities.tradeGraph.addChild(createTradeGraph(e.tradeList, xScale, entities.equityGraph.targetHeight))
+      entities.tradeGraph.addChild(createTradeGraph(e.tradeList, xScale, entities.tradeGraph.targetHeight))
     }
   })
 }
@@ -1222,6 +1279,7 @@ function gameOverLayout() {
   entities.equityGraph.targetWidth = width - 2 * margin
   entities.equityGraph.targetHeight = height - sy - margin
   entities.equityGraph.position.set(margin, sy + entities.equityGraph.targetHeight / 2)
+  entities.equityGraph.scale.set(1, -1)
   entities.equityGraph.visible = false
   entities.equityGraph.mask = new PIXI.Graphics()
   entities.equityGraph.mask.isMask = true
@@ -1231,6 +1289,7 @@ function gameOverLayout() {
   entities.tradeGraph.targetWidth = width - 2 * margin
   entities.tradeGraph.targetHeight = height - sy - margin
   entities.tradeGraph.position.set(margin, sy + entities.tradeGraph.targetHeight)
+  entities.tradeGraph.scale.set(1, -1)
   entities.tradeGraph.visible = false
   entities.tradeGraph.mask = new PIXI.Graphics()
   entities.tradeGraph.mask.isMask = true
@@ -1336,7 +1395,6 @@ function calculateEquityCurve(tradeList) {
     // console.log('@' + tick + ': ' + equityCurve[tick])
     // console.log('' + money + ' + ' + (asset * price) + ' - ' + (loan * price))
   }
-
   return equityCurve
 }
 
@@ -1719,6 +1777,17 @@ const TEXT_LOSS_STYLE = new PIXI.TextStyle({
   fontSize: 20,
   fontWeight: 'bold',
   fill: COLOR_RED,
+  dropShadow: true,
+  dropShadowAlpha: 0.6,
+  dropShadowBlur: 10,
+  dropShadowDistance: 3,
+});
+
+const TEXT_SMALL_STYLE = new PIXI.TextStyle({
+  fontFamily: '"B612 Mono", monospace',
+  fontSize: 18,
+  fill: COLOR_WHITE,
+  align: 'center',
   dropShadow: true,
   dropShadowAlpha: 0.6,
   dropShadowBlur: 10,
