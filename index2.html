@@ -1209,7 +1209,7 @@ function drawGameOverGraphs(scores) {
 
     name.text = ''
     name.position.set(x * xScale, y * yScale)
-    name.anchor.set(x / xScaleFactor, 0.5 - y / yScaleFactor)
+    name.anchor.set(x / xScaleFactor, (0.5 - y / yScaleFactor) < 0.15 ? -0.5 : 1.5)
 
     curves.forEach((e, i) => {
       if (selected === i) {
