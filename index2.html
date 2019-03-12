@@ -1097,12 +1097,15 @@ function createEquityGraph(scoreObject, xScale, yScale, name, isSelf, isHod) {
 
 function createTradeGrid(xScale, yScale) {
   let container = new PIXI.Container()
-
   let grid = new PIXI.Graphics()
-  let step = (priceData.max - priceData.min) / 10
   grid.lineStyle(1, COLOR_GREY_DARK_2)
-  for (let i = priceData.min; i <= priceData.max; i += step) {
-    let y = yScale * (i - priceData.min) / (priceData.max - priceData.min)
+  for (let i = 0; i <= GAME_LENGTH_DAYS; i++) {
+    grid.moveTo(xScale * TICKS_PER_DAY * i, -yScale).lineTo(xScale * TICKS_PER_DAY * i, yScale)
+  }
+
+  const step = Math.max(1, Math.round((priceData.max - priceData.min) / 100) * 10)
+  for (let i = Math.floor(priceData.min / 10) * 10; i <= priceData.max; i += step) {
+    const y = yScale * (i - priceData.min) / (priceData.max - priceData.min)
     grid.moveTo(0, y).lineTo(xScale * GAME_LENGTH_TICKS, y)
 
     let label = new PIXI.Text('$' + i.toFixed(), TEXT_TINY_STYLE)
@@ -1110,9 +1113,6 @@ function createTradeGrid(xScale, yScale) {
     label.scale.set(1, -1)
     label.position.set(xScale * GAME_LENGTH_TICKS, y)
     container.addChild(label)
-  }
-  for (let i = 0; i <= GAME_LENGTH_DAYS; i++) {
-    grid.moveTo(xScale * TICKS_PER_DAY * i, -yScale).lineTo(xScale * TICKS_PER_DAY * i, yScale)
   }
   container.addChild(grid)
   return container
