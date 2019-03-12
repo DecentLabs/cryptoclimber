@@ -1044,12 +1044,19 @@ function updateTrade(trade, x, y) {
 
 // ===== gameover graphs =====
 
-function createEquityGrid(xScale, yScale) {
+function createEquityGrid(xScale, yScale, min, max) {
   let container = new PIXI.Container()
 
   let grid = new PIXI.Graphics()
-  for (let i = -1; i <= 1; i += 0.1) {
-    grid.lineStyle(1, Math.abs(i) < 0.01 ? COLOR_GREY_DARK_6 : COLOR_GREY_DARK_2)
+  grid.lineStyle(1, COLOR_GREY_DARK_2)
+  for (let i = 0; i <= GAME_LENGTH_DAYS; i++) {
+    grid.moveTo(xScale * TICKS_PER_DAY * i, -yScale).lineTo(xScale * TICKS_PER_DAY * i, yScale)
+  }
+
+  const mm = Math.max(Math.abs(min), Math.abs(max))
+  const step = mm > 0.12 ? 0.1 : mm > 0.012 ? 0.01 : 0.001
+  const drawLine = i => {
+    grid.lineStyle(1, Math.abs(i) < 0.0001 ? COLOR_GREY_DARK_4 : COLOR_GREY_DARK_2)
     grid.moveTo(0, yScale * i).lineTo(xScale * GAME_LENGTH_TICKS, yScale * i)
 
     let label = new PIXI.Text('$' + ((i + 1) * INIT_FUNDS).toFixed(), TEXT_TINY_STYLE)
@@ -1058,8 +1065,10 @@ function createEquityGrid(xScale, yScale) {
     label.position.set(xScale * GAME_LENGTH_TICKS, yScale * i)
     container.addChild(label)
   }
-  for (let i = 0; i <= GAME_LENGTH_DAYS; i++) {
-    grid.moveTo(xScale * TICKS_PER_DAY * i, -yScale).lineTo(xScale * TICKS_PER_DAY * i, yScale)
+  drawLine(0)
+  for (let i = step; i <= mm; i += step) {
+    drawLine(i)
+    drawLine(-i)
   }
   container.addChild(grid)
   return container
@@ -1166,7 +1175,7 @@ function drawGameOverGraphs(scores) {
   const yScale = entities.equityGraph.targetHeight / yScaleFactor
 
   entities.equityGraph.removeChildren()
-  entities.equityGraph.addChild(createEquityGrid(xScale, yScale))
+  entities.equityGraph.addChild(createEquityGrid(xScale, yScale, min, max))
   let equityGraphs = new Array(curves.length)
   let equitySelectedGraphs = new Array(curves.length)
   curves.forEach((e, i) => {
