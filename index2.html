@@ -1046,8 +1046,9 @@ function updateTrade(trade, x, y) {
 
 function createEquityGrid(xScale, yScale, min, max) {
   let container = new PIXI.Container()
-
   let grid = new PIXI.Graphics()
+  let labels = []
+
   grid.lineStyle(1, COLOR_GREY_DARK_2)
   for (let i = 0; i <= GAME_LENGTH_DAYS; i++) {
     grid.moveTo(xScale * TICKS_PER_DAY * i, -yScale).lineTo(xScale * TICKS_PER_DAY * i, yScale)
@@ -1063,14 +1064,16 @@ function createEquityGrid(xScale, yScale, min, max) {
     label.anchor.set(1.0, 1.0)
     label.scale.set(1, -1)
     label.position.set(xScale * GAME_LENGTH_TICKS, yScale * i)
-    container.addChild(label)
+    labels.push(label)
   }
   drawLine(0)
   for (let i = step; i <= mm; i += step) {
     drawLine(i)
     drawLine(-i)
   }
+
   container.addChild(grid)
+  labels.forEach(label => container.addChild(label))
   return container
 }
 
@@ -1098,6 +1101,8 @@ function createEquityGraph(scoreObject, xScale, yScale, name, isSelf, isHod) {
 function createTradeGrid(xScale, yScale) {
   let container = new PIXI.Container()
   let grid = new PIXI.Graphics()
+  let labels = []
+
   grid.lineStyle(1, COLOR_GREY_DARK_2)
   for (let i = 0; i <= GAME_LENGTH_DAYS; i++) {
     grid.moveTo(xScale * TICKS_PER_DAY * i, -yScale).lineTo(xScale * TICKS_PER_DAY * i, yScale)
@@ -1112,9 +1117,11 @@ function createTradeGrid(xScale, yScale) {
     label.anchor.set(1.0, 1.0)
     label.scale.set(1, -1)
     label.position.set(xScale * GAME_LENGTH_TICKS, y)
-    container.addChild(label)
+    labels.push(label)
   }
+
   container.addChild(grid)
+  labels.forEach(label => container.addChild(label))
   return container
 }
 
