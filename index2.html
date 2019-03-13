@@ -125,6 +125,7 @@ const COLOR_HODL = 0x00aaff // light blue
 const COLOR_NICE_BLUE = 0x1a73e8
 
 const EPSILON = 0.1
+const HOUR_IN_MS = 60 * 60 * 1000
 
 // ===== global variables =====
 
@@ -1098,19 +1099,23 @@ function createEquityGraph(scoreObject, xScale, yScale, name, isSelf, isHod) {
   return {normal, selected}
 }
 
-function createTradeGrid(xScale, yScale) {
+function createTradeGrid(xScale, yScale, min, max) {
+  const yFun = y => yScale * (y - min)
+
   let container = new PIXI.Container()
   let grid = new PIXI.Graphics()
   let labels = []
 
   grid.lineStyle(1, COLOR_GREY_DARK_2)
   for (let i = 0; i <= GAME_LENGTH_DAYS; i++) {
-    grid.moveTo(xScale * TICKS_PER_DAY * i, -yScale).lineTo(xScale * TICKS_PER_DAY * i, yScale)
+    grid
+      .moveTo(xScale * TICKS_PER_DAY * i, yFun(min))
+      .lineTo(xScale * TICKS_PER_DAY * i, yFun(max))
   }
 
-  const step = Math.max(1, Math.round((priceData.max - priceData.min) / 100) * 10)
-  for (let i = Math.floor(priceData.min / 10) * 10; i <= priceData.max; i += step) {
-    const y = yScale * (i - priceData.min) / (priceData.max - priceData.min)
+  const step = Math.max(1, Math.round((max - min) / 100) * 10)
+  for (let i = Math.floor(min / 10) * 10; i <= max; i += step) {
+    const y = yFun(i)
     grid.moveTo(0, y).lineTo(xScale * GAME_LENGTH_TICKS, y)
 
     let label = new PIXI.Text('$' + i.toFixed(), TEXT_TINY_STYLE)
@@ -1125,8 +1130,9 @@ function createTradeGrid(xScale, yScale) {
   return container
 }
 
-function createTradeGraph(tradeList, xScale, yScale) {
-  let yFun = y => yScale * (y - priceData.min) / (priceData.max - priceData.min)
+function createTradeGraph(tradeList, xScale, yScale, min, max) {
+  const yFun = y => yScale * (y - min)
+
   let graph = new PIXI.Graphics()
   graph.lineStyle(1, COLOR_GREY_MEDIUM)
   for (let i = 0; i < priceData.series.length; i++) {
@@ -1159,8 +1165,7 @@ function createTradeGraph(tradeList, xScale, yScale) {
   return graph
 }
 
-function drawGameOverGraphs(scores) {
-  // equity graph
+function drawGameOverEquityGraph(scores, equityGraph) {
   scores.forEach(e => {
     if (e.tradeList) {
       e.equityCurve = calculateEquityCurve(e.tradeList)
@@ -1178,11 +1183,11 @@ function drawGameOverGraphs(scores) {
 
   const xScaleFactor = GAME_LENGTH_TICKS
   const yScaleFactor = 2 * (Math.max(Math.abs(min), Math.abs(max)) || 1)
-  const xScale = entities.equityGraph.targetWidth / xScaleFactor
-  const yScale = entities.equityGraph.targetHeight / yScaleFactor
+  const xScale = equityGraph.targetWidth / xScaleFactor
+  const yScale = equityGraph.targetHeight / yScaleFactor
 
-  entities.equityGraph.removeChildren()
-  entities.equityGraph.addChild(createEquityGrid(xScale, yScale, min, max))
+  equityGraph.removeChildren()
+  equityGraph.addChild(createEquityGrid(xScale, yScale, min, max))
   let equityGraphs = new Array(curves.length)
   let equitySelectedGraphs = new Array(curves.length)
   curves.forEach((e, i) => {
@@ -1190,22 +1195,22 @@ function drawGameOverGraphs(scores) {
     equityGraphs[i] = normal
     equitySelectedGraphs[i] = selected
   })
-  equityGraphs.forEach(g => entities.equityGraph.addChild(g))
-  equitySelectedGraphs.forEach(g => entities.equityGraph.addChild(g))
+  equityGraphs.forEach(g => equityGraph.addChild(g))
+  equitySelectedGraphs.forEach(g => equityGraph.addChild(g))
 
 
-  let name = new PIXI.Text('', TEXT_SMALL_STYLE)
-  name.scale.set(1, -1)
-  name.anchor.set(0.5, 0.5)
-  name.position.set(0, 0)
-  entities.equityGraph.addChild(name)
+  let equityLabel = new PIXI.Text('', TEXT_SMALL_STYLE)
+  equityLabel.scale.set(1, -1)
+  equityLabel.anchor.set(0.5, 0.5)
+  equityLabel.position.set(0, 0)
+  equityGraph.addChild(equityLabel)
 
-  entities.equityGraph.interactive = true
-  entities.equityGraph.cursor = 'crosshair'
-  entities.equityGraph.hitArea = new PIXI.Rectangle(0, -entities.equityGraph.targetHeight / 2, entities.equityGraph.targetWidth, entities.equityGraph.targetHeight)
+  equityGraph.interactive = true
+  equityGraph.cursor = 'crosshair'
+  equityGraph.hitArea = new PIXI.Rectangle(0, -equityGraph.targetHeight / 2, equityGraph.targetWidth, equityGraph.targetHeight)
 
-  entities.equityGraph.on('mousemove', (e) => {
-    const localPos = e.data.getLocalPosition(entities.equityGraph)
+  equityGraph.on('mousemove', (e) => {
+    const localPos = e.data.getLocalPosition(equityGraph)
     const x = localPos.x / xScale
     const y = localPos.y / yScale
 
@@ -1223,13 +1228,13 @@ function drawGameOverGraphs(scores) {
       }
     })
 
-    name.text = ''
-    name.position.set(x * xScale, y * yScale)
-    name.anchor.set(x / xScaleFactor, (0.5 - y / yScaleFactor) < 0.15 ? -0.5 : 1.5)
+    equityLabel.text = ''
+    equityLabel.position.set(x * xScale, y * yScale)
+    equityLabel.anchor.set(x / xScaleFactor, (0.5 - y / yScaleFactor) < 0.15 ? -0.5 : 1.5)
 
     curves.forEach((e, i) => {
       if (selected === i) {
-        name.text = e.player
+        equityLabel.text = e.player
         equityGraphs[i].visible = false
         equitySelectedGraphs[i].visible = true
       } else {
@@ -1238,15 +1243,60 @@ function drawGameOverGraphs(scores) {
       }
     })
   })
+}
 
+function drawGameOverTradeGraph(scores, tradeGraph) {
+  const xScaleFactor = GAME_LENGTH_TICKS
+  const yScaleFactor = priceData.max - priceData.min
+  const xScale = tradeGraph.targetWidth / xScaleFactor
+  const yScale = tradeGraph.targetHeight / yScaleFactor
 
-  // trade graph
-  entities.tradeGraph.removeChildren()
-  entities.tradeGraph.addChild(createTradeGrid(xScale, entities.tradeGraph.targetHeight))
+  tradeGraph.removeChildren()
+
+  tradeGraph.interactive = true
+  tradeGraph.cursor = 'crosshair'
+  tradeGraph.hitArea = new PIXI.Rectangle(0, 0, tradeGraph.targetWidth, tradeGraph.targetHeight)
+
+  tradeGraph.addChild(createTradeGrid(xScale, yScale, priceData.min, priceData.max))
   scores.forEach(e => {
     if (e.self && e.tradeList) {
-      entities.tradeGraph.addChild(createTradeGraph(e.tradeList, xScale, entities.tradeGraph.targetHeight))
+      tradeGraph.addChild(createTradeGraph(e.tradeList, xScale, yScale, priceData.min, priceData.max))
     }
+  })
+
+  let tradeLabel = new PIXI.Text('', TEXT_SMALL_STYLE)
+  tradeLabel.scale.set(1, -1)
+  tradeLabel.anchor.set(0.5, 0.5)
+  tradeLabel.position.set(0, 0)
+  tradeGraph.addChild(tradeLabel)
+
+  tradeGraph.on('mousemove', (e) => {
+    const localPos = e.data.getLocalPosition(tradeGraph)
+    const x = localPos.x / xScale
+    const y = localPos.y / yScale
+
+    tradeLabel.text = ''
+    tradeLabel.position.set(x * xScale, y * yScale)
+    tradeLabel.anchor.set(x / xScaleFactor, (y / yScaleFactor) > 0.85 ? -0.5 : 1.5)
+
+    assets.trades.forEach(t => {
+      if (t.barOpen <= x && x <= t.barClose) {
+        const c = (x - t.barOpen) / (t.barClose - t.barOpen)
+        const d = t.priceOpen + c * (t.priceClose - t.priceOpen)
+        const dist = Math.abs(y + priceData.min - d) * yScale
+        if (dist < 25) {
+          const profit = t.current - t.margin
+          tradeLabel.text += (t.isLong ? '\u25B3\u2009LONG' : '\u25BD\u2009SHORT') + '\n'
+            + (t.barClose - t.barOpen).toFixed() + ' hours\n'
+            + (profit < 0 ? '-' : '+') + '$' + Math.abs(profit).toFixed(2)
+            if (SHOW_DEBUG) {
+              tradeLabel.text += '\n'
+              + t.barOpen + ' \u2192 ' + t.barClose + '\n'
+              + t.priceOpen.toFixed(2) + ' \u2192 $' + t.priceClose.toFixed(2)
+          }
+        }
+      }
+    })
   })
 }
 
@@ -1487,13 +1537,12 @@ function showScores() {
   if (entities.screenshot) {
     entities.screenshot.visible = true
   }
-  drawGameOverGraphs(assets.scores)
+  drawGameOverEquityGraph(assets.scores, entities.equityGraph)
+  drawGameOverTradeGraph(assets.scores, entities.tradeGraph)
   updateTexts()
 }
 
 function dateRangeString(epoch, startTick, stopTick, candleLength) {
-  const HOUR_IN_MS = 60 * 60 * 1000
-
   const startTickDate = new Date(epoch + startTick * HOUR_IN_MS * candleLength)
   const startYear = startTickDate.getFullYear().toString()
   const startMonth = startTickDate.toLocaleString('en-us', { month: 'long' })
