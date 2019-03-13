@@ -1078,8 +1078,7 @@ function createEquityGrid(xScale, yScale, min, max) {
   return container
 }
 
-function createEquityGraph(scoreObject, xScale, yScale, name, isSelf, isHod) {
-  let equityCurve = scoreObject.equityCurve
+function createEquityGraph(equityCurve, xScale, yScale, name, isSelf, isHod) {
   let normal = new PIXI.Graphics()
   let selected = new PIXI.Graphics()
 
@@ -1191,7 +1190,7 @@ function drawGameOverEquityGraph(scores, equityGraph) {
   let equityGraphs = new Array(curves.length)
   let equitySelectedGraphs = new Array(curves.length)
   curves.forEach((e, i) => {
-    let {normal, selected} = createEquityGraph(e, xScale, yScale, e.player, e.self, (e.player == HODL_NAME))
+    let {normal, selected} = createEquityGraph(e.equityCurve, xScale, yScale, e.player, e.self, (e.player == HODL_NAME))
     equityGraphs[i] = normal
     equitySelectedGraphs[i] = selected
   })
