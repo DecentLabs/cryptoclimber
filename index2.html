@@ -1312,21 +1312,25 @@ function gameOverLayout() {
   bg.drawRect(0, 0, width, height)
 
   let header = new PIXI.Container()
-  const txt = '<strong>RESULTS</strong>\n'
-    + dateRangeString(priceData.epoch, priceData.startTick, priceData.stopTick, priceData.candleLength)
-  let headerText = new MultiStyleText(txt, TEXT_MULTI_STYLE)
-  headerText.position.set(width / 2, margin)
-  headerText.anchor.set(0.5, 0.0)
-  header.addChild(headerText)
+  let headerText1 = new PIXI.Text('RESULTS', TEXT_STYLE_20_STRONG)
+  headerText1.position.set(width / 2, margin)
+  headerText1.anchor.set(0.5, 0.0)
+  const dateRange = dateRangeString(priceData.epoch, priceData.startTick, priceData.stopTick, priceData.candleLength)
+  let headerText2 = new PIXI.Text(dateRange, TEXT_STYLE_20)
+  headerText2.position.set(width / 2, margin + headerText1.height)
+  headerText2.anchor.set(0.5, 0.0)
+  header.addChild(headerText1)
+  header.addChild(headerText2)
+  header.addChild(createSmallLogo(width, height, margin))
 
   let footer = new PIXI.Container()
-  let footerText = new MultiStyleText('cryptoclimber.decent.org', TEXT_MULTI_STYLE)
+  let footerText = new PIXI.Text('cryptoclimber.decent.org', TEXT_STYLE_20)
   footerText.position.set(width / 2, height - margin)
   footerText.anchor.set(0.5, 1.0)
   footer.addChild(footerText)
 
-  let y1 = 3 * margin + header.height
-  let y2 = height - 3 * margin - footer.height
+  let y1 = 2 * margin + header.height
+  let y2 = height - 2 * margin - footer.height
 
   entities.messages.highscores.position.set(width / 2, y1)
   entities.messages.highscores.anchor.set(0.5, 0.0)
@@ -1816,6 +1820,29 @@ const TEXT_LOSS_STYLE = new PIXI.TextStyle({
   fontSize: 20,
   fontWeight: 'bold',
   fill: COLOR_RED,
+  dropShadow: true,
+  dropShadowAlpha: 0.6,
+  dropShadowBlur: 10,
+  dropShadowDistance: 3,
+});
+
+const TEXT_STYLE_20 = new PIXI.TextStyle({
+  fontFamily: '"B612 Mono", monospace',
+  fontSize: 20,
+  fill: COLOR_GREY_LIGHT,
+  align: 'center',
+  dropShadow: true,
+  dropShadowAlpha: 0.6,
+  dropShadowBlur: 10,
+  dropShadowDistance: 3,
+});
+
+const TEXT_STYLE_20_STRONG = new PIXI.TextStyle({
+  fontFamily: '"B612 Mono", monospace',
+  fontSize: 20,
+  fill: COLOR_WHITE,
+  fontWeight: 'bold',
+  align: 'center',
   dropShadow: true,
   dropShadowAlpha: 0.6,
   dropShadowBlur: 10,
