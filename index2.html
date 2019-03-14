@@ -601,6 +601,7 @@ function onGameOver() {
   updateMessages(GAME_LENGTH_TICKS - 1)
   zoomOutFull()
   gameOverLayout()
+  gameOverLayout.showContent(0)
 
   const returns = playerReturns()
   const hodl = hodlReturns()
@@ -1311,91 +1312,65 @@ function gameOverLayout() {
   bg.drawRect(0, 0, width, height)
 
   let header = new PIXI.Container()
-  let iw = (width - 2 * margin) / 6
+  const txt = '<strong>RESULTS</strong>\n'
+    + dateRangeString(priceData.epoch, priceData.startTick, priceData.stopTick, priceData.candleLength)
+  let headerText = new MultiStyleText(txt, TEXT_MULTI_STYLE)
+  headerText.position.set(width / 2, margin)
+  headerText.anchor.set(0.5, 0.0)
+  header.addChild(headerText)
 
-  let menu1 = new PIXI.Text('highscore list', TEXT_STYLE.clone())
-  menu1.interactive = true
-  menu1.buttonMode = true
-  menu1.position.set(margin + 1 * iw, margin)
-  menu1.anchor.set(0.5, 0.0)
+  let footer = new PIXI.Container()
+  let footerText = new MultiStyleText('cryptoclimber.decent.org', TEXT_MULTI_STYLE)
+  footerText.position.set(width / 2, height - margin)
+  footerText.anchor.set(0.5, 1.0)
+  footer.addChild(footerText)
 
-  let menu2 = new PIXI.Text('equity graph', TEXT_STYLE.clone())
-  menu2.interactive = true
-  menu2.buttonMode = true
-  menu2.position.set(margin + 3 * iw, margin)
-  menu2.anchor.set(0.5, 0.0)
+  let y1 = 3 * margin + header.height
+  let y2 = height - 3 * margin - footer.height
 
-  let menu3 = new PIXI.Text('your trades', TEXT_STYLE.clone())
-  menu3.interactive = true
-  menu3.buttonMode = true
-  menu3.position.set(margin + 5 * iw, margin)
-  menu3.anchor.set(0.5, 0.0)
-
-  header.addChild(menu1)
-  header.addChild(menu2)
-  header.addChild(menu3)
-
-  let sy = 3 * margin + header.height
-  entities.messages.highscores.position.set(width / 2, sy)
+  entities.messages.highscores.position.set(width / 2, y1)
   entities.messages.highscores.anchor.set(0.5, 0.0)
   entities.messages.highscores.visible = false
 
   entities.equityGraph = new PIXI.Container()
   entities.equityGraph.targetWidth = width - 2 * margin
-  entities.equityGraph.targetHeight = height - sy - margin
-  entities.equityGraph.position.set(margin, sy + entities.equityGraph.targetHeight / 2)
+  entities.equityGraph.targetHeight = y2 - y1
+  entities.equityGraph.position.set(margin, y1 + entities.equityGraph.targetHeight / 2)
   entities.equityGraph.scale.set(1, -1)
   entities.equityGraph.visible = false
   entities.equityGraph.mask = new PIXI.Graphics()
   entities.equityGraph.mask.isMask = true
-  entities.equityGraph.mask.drawRect(margin, sy, entities.equityGraph.targetWidth, entities.equityGraph.targetHeight)
+  entities.equityGraph.mask.drawRect(margin, y1, entities.equityGraph.targetWidth, entities.equityGraph.targetHeight)
 
   entities.tradeGraph = new PIXI.Container()
   entities.tradeGraph.targetWidth = width - 2 * margin
-  entities.tradeGraph.targetHeight = height - sy - margin
-  entities.tradeGraph.position.set(margin, sy + entities.tradeGraph.targetHeight)
+  entities.tradeGraph.targetHeight = y2 - y1
+  entities.tradeGraph.position.set(margin, y1 + entities.tradeGraph.targetHeight)
   entities.tradeGraph.scale.set(1, -1)
   entities.tradeGraph.visible = false
   entities.tradeGraph.mask = new PIXI.Graphics()
   entities.tradeGraph.mask.isMask = true
-  entities.tradeGraph.mask.drawRect(margin, sy, entities.tradeGraph.targetWidth, entities.tradeGraph.targetHeight)
+  entities.tradeGraph.mask.drawRect(margin, y1, entities.tradeGraph.targetWidth, entities.tradeGraph.targetHeight)
 
-  const content = [entities.messages.highscores, entities.equityGraph, entities.tradeGraph]
-  const menu = [menu1, menu2, menu3]
-  gameOverLayout.showContent = (index) => {
-    index = Math.max(0, index)
-    index = Math.min(menu.length - 1, index)
-    gameOverLayout.activeTab = index
-    for (let i = 0; i < content.length; i++) {
-      content[i].visible = i === index
-      menu[i].tint = i === index ? COLOR_BUTTON_ACTIVE : COLOR_BUTTON_INACTIVE
-    }
-  }
-  menu1.on('click', () => gameOverLayout.showContent(0))
-  menu2.on('click', () => gameOverLayout.showContent(1))
-  menu3.on('click', () => gameOverLayout.showContent(2))
-  menu1.on('tap', () => gameOverLayout.showContent(0))
-  menu2.on('tap', () => gameOverLayout.showContent(1))
-  menu3.on('tap', () => gameOverLayout.showContent(2))
-
-  let lines = new PIXI.Graphics()
-    .lineStyle(1, COLOR_WHITE)
-    .moveTo(margin, 2 * margin + header.height)
-    .lineTo(width - margin, 2 * margin + header.height)
-
-  for (let i = 0; i <= menu.length; i++) {
-    let x = margin + i * (width - 2 * margin) / menu.length
-    lines.moveTo(x, 0).lineTo(x, 2 * margin + header.height)
-  }
-
+  const content = [entities.tradeGraph, entities.messages.highscores, entities.equityGraph]
   if (typeof gameOverLayout.activeTab === 'undefined') {
     gameOverLayout.activeTab = 0
   }
-  gameOverLayout.showContent(gameOverLayout.activeTab)
+  gameOverLayout.contentLength = () => content.length
+  gameOverLayout.activeContent = () => gameOverLayout.activeTab
+  gameOverLayout.showContent = (index) => {
+    index = Math.max(0, index)
+    index = Math.min(content.length - 1, index)
+    gameOverLayout.activeTab = index
+    for (let i = 0; i < content.length; i++) {
+      content[i].visible = i === index
+    }
+  }
+  gameOverLayout.showContent(gameOverLayout.activeContent())
 
   gameOver.addChild(bg)
-  gameOver.addChild(lines)
   gameOver.addChild(header)
+  gameOver.addChild(footer)
   gameOver.addChild(entities.messages.highscores)
   gameOver.addChild(entities.equityGraph)
   gameOver.addChild(entities.equityGraph.mask)
@@ -1515,23 +1490,17 @@ function addScore(self, player, result, trades, tradeList, date) {
 }
 
 function showScores() {
-  const rangeString = dateRangeString(priceData.epoch, priceData.startTick, priceData.stopTick, priceData.candleLength)
-
-  let text = '<strong>RESULTS</strong>\n'
-  text += '' + rangeString + '\n'
   const cmp = (a, b) => b.result - a.result || a.player.localeCompare(b.player)
   assets.scores = uniqueSorted(assets.scores, cmp)
 
+  texts.highscores = ''
   assets.scores.forEach(e => {
-    text += '\n'
-      + tag(e.self ? 'self' : (e.player == HODL_NAME ? 'hodl' : 'b'),
+    texts.highscores += tag(e.self ? 'self' : (e.player == HODL_NAME ? 'hodl' : 'b'),
         e.player.slice(0, 14).padEnd(14, ' ')
         + tag(e.result >= 0 ? 'profit' : 'loss', toPercent(e.result).padStart(8, ' '))
         + tag('tr', (' (' + toTrades(e.trades) + ')').padEnd(14, ' '))
-      )
+      ) + '\n'
   })
-  text += '\n\ncryptoclimber.decent.org'
-  texts.highscores = text
   texts.restart = 'Press [SPACE] to restart'
   if (entities.screenshot) {
     entities.screenshot.visible = true
@@ -1571,7 +1540,8 @@ function listenerResize(event) {
     if (isGameOverScreen()) {
       zoomOutFull()
       gameOverLayout()
-      drawGameOverGraphs(assets.scores)
+      drawGameOverEquityGraph(assets.scores, entities.equityGraph)
+      drawGameOverTradeGraph(assets.scores, entities.tradeGraph)
     } else if (isMainScreen()) {
       setViewPort(0, 0, OFFSET_X)
     }
@@ -1604,11 +1574,15 @@ const listenerKeyDown = event => {
   }
   if (gameOver) {
     if (event.code === 'Space') {
-      setup()
+      if (gameOverLayout.activeContent() < gameOverLayout.contentLength() - 1) {
+        gameOverLayout.showContent(gameOverLayout.activeContent() + 1)
+      } else {
+        setup()
+      }
     } else if (event.code === 'ArrowLeft') {
-      gameOverLayout.showContent(gameOverLayout.activeTab - 1)
+      gameOverLayout.showContent(gameOverLayout.activeContent() - 1)
     } else if (event.code === 'ArrowRight') {
-      gameOverLayout.showContent(gameOverLayout.activeTab + 1)
+      gameOverLayout.showContent(gameOverLayout.activeContent() + 1)
     }    
     return
   }
