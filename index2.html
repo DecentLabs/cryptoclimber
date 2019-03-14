@@ -1598,6 +1598,7 @@ const listenerGlobalTap = event => {
 const listenerKeyDown = event => {
   if (paused) {
     pauseGame(false)
+    return
   } else if (event.code ==='KeyP') {
     pauseGame(true)
   }
