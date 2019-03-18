@@ -96,7 +96,6 @@ const TEST_SHEET_URL = 'https://script.google.com/macros/s/AKfycbwISEh8gGr-8QXD_
 const DEFAULT_TEXTS = Object.freeze({
   summary: INTRO,
   highscores: '',
-  restart: '',
   iteration: '',
   funds: '',
   price: '',
@@ -147,7 +146,6 @@ let entities = {
     funds: null,
     summary: null,
     highscores: null,
-    restart: null,
     price: null,
     debug: null,
     pause: null,
@@ -308,11 +306,6 @@ function setupUI(width, height) {
   entities.smallLogo = createSmallLogo(width, height, MARGIN)
   uiContainer.addChild(entities.smallLogo)
 
-  entities.screenshot = createScreenShotButton(width, height, MARGIN)
-  if (entities.screenshot) {
-    uiContainer.addChild(entities.screenshot)
-  }
-
   entities.longButton = createButton("\u25B3\u2009Long\u2009",
     width - BUTTON_WIDTH - MARGIN, height - 3 * BUTTON_HEIGHT - 5 * MARGIN,
     BUTTON_WIDTH, BUTTON_HEIGHT, input.long,
@@ -392,7 +385,6 @@ function updateSpeedButtons(downPressed = false, upPressed = false) {
 function updateTexts() {
   entities.messages.summary.text = texts.summary
   entities.messages.highscores.text = texts.highscores
-  entities.messages.restart.text = texts.restart
   entities.messages.iteration.text = texts.iteration
   entities.messages.funds.text = texts.funds
   if (SHOW_PRICE) {
@@ -473,7 +465,6 @@ function updatePlayer(x, y) {
 function startGame() {
   texts.summary = ''
   texts.highscores = ''
-  texts.restart = ''
   updateTexts()
   entities.logos.visible = false
   entities.smallLogo.visible = true
@@ -599,7 +590,6 @@ function onGameOver() {
     exitTrade(GAME_LENGTH_TICKS)
   }
   updateMessages(GAME_LENGTH_TICKS - 1)
-  zoomOutFull()
   gameOverLayout()
   gameOverLayout.showContent(0)
 
@@ -645,11 +635,6 @@ function selfTrades(trades) {
     priceOpen: trades.map(t => t.priceOpen),
     priceClose: trades.map(t => t.priceClose)
   }
-}
-
-function zoomOutFull() {
-  zoom = screenWidth / (GAME_LENGTH_TICKS * GRAPH_X_GRANULARITY_PX)
-  setViewPort(GAME_LENGTH_TICKS * GRAPH_X_GRANULARITY_PX / 2, 0, 0)
 }
 
 
@@ -795,16 +780,6 @@ function createMessages(width, height, margin) {
   messages.highscores.position.set(width / 2, height / 2)
   messages.highscores.anchor.set(0.5, 0.5)
   messagesContainer.addChild(messages.highscores)
-
-  {
-    let style = TEXT_STYLE.clone()
-    style.fontSize = 20
-    style.fill = COLOR_GREY_LIGHT
-    messages.restart = new PIXI.Text(texts.restart, style)
-    messages.restart.position.set(width / 2, height - margin)
-    messages.restart.anchor.set(0.5, 1.0)
-    messagesContainer.addChild(messages.restart)
-  }
 
   {
     let style = TEXT_STYLE.clone()
@@ -1577,10 +1552,6 @@ function showScores() {
         + tag('tr', (' (' + toTrades(e.trades) + ')').padEnd(14, ' '))
       ) + '\n'
   })
-  texts.restart = 'Press [SPACE] to restart'
-  if (entities.screenshot) {
-    entities.screenshot.visible = true
-  }
   drawGameOverEquityGraph(assets.scores, entities.equityGraph)
   drawGameOverTradeGraph(assets.scores, entities.tradeGraph)
   updateTexts()
@@ -1614,7 +1585,6 @@ function listenerResize(event) {
     screenHeight = window.innerHeight
     setupUI(screenWidth, screenHeight)
     if (isGameOverScreen()) {
-      zoomOutFull()
       gameOverLayout()
       drawGameOverEquityGraph(assets.scores, entities.equityGraph)
       drawGameOverTradeGraph(assets.scores, entities.tradeGraph)
