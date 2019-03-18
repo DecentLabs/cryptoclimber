@@ -384,7 +384,6 @@ function updateSpeedButtons(downPressed = false, upPressed = false) {
 
 function updateTexts() {
   entities.messages.summary.text = texts.summary
-  entities.messages.highscores.text = texts.highscores
   entities.messages.iteration.text = texts.iteration
   entities.messages.funds.text = texts.funds
   if (SHOW_PRICE) {
@@ -464,7 +463,6 @@ function updatePlayer(x, y) {
 
 function startGame() {
   texts.summary = ''
-  texts.highscores = ''
   updateTexts()
   entities.logos.visible = false
   entities.smallLogo.visible = true
@@ -776,11 +774,6 @@ function createMessages(width, height, margin) {
   messages.summary.anchor.set(0.5, 0.0)
   messagesContainer.addChild(messages.summary)
 
-  messages.highscores = new MultiStyleText(texts.highscores, TEXT_MULTI_STYLE)
-  messages.highscores.position.set(width / 2, height / 2)
-  messages.highscores.anchor.set(0.5, 0.5)
-  messagesContainer.addChild(messages.highscores)
-
   {
     let style = TEXT_STYLE.clone()
     style.fontSize = 48
@@ -841,21 +834,20 @@ function createSmallLogo(width, height, margin) {
   let logo = new PIXI.Sprite.from('logo.png')
   logo.position.set(width - margin, margin)
   logo.anchor.set(1.0, 0.0)
-  logo.scale.set(0.5)
+  logo.scale.set(0.25)
   logo.visible = !isMainScreen()
   return logo
 }
 
-function createScreenShotButton(width, height, margin) {
+function createScreenShotButton() {
   if (HTMLCanvasElement && HTMLCanvasElement.prototype && HTMLCanvasElement.prototype.toBlob) {
     let screenshot = new PIXI.Sprite.from('screenshot.png')
-    screenshot.position.set(margin, height - margin)
-    screenshot.anchor.set(0.0, 1.0)
-    screenshot.scale.set(0.25)
+    screenshot.anchor.set(0.0, 0.0)
+    screenshot.scale.set(0.125)
     screenshot.interactive = true
     screenshot.buttonMode = true
-    screenshot.on('click', () => { screenShot(app.view, entities.messages.highscores, 5 * MARGIN) })
-    screenshot.on('tap', () => { screenShot(app.view, entities.messages.highscores, 5 * MARGIN) })
+    screenshot.on('click', () => { screenShot(app.view, entities.messages.highscores) })
+    screenshot.on('tap', () => { screenShot(app.view, entities.messages.highscores) })
     screenshot.visible = isGameOverScreen()
     return screenshot
   } else {
@@ -1358,8 +1350,11 @@ function gameOverLayout() {
   let headerText2 = new PIXI.Text(dateRange, TEXT_STYLE_20)
   headerText2.position.set(width / 2, margin + headerText1.height)
   headerText2.anchor.set(0.5, 0.0)
+  let screenShotButton = createScreenShotButton()
+  screenShotButton.position.set(margin, margin)
   header.addChild(headerText1)
   header.addChild(headerText2)
+  header.addChild(screenShotButton)
   header.addChild(createSmallLogo(width, height, margin))
 
   let footer = new PIXI.Container()
@@ -1375,9 +1370,11 @@ function gameOverLayout() {
   let y1 = 2 * margin + header.height
   let y2 = height - 2 * margin - footer.height
 
+  entities.messages.highscores = new MultiStyleText(texts.highscores, TEXT_MULTI_STYLE)
   entities.messages.highscores.position.set(width / 2, y1)
   entities.messages.highscores.anchor.set(0.5, 0.0)
   entities.messages.highscores.visible = false
+  entities.messages.highscores.margins = [y1, margin, margin, margin]
 
   entities.equityGraph = new PIXI.Container()
   entities.equityGraph.targetWidth = width - 2 * margin
@@ -1416,6 +1413,7 @@ function gameOverLayout() {
       content[i].visible = i === index
     }
     headerText1.text = title[index]
+    screenShotButton.visible = index === 0
   }
   gameOverLayout.showContent(gameOverLayout.activeContent())
 
@@ -1552,9 +1550,11 @@ function showScores() {
         + tag('tr', (' (' + toTrades(e.trades) + ')').padEnd(14, ' '))
       ) + '\n'
   })
+  texts.highscores += '\ncryptoclimber.decent.org'
+
   drawGameOverEquityGraph(assets.scores, entities.equityGraph)
   drawGameOverTradeGraph(assets.scores, entities.tradeGraph)
-  updateTexts()
+  entities.messages.highscores.text = texts.highscores
 }
 
 function dateRangeString(epoch, startTick, stopTick, candleLength) {
@@ -1588,6 +1588,7 @@ function listenerResize(event) {
       gameOverLayout()
       drawGameOverEquityGraph(assets.scores, entities.equityGraph)
       drawGameOverTradeGraph(assets.scores, entities.tradeGraph)
+      entities.messages.highscores.text = texts.highscores
     } else if (isMainScreen()) {
       setViewPort(0, 0, OFFSET_X)
     }
@@ -1668,17 +1669,23 @@ const listenerKeyDown = event => {
   }
 }
 
-function screenShot(canvas, element, margin) {
+function screenShot(canvas, element) {
   if (HTMLCanvasElement && HTMLCanvasElement.prototype && HTMLCanvasElement.prototype.toBlob) {
-    let x = window.devicePixelRatio * element.x
-    let y = window.devicePixelRatio * element.y
-    let w = window.devicePixelRatio * element.width + margin
-    let h = window.devicePixelRatio * element.height + margin
+    const w = window.devicePixelRatio * element.width
+    const h = window.devicePixelRatio * element.height
+    const x = window.devicePixelRatio * element.x - w * element.anchor.x
+    const y = window.devicePixelRatio * element.y - h * element.anchor.y
+    const margins = element.margins || [0, 0, 0, 0]
+    const m = margins.map(m => window.devicePixelRatio * m)
+    const mx = x - m[3]
+    const my = y - m[0]
+    const mw = w + m[1] + m[3]
+    const mh = h + m[0] + m[2]
 
     let tempCanvas = document.createElement('canvas')
-    tempCanvas.width = w
-    tempCanvas.height = h
-    tempCanvas.getContext("2d").drawImage(canvas, x - w / 2, y - h / 2, w, h, 0, 0, w, h)
+    tempCanvas.width = mw
+    tempCanvas.height = mh
+    tempCanvas.getContext("2d").drawImage(canvas, mx, my, mw, mh, 0, 0, mw, mh)
 
     tempCanvas.toBlob(function(blob) {
       saveAs(blob, 'cryptoclimber-highscore-' + new Date().toISOString() + '.png')
