@@ -1168,7 +1168,7 @@ function createTradeGraphLine(tradeList, i, xScale, yScale, min, max) {
     .moveTo(xScale * barOpen, yFun(priceOpen))
     .lineTo(xScale * barClose, yFun(priceClose))
 
-  selected.lineStyle(4, profitable ? COLOR_GREEN : COLOR_RED)
+  selected.lineStyle(3, profitable ? COLOR_GREEN : COLOR_RED)
     .moveTo(xScale * barOpen, yFun(priceOpen))
     .lineTo(xScale * barClose, yFun(priceClose))
 
