@@ -1046,10 +1046,32 @@ function updateTrade(trade, x, y) {
 
 // ===== gameover graphs =====
 
+function createEquityYAxisLabels(xScale, yScale, min, max) {
+  let container = new PIXI.Container()
+  let labels = []
+
+  const mm = Math.max(Math.abs(min), Math.abs(max))
+  const step = mm > 0.12 ? 0.1 : mm > 0.012 ? 0.01 : 0.001
+  const drawLabel = i => {
+    let label = new PIXI.Text('$' + ((i + 1) * INIT_FUNDS).toFixed(), TEXT_TINY_STYLE)
+    label.anchor.set(1.0, 0.5)
+    label.scale.set(1, -1)
+    label.position.set(xScale * GAME_LENGTH_TICKS, yScale * i)
+    labels.push(label)
+  }
+  drawLabel(0)
+  for (let i = step; i <= mm; i += step) {
+    drawLabel(i)
+    drawLabel(-i)
+  }
+
+  labels.forEach(label => container.addChild(label))
+  return container
+}
+
 function createEquityGrid(xScale, yScale, min, max) {
   let container = new PIXI.Container()
   let grid = new PIXI.Graphics()
-  let labels = []
 
   grid.lineStyle(1, COLOR_GREY_DARK_2)
   for (let i = 0; i <= GAME_LENGTH_DAYS; i++) {
@@ -1061,12 +1083,6 @@ function createEquityGrid(xScale, yScale, min, max) {
   const drawLine = i => {
     grid.lineStyle(1, Math.abs(i) < 0.0001 ? COLOR_GREY_DARK_4 : COLOR_GREY_DARK_2)
     grid.moveTo(0, yScale * i).lineTo(xScale * GAME_LENGTH_TICKS, yScale * i)
-
-    let label = new PIXI.Text('$' + ((i + 1) * INIT_FUNDS).toFixed(), TEXT_TINY_STYLE)
-    label.anchor.set(1.0, 1.0)
-    label.scale.set(1, -1)
-    label.position.set(xScale * GAME_LENGTH_TICKS, yScale * i)
-    labels.push(label)
   }
   drawLine(0)
   for (let i = step; i <= mm; i += step) {
@@ -1075,7 +1091,6 @@ function createEquityGrid(xScale, yScale, min, max) {
   }
 
   container.addChild(grid)
-  labels.forEach(label => container.addChild(label))
   return container
 }
 
@@ -1099,12 +1114,31 @@ function createEquityGraph(equityCurve, xScale, yScale, name, isSelf, isHod) {
   return {normal, selected}
 }
 
-function createTradeGrid(xScale, yScale, min, max) {
+function createPriceYAxisLabels(xScale, yScale, min, max) {
+  const yFun = y => yScale * (y - min)
+
+  let container = new PIXI.Container()
+  let labels = []
+
+  const step = Math.max(1, Math.round((max - min) / 100) * 10)
+  for (let i = Math.floor(min / 10) * 10; i <= max; i += step) {
+    const y = yFun(i)
+    let label = new PIXI.Text('$' + i.toFixed(), TEXT_TINY_STYLE)
+    label.anchor.set(1.0, 0.5)
+    label.scale.set(1, -1)
+    label.position.set(xScale * GAME_LENGTH_TICKS, y)
+    labels.push(label)
+  }
+
+  labels.forEach(label => container.addChild(label))
+  return container
+}
+
+function createPriceGrid(xScale, yScale, min, max) {
   const yFun = y => yScale * (y - min)
 
   let container = new PIXI.Container()
   let grid = new PIXI.Graphics()
-  let labels = []
 
   grid.lineStyle(1, COLOR_GREY_DARK_2)
   for (let i = 0; i <= GAME_LENGTH_DAYS; i++) {
@@ -1117,16 +1151,9 @@ function createTradeGrid(xScale, yScale, min, max) {
   for (let i = Math.floor(min / 10) * 10; i <= max; i += step) {
     const y = yFun(i)
     grid.moveTo(0, y).lineTo(xScale * GAME_LENGTH_TICKS, y)
-
-    let label = new PIXI.Text('$' + i.toFixed(), TEXT_TINY_STYLE)
-    label.anchor.set(1.0, 1.0)
-    label.scale.set(1, -1)
-    label.position.set(xScale * GAME_LENGTH_TICKS, y)
-    labels.push(label)
   }
 
   container.addChild(grid)
-  labels.forEach(label => container.addChild(label))
   return container
 }
 
@@ -1195,11 +1222,16 @@ function drawGameOverEquityGraph(scores, equityGraph) {
 
   const xScaleFactor = GAME_LENGTH_TICKS
   const yScaleFactor = 2 * (Math.max(Math.abs(min), Math.abs(max)) || 1)
-  const xScale = equityGraph.targetWidth / xScaleFactor
+  let xScale = equityGraph.targetWidth / xScaleFactor
   const yScale = equityGraph.targetHeight / yScaleFactor
 
   equityGraph.removeChildren()
+
+  let yAxisLabels = createEquityYAxisLabels(xScale, yScale, min, max)
+  equityGraph.addChild(yAxisLabels)
+  xScale = (equityGraph.targetWidth - yAxisLabels.width - equityGraph.margin) / xScaleFactor
   equityGraph.addChild(createEquityGrid(xScale, yScale, min, max))
+
   let equityGraphs = new Array(curves.length)
   let equityGraphsSelected = new Array(curves.length)
   curves.forEach((e, i) => {
@@ -1260,16 +1292,16 @@ function drawGameOverEquityGraph(scores, equityGraph) {
 function drawGameOverTradeGraph(scores, tradeGraph) {
   const xScaleFactor = GAME_LENGTH_TICKS
   const yScaleFactor = priceData.max - priceData.min
-  const xScale = tradeGraph.targetWidth / xScaleFactor
+  let xScale = tradeGraph.targetWidth / xScaleFactor
   const yScale = tradeGraph.targetHeight / yScaleFactor
 
   tradeGraph.removeChildren()
 
-  tradeGraph.interactive = true
-  tradeGraph.cursor = 'crosshair'
-  tradeGraph.hitArea = new PIXI.Rectangle(0, 0, tradeGraph.targetWidth, tradeGraph.targetHeight)
+  let yAxisLabels = createPriceYAxisLabels(xScale, yScale, priceData.min, priceData.max)
+  tradeGraph.addChild(yAxisLabels)
+  xScale = (tradeGraph.targetWidth - yAxisLabels.width - tradeGraph.margin) / xScaleFactor
 
-  tradeGraph.addChild(createTradeGrid(xScale, yScale, priceData.min, priceData.max))
+  tradeGraph.addChild(createPriceGrid(xScale, yScale, priceData.min, priceData.max))
   tradeGraph.addChild(createPriceGraph(xScale, yScale, priceData.min, priceData.max))
 
   let score = scores.find(e => e.self && e.tradeList)
@@ -1292,6 +1324,10 @@ function drawGameOverTradeGraph(scores, tradeGraph) {
   tradeLabel.anchor.set(0.5, 0.5)
   tradeLabel.position.set(0, 0)
   tradeGraph.addChild(tradeLabel)
+
+  tradeGraph.interactive = true
+  tradeGraph.cursor = 'crosshair'
+  tradeGraph.hitArea = new PIXI.Rectangle(0, 0, tradeGraph.targetWidth, tradeGraph.targetHeight)
 
   tradeGraph.on('mousemove', (e) => {
     const localPos = e.data.getLocalPosition(tradeGraph)
@@ -1371,6 +1407,7 @@ function gameOverLayout() {
   entities.equityGraph = new PIXI.Container()
   entities.equityGraph.targetWidth = width - 2 * margin
   entities.equityGraph.targetHeight = y2 - y1
+  entities.equityGraph.margin = margin
   entities.equityGraph.position.set(margin, y1 + entities.equityGraph.targetHeight / 2)
   entities.equityGraph.scale.set(1, -1)
   entities.equityGraph.visible = false
@@ -1381,6 +1418,7 @@ function gameOverLayout() {
   entities.tradeGraph = new PIXI.Container()
   entities.tradeGraph.targetWidth = width - 2 * margin
   entities.tradeGraph.targetHeight = y2 - y1
+  entities.tradeGraph.margin = margin
   entities.tradeGraph.position.set(margin, y1 + entities.tradeGraph.targetHeight)
   entities.tradeGraph.scale.set(1, -1)
   entities.tradeGraph.visible = false
