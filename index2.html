@@ -1130,9 +1130,8 @@ function createTradeGrid(xScale, yScale, min, max) {
   return container
 }
 
-function createTradeGraph(tradeList, xScale, yScale, min, max) {
+function createPriceGraph(xScale, yScale, min, max) {
   const yFun = y => yScale * (y - min)
-
   let graph = new PIXI.Graphics()
   graph.lineStyle(1, COLOR_GREY_MEDIUM)
   for (let i = 0; i < priceData.series.length; i++) {
@@ -1140,29 +1139,42 @@ function createTradeGraph(tradeList, xScale, yScale, min, max) {
       .moveTo(xScale * i, yFun(priceData.series[i]))
       .lineTo(xScale * (i + 1), yFun(priceData.series[i + 1]))
   }
-
-  for (let i = 0; i < tradeList.position.length; i++) {
-    const position = tradeList.position[i]
-    const barOpen = tradeList.barOpen[i]
-    const barClose = tradeList.barClose[i]
-    const priceOpen = priceData.series[barOpen]
-    const priceClose = priceData.series[barClose]
-    const profitable = position === 'L' && priceOpen <= priceClose || position === 'S' && priceOpen >= priceClose
-
-    // assert price is right
-    if (Math.abs(priceOpen - tradeList.priceOpen[i]) > EPSILON) {
-      console.log('Open price mismatch: ' + priceOpen + ' vs ' + tradeList.priceOpen[i])
-    }
-    // assert price is right
-    if (Math.abs(priceClose - tradeList.priceClose[i]) > EPSILON) {
-      console.log('Close price mismatch: ' + priceClose + ' vs ' + tradeList.priceClose[i])
-    }
-
-    graph.lineStyle(2, profitable ? COLOR_GREEN : COLOR_RED, 0.66)
-      .moveTo(xScale * barOpen, yFun(priceOpen))
-      .lineTo(xScale * barClose, yFun(priceClose))
-  }
   return graph
+}
+
+function createTradeGraphLine(tradeList, i, xScale, yScale, min, max) {
+  const yFun = y => yScale * (y - min)
+
+  let normal = new PIXI.Graphics()
+  let selected = new PIXI.Graphics()
+
+  const position = tradeList.position[i]
+  const barOpen = tradeList.barOpen[i]
+  const barClose = tradeList.barClose[i]
+  const priceOpen = priceData.series[barOpen]
+  const priceClose = priceData.series[barClose]
+  const profitable = position === 'L' && priceOpen <= priceClose || position === 'S' && priceOpen >= priceClose
+
+  // assert price is right
+  if (Math.abs(priceOpen - tradeList.priceOpen[i]) > EPSILON) {
+    console.log('Open price mismatch: ' + priceOpen + ' vs ' + tradeList.priceOpen[i])
+  }
+  // assert price is right
+  if (Math.abs(priceClose - tradeList.priceClose[i]) > EPSILON) {
+    console.log('Close price mismatch: ' + priceClose + ' vs ' + tradeList.priceClose[i])
+  }
+
+  normal.lineStyle(2, profitable ? COLOR_GREEN : COLOR_RED, 0.66)
+    .moveTo(xScale * barOpen, yFun(priceOpen))
+    .lineTo(xScale * barClose, yFun(priceClose))
+
+  selected.lineStyle(4, profitable ? COLOR_GREEN : COLOR_RED)
+    .moveTo(xScale * barOpen, yFun(priceOpen))
+    .lineTo(xScale * barClose, yFun(priceClose))
+
+  normal.visible = true
+  selected.visible = false
+  return {normal, selected}
 }
 
 function drawGameOverEquityGraph(scores, equityGraph) {
@@ -1189,14 +1201,14 @@ function drawGameOverEquityGraph(scores, equityGraph) {
   equityGraph.removeChildren()
   equityGraph.addChild(createEquityGrid(xScale, yScale, min, max))
   let equityGraphs = new Array(curves.length)
-  let equitySelectedGraphs = new Array(curves.length)
+  let equityGraphsSelected = new Array(curves.length)
   curves.forEach((e, i) => {
     let {normal, selected} = createEquityGraph(e.equityCurve, xScale, yScale, e.player, e.self, (e.player == HODL_NAME))
     equityGraphs[i] = normal
-    equitySelectedGraphs[i] = selected
+    equityGraphsSelected[i] = selected
   })
   equityGraphs.forEach(g => equityGraph.addChild(g))
-  equitySelectedGraphs.forEach(g => equityGraph.addChild(g))
+  equityGraphsSelected.forEach(g => equityGraph.addChild(g))
 
 
   let equityLabel = new PIXI.Text('', TEXT_SMALL_STYLE)
@@ -1236,10 +1248,10 @@ function drawGameOverEquityGraph(scores, equityGraph) {
       if (selected === i) {
         equityLabel.text = e.player
         equityGraphs[i].visible = false
-        equitySelectedGraphs[i].visible = true
+        equityGraphsSelected[i].visible = true
       } else {
         equityGraphs[i].visible = true
-        equitySelectedGraphs[i].visible = false
+        equityGraphsSelected[i].visible = false
       }
     })
   })
@@ -1258,11 +1270,22 @@ function drawGameOverTradeGraph(scores, tradeGraph) {
   tradeGraph.hitArea = new PIXI.Rectangle(0, 0, tradeGraph.targetWidth, tradeGraph.targetHeight)
 
   tradeGraph.addChild(createTradeGrid(xScale, yScale, priceData.min, priceData.max))
-  scores.forEach(e => {
-    if (e.self && e.tradeList) {
-      tradeGraph.addChild(createTradeGraph(e.tradeList, xScale, yScale, priceData.min, priceData.max))
-    }
-  })
+  tradeGraph.addChild(createPriceGraph(xScale, yScale, priceData.min, priceData.max))
+
+  let score = scores.find(e => e.self && e.tradeList)
+  if (!score) {
+    return
+  }
+
+  let tradeLines = new Array(score.tradeList.position.length)
+  let tradeLinesSelected = new Array(score.tradeList.position.length)
+  for (let i = 0; i < score.tradeList.position.length; i++) {
+    let {normal, selected} = createTradeGraphLine(score.tradeList, i, xScale, yScale, priceData.min, priceData.max)
+    tradeLines[i] = normal
+    tradeLinesSelected[i] = selected
+  }
+  tradeLines.forEach(g => tradeGraph.addChild(g))
+  tradeLinesSelected.forEach(g => tradeGraph.addChild(g))
 
   let tradeLabel = new PIXI.Text('', TEXT_SMALL_STYLE)
   tradeLabel.scale.set(1, -1)
@@ -1279,21 +1302,26 @@ function drawGameOverTradeGraph(scores, tradeGraph) {
     tradeLabel.position.set(x * xScale, y * yScale)
     tradeLabel.anchor.set(x / xScaleFactor, (y / yScaleFactor) > 0.85 ? -0.5 : 1.5)
 
-    assets.trades.forEach(t => {
+    assets.trades.forEach((t, i) => {
+      tradeLines[i].visible = true
+      tradeLinesSelected[i].visible = false
       if (t.barOpen <= x && x <= t.barClose) {
         const c = (x - t.barOpen) / (t.barClose - t.barOpen)
         const d = t.priceOpen + c * (t.priceClose - t.priceOpen)
         const dist = Math.abs(y + priceData.min - d) * yScale
         if (dist < 25) {
           const profit = t.current - t.margin
-          tradeLabel.text += (t.isLong ? '\u25B3\u2009LONG' : '\u25BD\u2009SHORT') + '\n'
+          tradeLabel.text += (t.isLong ? '\u25B3\u2009LONG\u2009\u2009' : '\u25BD\u2009SHORT\u2009\u2009') + '\n'
             + (t.barClose - t.barOpen).toFixed() + ' hours\n'
             + (profit < 0 ? '-' : '+') + '$' + Math.abs(profit).toFixed(2)
+            tradeLabel.tint = profit < 0 ? COLOR_RED : COLOR_GREEN
             if (SHOW_DEBUG) {
               tradeLabel.text += '\n'
               + t.barOpen + ' \u2192 ' + t.barClose + '\n'
               + t.priceOpen.toFixed(2) + ' \u2192 $' + t.priceClose.toFixed(2)
           }
+          tradeLines[i].visible = false
+          tradeLinesSelected[i].visible = true
         }
       }
     })
