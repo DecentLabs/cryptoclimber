@@ -1821,16 +1821,28 @@ function buttonize(elem, fun, init = true) {
   elem.update = () => elem.tint = elem.buttonEnabled ? COLOR_BUTTON_INACTIVE : COLOR_BUTTON_DISABLED
   elem.update()
 
-  elem.on('mouseover', e => elem.tint = elem.buttonEnabled ? COLOR_BUTTON_ACTIVE : COLOR_BUTTON_DISABLED)
-  elem.on('mouseout', e => elem.tint = elem.buttonEnabled ? COLOR_BUTTON_INACTIVE : COLOR_BUTTON_DISABLED)
-  elem.on('click', e => {
+  const overFun = e => elem.tint = elem.buttonEnabled ? COLOR_BUTTON_ACTIVE : COLOR_BUTTON_DISABLED
+  const outFun = e => elem.tint = elem.buttonEnabled ? COLOR_BUTTON_INACTIVE : COLOR_BUTTON_DISABLED
+  const clickFun = e => {
     fun(e)
     elem.update()
+  }
+
+  elem.on('mouseover', overFun)
+  elem.on('mouseout', outFun)
+  elem.on('click', clickFun)
+  elem.on('tap', clickFun)
+  elem.on('touchstart', overFun)
+  elem.on('touchmove', e => {
+    if (app.renderer.plugins.interaction.hitTest(e.data.global, elem)) {
+      overFun(e)
+    } else {
+      outFun(e)
+    }
   })
-  elem.on('tap', e => {
-    fun(e)
-    elem.update()
-  })
+  elem.on('touchend', outFun)
+  elem.on('touchendoutside', outFun)
+  elem.on('touchcancel', outFun)
 }
 
 function isMainScreen() {
