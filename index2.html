@@ -1220,7 +1220,7 @@ function drawGameOverEquityGraph(scores, equityGraph) {
   equityGraph.cursor = 'crosshair'
   equityGraph.hitArea = new PIXI.Rectangle(0, -equityGraph.targetHeight / 2, equityGraph.targetWidth, equityGraph.targetHeight)
 
-  equityGraph.on('mousemove', (e) => {
+  const mouseOverFun = e => {
     const localPos = e.data.getLocalPosition(equityGraph)
     const x = localPos.x / xScale
     const y = localPos.y / yScale
@@ -1253,7 +1253,10 @@ function drawGameOverEquityGraph(scores, equityGraph) {
         equityGraphsSelected[i].visible = false
       }
     })
-  })
+  }
+  equityGraph.on('mousemove', mouseOverFun)
+  equityGraph.on('touchmove', mouseOverFun)
+  equityGraph.on('tap', mouseOverFun)
 }
 
 function drawGameOverTradeGraph(scores, tradeGraph) {
@@ -1296,14 +1299,14 @@ function drawGameOverTradeGraph(scores, tradeGraph) {
   tradeGraph.cursor = 'crosshair'
   tradeGraph.hitArea = new PIXI.Rectangle(0, 0, tradeGraph.targetWidth, tradeGraph.targetHeight)
 
-  tradeGraph.on('mousemove', (e) => {
+  const mouseOverFun = e => {
     const localPos = e.data.getLocalPosition(tradeGraph)
     const x = localPos.x / xScale
     const y = localPos.y / yScale
 
     tradeLabel.text = ''
     tradeLabel.position.set(x * xScale, y * yScale)
-    tradeLabel.anchor.set(x / xScaleFactor, (y / yScaleFactor) > 0.85 ? -0.5 : 1.5)
+    tradeLabel.anchor.set(x / xScaleFactor, (y / yScaleFactor) > 0.75 ? -0.5 : 1.5)
 
     assets.trades.forEach((t, i) => {
       tradeLines[i].visible = true
@@ -1328,7 +1331,10 @@ function drawGameOverTradeGraph(scores, tradeGraph) {
         }
       }
     })
-  })
+  }
+  tradeGraph.on('mousemove', mouseOverFun)
+  tradeGraph.on('touchmove', mouseOverFun)
+  tradeGraph.on('tap', mouseOverFun)
 }
 
 function gameOverLayout() {
@@ -1358,14 +1364,28 @@ function gameOverLayout() {
   header.addChild(createSmallLogo(width, height, margin))
 
   let footer = new PIXI.Container()
-  let footerText1 = new PIXI.Text('[SPACE] Next page', TEXT_STYLE_20)
-  footerText1.position.set(width / 2, height - margin)
-  footerText1.anchor.set(0.5, 1.0)
-  let footerText2 = new PIXI.Text('[ENTER] New game', TEXT_STYLE_20_STRONG)
-  footerText2.position.set(width / 2, height - margin - footerText1.height)
-  footerText2.anchor.set(0.5, 1.0)
-  footer.addChild(footerText1)
-  footer.addChild(footerText2)
+
+  let prevButton = new PIXI.Text('\u2329 Previous', TEXT_STYLE)
+  prevButton.position.set(margin, height - margin)
+  prevButton.anchor.set(0.0, 1.0)
+  buttonize(prevButton, e => {
+    gameOverLayout.showContent(gameOverLayout.activeContent() - 1)
+  }, false)
+  footer.addChild(prevButton)
+
+  let nextButton = new PIXI.Text('Next \u232a', TEXT_STYLE)
+  nextButton.position.set(width - margin, height - margin)
+  nextButton.anchor.set(1.0, 1.0)
+  buttonize(nextButton, e => {
+    gameOverLayout.showContent(gameOverLayout.activeContent() + 1)
+  }, true)
+  footer.addChild(nextButton)
+
+  let newGameButton = new PIXI.Text('Start new game', TEXT_STYLE)
+  newGameButton.position.set(width / 2, height - margin)
+  newGameButton.anchor.set(0.5, 1.0)
+  buttonize(newGameButton, e => setup())
+  footer.addChild(newGameButton)
 
   let y1 = 2 * margin + header.height
   let y2 = height - 2 * margin - footer.height
@@ -1414,6 +1434,13 @@ function gameOverLayout() {
     }
     headerText1.text = title[index]
     screenShotButton.visible = index === 0
+    gameOverLayout.updatePagingButtons()
+  }
+  gameOverLayout.updatePagingButtons = () => {
+    prevButton.buttonEnabled = gameOverLayout.activeContent() > 0
+    prevButton.update()
+    nextButton.buttonEnabled = gameOverLayout.activeContent() < gameOverLayout.contentLength() - 1
+    nextButton.update()
   }
   gameOverLayout.showContent(gameOverLayout.activeContent())
 
@@ -1605,9 +1632,10 @@ const listenerBlur = event => {
 }
 
 const listenerGlobalTap = event => {
-  if (gameOver) {
-    setup()
-  } else if (!gameStarted) {
+  if (paused) {
+    pauseGame(false)
+    return
+  } else if (isMainScreen()) {
     startGame()
   }
 }
@@ -1784,6 +1812,25 @@ function parsePriceData(data, ticks) {
     epoch: Date.parse(data.startDate),
     candleLength: candleLength
   }
+}
+
+function buttonize(elem, fun, init = true) {
+  elem.buttonEnabled = init
+  elem.interactive = true
+  elem.buttonMode = true
+  elem.update = () => elem.tint = elem.buttonEnabled ? COLOR_BUTTON_INACTIVE : COLOR_BUTTON_DISABLED
+  elem.update()
+
+  elem.on('mouseover', e => elem.tint = elem.buttonEnabled ? COLOR_BUTTON_ACTIVE : COLOR_BUTTON_DISABLED)
+  elem.on('mouseout', e => elem.tint = elem.buttonEnabled ? COLOR_BUTTON_INACTIVE : COLOR_BUTTON_DISABLED)
+  elem.on('click', e => {
+    fun(e)
+    elem.update()
+  })
+  elem.on('tap', e => {
+    fun(e)
+    elem.update()
+  })
 }
 
 function isMainScreen() {
