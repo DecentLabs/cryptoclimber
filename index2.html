@@ -1018,7 +1018,7 @@ function createEquityYAxisLabels(xScale, yScale, min, max) {
   let labels = []
 
   const mm = Math.max(Math.abs(min), Math.abs(max))
-  const step = mm > 0.12 ? 0.1 : mm > 0.012 ? 0.01 : 0.001
+  const step = mm > 0.12 ? 0.1 : 0.01
   const drawLabel = i => {
     let label = new PIXI.Text('$' + ((i + 1) * INIT_FUNDS).toFixed(), TEXT_TINY_STYLE)
     label.anchor.set(1.0, 0.5)
@@ -1046,7 +1046,7 @@ function createEquityGrid(xScale, yScale, min, max) {
   }
 
   const mm = Math.max(Math.abs(min), Math.abs(max))
-  const step = mm > 0.12 ? 0.1 : mm > 0.012 ? 0.01 : 0.001
+  const step = mm > 0.12 ? 0.1 : 0.01
   const drawLine = i => {
     grid.lineStyle(1, Math.abs(i) < 0.0001 ? COLOR_GREY_DARK_4 : COLOR_GREY_DARK_2)
     grid.moveTo(0, yScale * i).lineTo(xScale * GAME_LENGTH_TICKS, yScale * i)
@@ -1087,8 +1087,11 @@ function createPriceYAxisLabels(xScale, yScale, min, max) {
   let container = new PIXI.Container()
   let labels = []
 
-  const step = Math.max(1, Math.round((max - min) / 100) * 10)
-  for (let i = Math.floor(min / 10) * 10; i <= max; i += step) {
+  const range = max - min
+  const step = range >= 10000 ? 1000 : range >= 1000 ? 100 : 10
+  const start = range >= 10000 ? Math.floor(min / 1000) * 1000 :
+    range >= 1000 ? Math.floor(min / 100) * 100 : Math.floor(min / 10) * 10
+  for (let i = start; i <= max; i += step) {
     const y = yFun(i)
     let label = new PIXI.Text('$' + i.toFixed(), TEXT_TINY_STYLE)
     label.anchor.set(1.0, 0.5)
@@ -1114,8 +1117,11 @@ function createPriceGrid(xScale, yScale, min, max) {
       .lineTo(xScale * TICKS_PER_DAY * i, yFun(max))
   }
 
-  const step = Math.max(1, Math.round((max - min) / 100) * 10)
-  for (let i = Math.floor(min / 10) * 10; i <= max; i += step) {
+  const range = max - min
+  const step = range >= 10000 ? 1000 : range >= 1000 ? 100 : 10
+  const start = range >= 10000 ? Math.floor(min / 1000) * 1000 :
+    range >= 1000 ? Math.floor(min / 100) * 100 : Math.floor(min / 10) * 10
+  for (let i = start; i <= max; i += step) {
     const y = yFun(i)
     grid.moveTo(0, y).lineTo(xScale * GAME_LENGTH_TICKS, y)
   }
@@ -1179,7 +1185,8 @@ function drawGameOverEquityGraph(scores, equityGraph) {
   })
   let curves = scores.filter(e => e.equityCurve)
 
-  let min = max = 0
+  let min = -0.105
+  let max = 0.105
   curves.forEach(e => {
     e.equityCurve.forEach(x => {
       min = Math.min(min, x)
@@ -1260,19 +1267,21 @@ function drawGameOverEquityGraph(scores, equityGraph) {
 }
 
 function drawGameOverTradeGraph(scores, tradeGraph) {
+  let min = Math.min(priceData.min, priceData.series[0] * 0.895)
+  let max = Math.max(priceData.max, priceData.series[0] * 1.105)
   const xScaleFactor = GAME_LENGTH_TICKS
-  const yScaleFactor = priceData.max - priceData.min
+  const yScaleFactor = max - min
   let xScale = tradeGraph.targetWidth / xScaleFactor
   const yScale = tradeGraph.targetHeight / yScaleFactor
 
   tradeGraph.removeChildren()
 
-  let yAxisLabels = createPriceYAxisLabels(xScale, yScale, priceData.min, priceData.max)
+  let yAxisLabels = createPriceYAxisLabels(xScale, yScale, min, max)
   tradeGraph.addChild(yAxisLabels)
   xScale = (tradeGraph.targetWidth - yAxisLabels.width - tradeGraph.margin) / xScaleFactor
 
-  tradeGraph.addChild(createPriceGrid(xScale, yScale, priceData.min, priceData.max))
-  tradeGraph.addChild(createPriceGraph(xScale, yScale, priceData.min, priceData.max))
+  tradeGraph.addChild(createPriceGrid(xScale, yScale, min, max))
+  tradeGraph.addChild(createPriceGraph(xScale, yScale, min, max))
 
   let score = scores.find(e => e.self && e.tradeList)
   if (!score) {
@@ -1282,7 +1291,7 @@ function drawGameOverTradeGraph(scores, tradeGraph) {
   let tradeLines = new Array(score.tradeList.position.length)
   let tradeLinesSelected = new Array(score.tradeList.position.length)
   for (let i = 0; i < score.tradeList.position.length; i++) {
-    let {normal, selected} = createTradeGraphLine(score.tradeList, i, xScale, yScale, priceData.min, priceData.max)
+    let {normal, selected} = createTradeGraphLine(score.tradeList, i, xScale, yScale, min, max)
     tradeLines[i] = normal
     tradeLinesSelected[i] = selected
   }
@@ -1314,7 +1323,7 @@ function drawGameOverTradeGraph(scores, tradeGraph) {
       if (t.barOpen <= x && x <= t.barClose) {
         const c = (x - t.barOpen) / (t.barClose - t.barOpen)
         const d = t.priceOpen + c * (t.priceClose - t.priceOpen)
-        const dist = Math.abs(y + priceData.min - d) * yScale
+        const dist = Math.abs(y + min - d) * yScale
         if (dist < 25) {
           const profit = t.current - t.margin
           tradeLabel.text += (t.isLong ? '\u25B3\u2009LONG\u2009\u2009' : '\u25BD\u2009SHORT\u2009\u2009') + '\n'
@@ -1419,7 +1428,7 @@ function gameOverLayout() {
   entities.tradeGraph.mask.drawRect(margin, y1, entities.tradeGraph.targetWidth, entities.tradeGraph.targetHeight)
 
   const content = [entities.messages.highscores, entities.equityGraph, entities.tradeGraph]
-  const title = ['Scores', 'Equities', 'Your trades']
+  const title = ['Scores', 'Equity curves', 'Your trades']
   if (typeof gameOverLayout.activeTab === 'undefined') {
     gameOverLayout.activeTab = 0
   }
