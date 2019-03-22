@@ -1412,7 +1412,7 @@ function gameOverLayout() {
   let y2 = height - 2 * margin - footer.height
 
   entities.messages.highscores = new MultiStyleText(texts.highscores, TEXT_MULTI_STYLE)
-  entities.messages.highscores.position.set(width / 2, height / 2)
+  entities.messages.highscores.position.set(width / 2, margin + (y2 - margin) / 2)
   entities.messages.highscores.anchor.set(0.5, 0.5)
   entities.messages.highscores.visible = false
   entities.messages.highscores.margins = [margin, margin, margin, margin]
