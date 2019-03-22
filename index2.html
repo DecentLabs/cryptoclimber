@@ -1328,14 +1328,20 @@ function drawGameOverTradeGraph(scores, tradeGraph) {
         const dist = Math.abs(y + min - d) * yScale
         if (dist < 25) {
           const profit = t.current - t.margin
+          const days = Math.floor((t.barClose - t.barOpen) / 24)
+          const hours = (t.barClose - t.barOpen) % 24
           tradeLabel.text += (t.isLong ? '\u25B3\u2009LONG\u2009\u2009' : '\u25BD\u2009SHORT\u2009\u2009') + '\n'
-            + (t.barClose - t.barOpen).toFixed() + ' hours\n'
+            + (days > 0 ? (days.toFixed() + ' days') : '')
+            + (days > 0 && hours > 0 ? ' ' : '')
+            + (hours > 0 ? (hours.toFixed() + ' hours') : '')
+            + '\n'
             + (profit < 0 ? '-' : '+') + '$' + Math.abs(profit).toFixed(2)
             tradeLabel.tint = profit < 0 ? COLOR_RED : COLOR_GREEN
-            if (SHOW_DEBUG) {
-              tradeLabel.text += '\n'
-              + t.barOpen + ' \u2192 ' + t.barClose + '\n'
-              + t.priceOpen.toFixed(2) + ' \u2192 $' + t.priceClose.toFixed(2)
+          if (SHOW_DEBUG) {
+            tradeLabel.text += '\n'
+            + t.barOpen + ' \u2192 ' + t.barClose + '\n'
+            + (t.barClose - t.barOpen).toFixed() + ' bars\n'
+            + '$' + t.priceOpen.toFixed(2) + ' \u2192 $' + t.priceClose.toFixed(2)
           }
           tradeLines[i].visible = false
           tradeLinesSelected[i].visible = true
