@@ -1356,8 +1356,9 @@ function gameOverLayout() {
   let gameOver = new PIXI.Container()
 
   let bg = new PIXI.Graphics()
-  bg.fillColor = COLOR_BLACK
+  bg.beginFill(COLOR_BLACK)
   bg.drawRect(0, 0, width, height)
+  bg.endFill()
 
   let header = new PIXI.Container()
   let headerText1 = new PIXI.Text('RESULTS', TEXT_STYLE_20_STRONG)
@@ -1411,10 +1412,10 @@ function gameOverLayout() {
   let y2 = height - 2 * margin - footer.height
 
   entities.messages.highscores = new MultiStyleText(texts.highscores, TEXT_MULTI_STYLE)
-  entities.messages.highscores.position.set(width / 2, y1)
-  entities.messages.highscores.anchor.set(0.5, 0.0)
+  entities.messages.highscores.position.set(width / 2, height / 2)
+  entities.messages.highscores.anchor.set(0.5, 0.5)
   entities.messages.highscores.visible = false
-  entities.messages.highscores.margins = [y1, margin, margin, margin]
+  entities.messages.highscores.margins = [margin, margin, margin, margin]
 
   entities.equityGraph = new PIXI.Container()
   entities.equityGraph.targetWidth = width - 2 * margin
@@ -1439,7 +1440,7 @@ function gameOverLayout() {
   entities.tradeGraph.mask.drawRect(margin, y1, entities.tradeGraph.targetWidth, entities.tradeGraph.targetHeight)
 
   const content = [entities.messages.highscores, entities.equityGraph, entities.tradeGraph]
-  const title = ['Scores', 'Equity curves', 'Your trades']
+  const title = ['', 'Equity curves', 'Your trades']
   if (typeof gameOverLayout.activeTab === 'undefined') {
     gameOverLayout.activeTab = 0
   }
@@ -1453,6 +1454,7 @@ function gameOverLayout() {
       content[i].visible = i === index
     }
     headerText1.text = title[index]
+    headerText2.visible = index !== 0
     screenShotButton.visible = index === 0
     gameOverLayout.updatePagingButtons()
   }
@@ -1589,7 +1591,9 @@ function showScores() {
   const cmp = (a, b) => b.result - a.result || a.player.localeCompare(b.player)
   assets.scores = uniqueSorted(assets.scores, cmp)
 
-  texts.highscores = ''
+  texts.highscores = '<strong>RESULTS</strong>\n'
+  texts.highscores += dateRangeString(priceData.epoch, priceData.startTick, priceData.stopTick, priceData.candleLength)
+  texts.highscores += '\n\n'
   assets.scores.forEach(e => {
     texts.highscores += tag(e.self ? 'self' : (e.player == HODL_NAME ? 'hodl' : 'b'),
         e.player.slice(0, 14).padEnd(14, ' ')
