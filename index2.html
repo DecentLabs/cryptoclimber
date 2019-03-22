@@ -1088,9 +1088,9 @@ function createPriceYAxisLabels(xScale, yScale, min, max) {
   let labels = []
 
   const range = max - min
-  const step = range >= 10000 ? 1000 : range >= 1000 ? 100 : 10
-  const start = range >= 10000 ? Math.floor(min / 1000) * 1000 :
-    range >= 1000 ? Math.floor(min / 100) * 100 : Math.floor(min / 10) * 10
+  const step = range >= 2000 ? 1000 : range >= 200 ? 100 : 10
+  const start = range >= 2000 ? Math.floor(min / 1000) * 1000 :
+    range >= 200 ? Math.floor(min / 100) * 100 : Math.floor(min / 10) * 10
   for (let i = start; i <= max; i += step) {
     const y = yFun(i)
     let label = new PIXI.Text('$' + i.toFixed(), TEXT_TINY_STYLE)
@@ -1118,9 +1118,9 @@ function createPriceGrid(xScale, yScale, min, max) {
   }
 
   const range = max - min
-  const step = range >= 10000 ? 1000 : range >= 1000 ? 100 : 10
-  const start = range >= 10000 ? Math.floor(min / 1000) * 1000 :
-    range >= 1000 ? Math.floor(min / 100) * 100 : Math.floor(min / 10) * 10
+  const step = range >= 2000 ? 1000 : range >= 200 ? 100 : 10
+  const start = range >= 2000 ? Math.floor(min / 1000) * 1000 :
+    range >= 200 ? Math.floor(min / 100) * 100 : Math.floor(min / 10) * 10
   for (let i = start; i <= max; i += step) {
     const y = yFun(i)
     grid.moveTo(0, y).lineTo(xScale * GAME_LENGTH_TICKS, y)
@@ -1390,11 +1390,20 @@ function gameOverLayout() {
   }, true)
   footer.addChild(nextButton)
 
+  const radius = 15
   let newGameButton = new PIXI.Text('Start new game', TEXT_STYLE)
-  newGameButton.position.set(width / 2, height - margin)
+  newGameButton.position.set(width / 2, height - margin - radius)
   newGameButton.anchor.set(0.5, 1.0)
-  buttonize(newGameButton, e => setup())
-  footer.addChild(newGameButton)
+  let btnBorder = new PIXI.Graphics
+  const w = newGameButton.width + 2 * radius
+  const h = newGameButton.height + 2 * radius
+  btnBorder.lineStyle(2, COLOR_BUTTON_INACTIVE, 1)
+  btnBorder.beginFill(COLOR_BUTTON_INACTIVE, 0.25)
+  btnBorder.drawRoundedRect((width - w) / 2, height - margin - h, w, h, radius)
+  btnBorder.endFill()
+  btnBorder.addChild(newGameButton)
+  buttonize(btnBorder, e => setup())
+  footer.addChild(btnBorder)
 
   let y1 = 2 * margin + header.height
   let y2 = height - 2 * margin - footer.height
